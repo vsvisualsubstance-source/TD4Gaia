@@ -85,7 +85,7 @@ def send_command(device_id, service, action):
         return
     dat.publish(
         f"gaia/device/{device_id}/command",
-        json.dumps({"action": action, "service": service}),
+        json.dumps({"action": action, "service": service}).encode('utf-8'),
     )
 
 

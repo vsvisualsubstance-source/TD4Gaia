@@ -124,7 +124,7 @@ def _publish_status():
         "uptime":    int(time.time() - _START_TS),
         "ts":        int(time.time() * 1000),
     }
-    dat.publish(f"gaia/device/{cfg['device_id']}/status", json.dumps(payload), retain=True)
+    dat.publish(f"gaia/device/{cfg['device_id']}/status", json.dumps(payload).encode('utf-8'), retain=True)
 
 
 def _apply_command(cmd):
