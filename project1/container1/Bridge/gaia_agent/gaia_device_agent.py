@@ -59,8 +59,18 @@ Stesso protocollo MQTT degli agent Pi/OPS (pi/agent/agent.py,
 ops/agent/agent.py): gaia/device/{id}/status (retained, ogni 30s) +
 comandi enable/disable/restart su gaia/device/{id}/command e
 gaia/device/all/command.
+
+AGGIUNTO 2026-08-05: il payload di status ora include "ip" (stesso schema
+pi/agent.py._get_ip()/ops/agent.py._get_ip() — nessuna dipendenza esterna,
+solo socket della stdlib). Non è decorativo: pi/mediapipe/mediapipe_node.py
+lo usa per il mocap diretto OPS→TD (canale 2, bypassa il Core) — prima la
+destinazione OSC era un IP fisso in config, andato stantio in produzione
+appena TD è girata su una macchina diversa da quella scritta lì. Ora
+mediapipe ascolta gaia/device/+/status e si ridirige da solo verso il vero
+IP del TD sulla STESSA macchina (match su device_id == "td-{hostname}").
 """
 import json
+import socket
 import time
 
 _START_TS = time.time()
@@ -68,6 +78,21 @@ _services = {}   # name -> {"start": fn, "stop": fn, "status": fn}
 
 _HEARTBEAT_S = 30
 _last_heartbeat = 0.0
+
+
+def _get_ip():
+    """Stesso approccio di pi/agent/agent.py e ops/agent/agent.py (UDP
+    'connect' a un indirizzo pubblico, nessun pacchetto reale inviato,
+    legge solo l'IP locale scelto dal routing) — così il mocap diretto
+    OPS→TD (pi/mediapipe/mediapipe_node.py, canale 2 in ARCHITECTURE.md)
+    può scoprire dove mandare i pacchetti invece di usare un IP fisso in
+    config (che va stantio appena la macchina TD cambia)."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+    except Exception:
+        return "unknown"
 
 
 def register_service(name, start=None, stop=None, status=None):
@@ -120,6 +145,7 @@ def _publish_status():
         "name":      cfg["name"],
         "stanza":    cfg["stanza"],
         "role":      "touchdesigner",
+        "ip":        _get_ip(),
         "services":  {n: _service_status(n) for n in _services},
         "uptime":    int(time.time() - _START_TS),
         "ts":        int(time.time() * 1000),
