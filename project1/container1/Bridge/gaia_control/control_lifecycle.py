@@ -1,20 +1,13 @@
-def onCreate():
-	op('td_service_control').module.start()
-	return
-
-# NOTA (fix 2026-08-05): onStart RIMOSSO da qui apposta -- stesso motivo di
-# gaia_agent/agent_lifecycle: il toggle "Start" non sopravvive al roundtrip
-# .tox di questo COMP. Il trigger per il vero avvio di TD vive in
-# Bridge/gaia_startup (fuori da qualunque sottoalbero tox).
-
 def onFrameStart(frame):
-	changed = op('td_service_control').module.drain_inbox()
+	changed = op('td_service_control').module.tick()
 	if changed:
-		lst = op('gaia_control_panel/devices_list')
+		lst = op('ui_panel/devices_list')
 		if lst is not None:
 			lst.par.reset.pulse()
 	return
 
-def onExit():
-	op('td_service_control').module.stop()
-	return
+# NOTA (riscrittura 2026-08-05): onCreate/onExit rimossi -- non serve piu'
+# un client Python da avviare/fermare esplicitamente. mqtt_control
+# (mqttclientDAT nativo, Active=1) si connette da solo ogni volta che
+# l'operatore e' vivo. tick() ricalcola il flag "offline" ogni ~10s e
+# riporta se la tabella e' cambiata (vedi td_service_control.py).

@@ -95,7 +95,9 @@ sequenceDiagram
     Broker->>Agent: gaia/device/all/command (broadcast) or gaia/device/td-agentXX/command
 ```
 
-Both `gaia_agent` and `gaia_control` use raw `paho.mqtt.client` (not TD's native MQTT Client DAT). Both follow the same hard-won thread-safety pattern: **worker threads (paho's network thread, a heartbeat/staleness thread) touch only a `queue.Queue`; an Execute DAT's `onFrameStart` drains it on the main thread** — TD raises `tdError` if `run()` or any operator/parameter access happens off the main thread. `gaia_startup` (project root, outside Embody's tracked tree) fires `onStart` at real TD launch; the in-tree lifecycle DATs use `onCreate` for same-session recreation (a `.tox` "Start" toggle does not survive Embody's externalization roundtrip — a project-specific gotcha, not a TD limitation).
+Both `gaia_agent` and `gaia_control` run on TD's **native `mqttclientDAT`** (`mqtt_agent`, `mqtt_control`) — the same operator `Bridge/mqtt_bridge/mqtt_gaia` already used for the read-only firehose. No external Python package, no `sys.path` tricks, no worker threads: the Callbacks DAT (`onConnect`/`onMessage`/...) dispatches natively on TD's main thread, so `gaia_device_agent.py`/`td_service_control.py` touch `op()`/`par` directly from those callbacks. Periodic work (status heartbeat, staleness re-check) is a plain `time.time()` throttle inside `onFrameStart` — no thread, no queue.
+
+This replaced an earlier `paho.mqtt.client` + Python-threading design (queue-based marshalling, a `sys`-attached orphan registry) that only worked because Envoy's venv bootstrap happened to add itself to TD's `sys.path`. Since Envoy is a **dev-time tool**, not a runtime dependency, that made the whole MQTT device protocol silently inert on any machine that never enables Envoy — the native-DAT rewrite (2026-08-05) removes that coupling entirely: the project's Gaia integration now runs on stock TD with zero external dependencies. Envoy stays enabled on the authoring machine only; deployment/performance machines can leave it off (or use Embody's `Performmode` toggle to suspend it cleanly for a show) at effectively zero runtime cost.
 
 ## 5. TouchDesigner network map
 
@@ -103,11 +105,13 @@ Both `gaia_agent` and `gaia_control` use raw `paho.mqtt.client` (not TD's native
 flowchart TB
     subgraph P["/project1/container1"]
         subgraph Bridge["Bridge"]
+            gaia_config["gaia_config\n(Brokerhost/port, Corehost + camera_resolver)"]
             mqtt_bridge["mqtt_bridge\n('#' firehose, debug/log only)"]
             web_bridge["web_bridge\n(gaia-web dashboard via Web Render TOP)"]
             ollama_bridge["ollama_bridge\n(direct /api/generate call)"]
             gaia_agent["gaia_agent\n(TD as a Gaia device)"]
             gaia_control["gaia_control\n(TD as controller + UI)"]
+            gaia_config -.-> mqtt_bridge & web_bridge & ollama_bridge & gaia_agent & gaia_control
         end
         oscin1["oscin1 (OSC In CHOP, :7000)"]
         MoodNudge["MoodNudge (OSC Out, :9008)"]
@@ -137,5 +141,6 @@ Six generative features, each independently controllable and DMX/composite-linke
 ## 6. Dev tooling — Embody + Envoy
 
 - **Embody** externalizes COMPs/DATs to git-diffable files (`.tox`, `.py`, `.glsl`, `.tsv`) tracked in `externalizations.tsv`, and strips/restores the live network around `project.save()`. One hard rule learned the hard way: **never nest an independently-externalized `.tox` inside another tracked `.tox`** — it loses its contents on reload. Keep one tox level per subtree.
-- **Envoy** runs an MCP server inside TD (port 9870) so an AI agent can query and mutate the live network directly — used to build and debug everything in `Bridge/`.
+- **Envoy** runs an MCP server inside TD (port 9870) so an AI agent can query and mutate the live network directly — used to build and debug everything in `Bridge/`. **Envoy is a development-time tool, not a runtime dependency**: the MCP server binds to `127.0.0.1` only (never touches the network at runtime) and needs internet exactly once, to pip-install its own venv (`mcp`, `attrs`, `pyyaml`) on first launch. With Envoy disabled, its liveness watchdog idles at negligible cost (one no-op timer tick every 4s). Embody's `Performmode` toggle suspends Envoy cleanly for a live show (stops the server, greys out its parameters, restores on exit) without touching the `Envoyenable` config.
+- **Portability**: `Bridge/gaia_config` centralizes the only machine-specific values (MQTT broker host/port, Gaia Core host for OSC/Web/Ollama) via parameter expressions consumed project-wide; `Bridge/gaia_config/camera_resolver` derives camera stream URLs at runtime from the MQTT device registry instead of hardcoded IPs; `gaia_agent`'s `Deviceid` derives from the machine hostname. Combined with the native-`mqttclientDAT` rewrite (section 4), the project runs standalone on any machine with just TD — no Envoy, no external Python packages, no hardcoded network addresses.
 - Git LFS tracks `*.toe`/`*.tox` (binary); `Backup/`, `TDImportCache/`, `.tdn_backup/`, `.venv/`, `logs/` are regenerated locally and gitignored — git history replaces Embody's own local numbered-`.toe` backups.
