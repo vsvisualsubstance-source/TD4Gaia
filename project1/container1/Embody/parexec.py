@@ -1,0 +1,173 @@
+# me - this DAT
+# par - the Par object that has changed
+# val - the current value
+# prev - the previous value
+# 
+# Make sure the corresponding toggle is enabled in the Parameter Execute DAT.
+
+import webbrowser
+
+def onValueChange(par, prev):
+	# Suppress all side effects during init and settings restore.
+	# On .tox load, parameters are set from baked values BEFORE
+	# init()/onCreate() runs -- without this guard, parexec writes
+	# .embody/config.json with baked values before init() can intervene.
+	ext = parent.Embody.ext.Embody
+	if getattr(ext, '_restoring_settings', False):
+		return
+	if not parent.Embody.fetch('_init_complete', False, search=False):
+		return
+
+	# use par.eval() to get current value
+	if par.name == 'Folder':
+		parent.Embody.Disable(prev, removeTags=False)
+		run(f"op('{parent.Embody}').UpdateHandler()", delayFrames = 60)
+
+	elif par.name == 'Externalizations':
+		if not par:
+			parent.Embody.MissingExternalizationsPar()
+
+	elif par.name == 'Aiclient':
+		if parent.Embody.par.Envoyenable.eval():
+			op.Embody.ext.Embody._extractAIConfig()
+
+	elif par.name == 'Aiprojectroot':
+		# Move Embody's own state (.embody/config.json, project.json) to the
+		# new root first so _saveSettings (triggered by _deferSaveSettings
+		# below) writes alongside the migrated file rather than next to a
+		# stale copy. Then regenerate AI/MCP config at the new root.
+		new_mode = par.eval()
+		parent.Embody.ext.Embody._migrateRootFiles(prev, new_mode)
+		# Toggle enable on the custom-path sibling param so it greys out
+		# when the menu isn't on 'custom'.
+		custom_par = getattr(parent.Embody.par, 'Aiprojectrootcustom', None)
+		if custom_par is not None:
+			custom_par.enable = (new_mode == 'custom')
+		if parent.Embody.par.Envoyenable.eval():
+			parent.Embody.InitEnvoy()
+
+	elif par.name == 'Aiprojectrootcustom':
+		# Custom path changed within 'custom' mode -- migrate from old path
+		# to new path. No-op if Aiprojectroot isn't currently 'custom'
+		# (the value is preserved but inactive until the menu flips back).
+		if parent.Embody.par.Aiprojectroot.eval() == 'custom':
+			parent.Embody.ext.Embody._migrateRootFiles(
+				'custom', 'custom', old_custom=prev, new_custom=par.eval())
+			if parent.Embody.par.Envoyenable.eval():
+				parent.Embody.InitEnvoy()
+
+	elif par.name == 'Envoyenable':
+		if par.eval():
+			# Defer Start and re-check -- gives init() time to suppress
+			# the baked-in Envoyenable=True before the server launches.
+			# The 30-frame delay matches Verify() timing in onCreate().
+			run("parent.Embody.ext.Envoy.Start() if parent.Embody.par.Envoyenable.eval() else None",
+				delayFrames=30)
+		else:
+			parent.Embody.ext.Envoy.Stop()
+
+	elif par.name == 'Performmode':
+		if par.eval():
+			parent.Embody.ext.Embody._enterPerformMode()
+		else:
+			parent.Embody.ext.Embody._exitPerformMode()
+
+	elif par.name == 'Envoyport':
+		# Auto-restart server on port change if currently enabled
+		if parent.Embody.par.Envoyenable.eval():
+			parent.Embody.ext.Envoy.Stop()
+			# Delay restart to ensure clean shutdown
+			run("parent.Embody.ext.Envoy.Start()", delayFrames=2)
+
+	# UI color pars changed - reload list theme
+	elif 'color' in par.name.lower():
+		list_comp = op('list/list1')
+		if list_comp:
+			list_comp.reset()
+
+	elif par.name == 'Localtimestamps':
+		list_comp = op('list/list1')
+		if list_comp:
+			list_comp.reset()
+
+	elif par.name == 'Tdnmode':
+		parent.Embody.ext.Embody._onTdnModeChanged(str(par.eval()))
+
+	elif par.name == 'Embeddatsintdns':
+		# No-op when the TDN subsystem is disabled -- nothing to re-export.
+		if parent.Embody.ext.Embody._tdnEnabled():
+			parent.Embody.ext.TDN.ReexportAllTDNs()
+
+	elif par.name == 'Embedstorageintdns':
+		# No-op when the TDN subsystem is disabled -- nothing to re-export.
+		if parent.Embody.ext.Embody._tdnEnabled():
+			parent.Embody.ext.TDN.ReexportAllTDNs()
+
+	elif par.name == 'Tdncascade':
+		state = 'enabled' if par.eval() else 'disabled'
+		parent.Embody.ext.Embody.Log(f'TDN cascade {state}', 'INFO')
+
+	if par.name in parent.Embody.ext.Embody._PERSISTED_PARAMS:
+		parent.Embody.ext.Embody._deferSaveSettings()
+
+	return
+
+def onPulse(par):
+	if par.name == 'Disable':
+		parent.Embody.DisableHandler()
+		
+	elif par.name == 'Update':
+		parent.Embody.UpdateHandler()
+
+	elif par.name == 'Refresh':
+		parent.Embody.Refresh()
+
+	elif par.name == 'Openmanager':
+		parent.Embody.Manager('open')
+
+	elif par.name == 'Closemanager':
+		parent.Embody.Manager('close')
+				
+	elif par.name == 'Launchaiclient':
+		parent.Embody.LaunchAIClient()
+
+	elif par.name == 'Github':
+		webbrowser.open('https://github.com/dylanroscover/Embody')
+
+	elif par.name == 'Help':
+		op('help').openViewer()
+
+	elif par.name == 'Openexternalizationstable':
+		parent.Embody.OpenTable()
+
+	elif par.name == 'Createexternalizationstable':
+		parent.Embody.ext.Embody.CreateExternalizationsTable()
+
+	elif par.name == 'Externalizeproject':
+		parent.Embody.ExternalizeProject()
+
+	elif par.name == 'Exportprojecttdn':
+		parent.Embody.ext.TDN.ExportProjectTDNInteractive()
+
+	elif par.name == 'Importtdn':
+		file_path = parent.Embody.par.Tdnfile.eval()
+		target = parent.Embody.par.Networkpath.eval()
+		target_path = str(target) if target else '/'
+		clear_first = getattr(parent.Embody.ext.Embody, '_import_clear_first', False)
+		parent.Embody.ext.TDN.ImportNetworkFromFile(file_path, target_path, clear_first=clear_first)
+		parent.Embody.ext.Embody._import_clear_first = False
+
+	return
+
+def onExpressionChange(par, val, prev):
+	return
+
+def onExportChange(par, val, prev):
+	return
+
+def onEnableChange(par, val, prev):
+	return
+
+def onModeChange(par, val, prev):
+	return
+	

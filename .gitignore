@@ -1,0 +1,32 @@
+.DS_Store
+**/.DS_Store
+
+# Envoy Python venv — regenerated automatically by Envoy on startup
+.venv/
+
+# Embody's own local version history — superseded by git history
+Backup/
+NewProject.[0-9]*.toe
+
+# TD/Embody caches and backups — regenerable, not source
+TDImportCache/
+.tdn_backup/
+logs/
+
+# Machine/instance-specific state — auto-regenerated, wrong on another machine
+.mcp.json
+.embody/envoy.json
+.embody/project.json
+.embody/catalog_*.json
+.embody/generated-hashes.json
+
+# Local Claude Code settings, not shared project config
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
+# Embody / Envoy (auto-managed)
+CrashAutoSave*
+.embody/*
+!.embody/project.json
+.claude/projects/
+__pycache__/
