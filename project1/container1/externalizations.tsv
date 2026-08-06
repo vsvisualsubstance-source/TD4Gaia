@@ -8,7 +8,7 @@ path	type	strategy	rel_file_path	timestamp	dirty	build	touch_build	node_x	node_y
 /project1/container1/Visuals/data/script_detections_callbacks	text	py	project1/container1/Visuals/data/script_detections_callbacks.py	2026-07-25 09:00:09 UTC				1200	1080	0.9000,0.3000,0.4000
 /project1/container1/Visuals/data	base	tox	project1/container1/Visuals/data.tox	2026-08-05 07:54:35 UTC	False	20	2025.33070	-355	920	0.3250,0.8000,0.3000
 /project1/container1/Visuals/cam1	cam	tox	project1/container1/Visuals/cam1.tox	2026-07-25 09:00:09 UTC	False	1	2025.32820	400	0	0.3250,0.8000,0.3000
-/project1/container1/Visuals	base	tox	project1/container1/Visuals.tox	2026-08-06 10:04:45 UTC	False	42	2025.33070	1000	200	0.3250,0.8000,0.3000
+/project1/container1/Visuals	base	tox	project1/container1/Visuals.tox	2026-08-06 18:01:20 UTC	False	43	2025.33070	1000	200	0.3250,0.8000,0.3000
 /project1/container1/Embody/window_tagging_menu	window	tox	project1/container1/Embody/window_tagging_menu.tox	2026-07-25 09:00:09 UTC	False	24	2025.32820	900	675	0.3250,0.8000,0.3000
 /project1/container1/Embody/window_manager	window	tox	project1/container1/Embody/window_manager.tox	2026-07-25 09:00:09 UTC	False	13	2025.32820	500	675	0.3250,0.8000,0.3000
 /project1/container1/Embody/windowHeader/title	text	tox	project1/container1/Embody/windowHeader/title.tox	2026-07-25 09:00:09 UTC	False	49	2025.32820	0	0	0.3250,0.8000,0.3000
