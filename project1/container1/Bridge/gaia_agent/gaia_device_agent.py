@@ -68,6 +68,13 @@ destinazione OSC era un IP fisso in config, andato stantio in produzione
 appena TD è girata su una macchina diversa da quella scritta lì. Ora
 mediapipe ascolta gaia/device/+/status e si ridirige da solo verso il vero
 IP del TD sulla STESSA macchina (match su device_id == "td-{hostname}").
+
+AGGIUNTO 2026-08-06: on_connect ora fa anche l'announce col Device
+Registry di Node-RED (gaia/devices/{id}/announce + subscribe a
+gaia/devices/{id}/config) — mancava del tutto, per questo un'istanza TD
+compariva in Pi Manager ma /api/provision/assign rispondeva "device non
+trovato" e la Stanza restava un'etichetta mai registrata nel roomGraph
+reale. Vedi _publish_announce().
 """
 import json
 import socket
@@ -193,12 +200,35 @@ def tick():
 # ---- Chiamate da mqtt_agent_callbacks — girano gia' sul thread principale
 # (dispatch nativo del Callbacks DAT, verificato su mqtt_bridge/mqtt_gaia). --
 
+def _publish_announce(dat, cfg):
+    """Handshake col Device Registry di Node-RED (pi/agent.py e
+    ops/agent.py lo fanno già in ogni loro on_connect, questo agent no —
+    per questo un'istanza TD compariva in Pi Manager (status/command,
+    protocollo più leggero) ma /api/provision/assign rispondeva "device
+    non trovato": il Registry non aveva MAI sentito parlare di questo
+    device_id, e senza registrazione la stanza restava un'etichetta
+    proposta, mai un vero nodo nel roomGraph — trovato dal vivo il
+    2026-08-06 con un'istanza annunciata in "studio" mai comparsa da
+    nessuna parte fuori da questo status. Stesso payload esatto di
+    pi/mediapipe/mediapipe_node.py._on_connect (room_claim, non room)."""
+    announce = {
+        "device_id":  cfg["device_id"],
+        "type":       "touchdesigner",
+        "ip":         _get_ip(),
+        "room_claim": cfg["stanza"],
+        "ts":         int(time.time() * 1000),
+    }
+    dat.publish(f"gaia/devices/{cfg['device_id']}/announce", json.dumps(announce).encode('utf-8'))
+
+
 def on_connect(dat):
     cfg = _read_config()
     dat.subscribe(f"gaia/device/{cfg['device_id']}/command")
     dat.subscribe("gaia/device/all/command")
+    dat.subscribe(f"gaia/devices/{cfg['device_id']}/config")
     print(f"[GAIA Agent] Connesso — device_id: {cfg['device_id']}")
     _publish_status()
+    _publish_announce(dat, cfg)
 
 
 def on_connect_failure(msg):
@@ -213,8 +243,15 @@ def on_message(topic, payload):
     if isinstance(payload, bytes):
         payload = payload.decode('utf-8', errors='replace')
     try:
-        cmd = json.loads(payload)
+        d = json.loads(payload)
     except Exception as e:
-        print(f"[GAIA Agent] Comando non valido: {e}")
+        print(f"[GAIA Agent] Messaggio non valido: {e}")
         return
-    _apply_command(cmd)
+    if topic.endswith('/config'):
+        # Risposta autoritativa del Device Registry (retained) — solo log,
+        # NON sovrascrive Stanza in automatico: è un parametro scelto
+        # dall'artista nel COMP, non va cambiato di nascosto sotto un nome
+        # diverso senza che se ne accorga.
+        print(f"[GAIA Agent] Config dal Device Registry: {d}")
+        return
+    _apply_command(d)
