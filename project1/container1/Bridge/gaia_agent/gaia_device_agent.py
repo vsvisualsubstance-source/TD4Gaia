@@ -75,6 +75,13 @@ gaia/devices/{id}/config) — mancava del tutto, per questo un'istanza TD
 compariva in Pi Manager ma /api/provision/assign rispondeva "device non
 trovato" e la Stanza restava un'etichetta mai registrata nel roomGraph
 reale. Vedi _publish_announce().
+
+AGGIUNTO 2026-08-06 (2): due migliorie richieste dopo aver visto quanto
+poco l'agent facesse di suo — _publish_profile() (gaia/devices/{id}/profile,
+retained, stesso schema di pi/agent.py/ops/agent.py: capabilities derivate
+dai servizi REALMENTE registrati, non assunte) e _last_error nello status
+(ultima eccezione da un servizio, visibile in Admin senza dover aprire il
+Textport di TD).
 """
 import json
 import socket
@@ -85,6 +92,14 @@ _services = {}   # name -> {"start": fn, "stop": fn, "status": fn}
 
 _HEARTBEAT_S = 30
 _last_heartbeat = 0.0
+
+_last_error = None   # {"context","message","ts"} — ultimo errore, visibile in Admin senza aprire TD
+
+
+def _record_error(context, exc):
+    global _last_error
+    _last_error = {"context": context, "message": str(exc), "ts": int(time.time() * 1000)}
+    print(f"[GAIA Agent] Errore in {context}: {exc}")
 
 
 def _get_ip():
@@ -138,8 +153,18 @@ def _service_status(name):
     try:
         return "active" if fn() else "inactive"
     except Exception as e:
-        print(f"[GAIA Agent] status({name}) errore: {e}")
+        _record_error(f"status({name})", e)
         return "unknown"
+
+
+def _capabilities():
+    """Derivate da cosa e' REALMENTE registrato (register_service), non
+    assunte a priori — un progetto senza dmx_out non deve dichiarare dmx."""
+    return {
+        "display": True,   # sempre vero: un'istanza TD e' per definizione uno strato visivo
+        "dmx":     "dmx_out" in _services,
+        "mocap":   "mocap_bridge" in _services,
+    }
 
 
 def _publish_status():
@@ -148,16 +173,37 @@ def _publish_status():
         return
     cfg = _read_config()
     payload = {
-        "device_id": cfg["device_id"],
-        "name":      cfg["name"],
-        "stanza":    cfg["stanza"],
-        "role":      "touchdesigner",
-        "ip":        _get_ip(),
-        "services":  {n: _service_status(n) for n in _services},
-        "uptime":    int(time.time() - _START_TS),
-        "ts":        int(time.time() * 1000),
+        "device_id":  cfg["device_id"],
+        "name":       cfg["name"],
+        "stanza":     cfg["stanza"],
+        "role":       "touchdesigner",
+        "ip":         _get_ip(),
+        "services":   {n: _service_status(n) for n in _services},
+        "uptime":     int(time.time() - _START_TS),
+        "last_error": _last_error,
+        "ts":         int(time.time() * 1000),
     }
     dat.publish(f"gaia/device/{cfg['device_id']}/status", json.dumps(payload).encode('utf-8'), retain=True)
+    _publish_profile(dat, cfg)
+
+
+def _publish_profile(dat, cfg):
+    """Profilo semantico retained (docs/gaia-semantico.md), stesso schema
+    di pi/agent.py._publish_profile()/ops/agent.py._publish_profile() —
+    finora mancava del tutto: un'istanza TD era invisibile a chi legge
+    /gaia/devices/profiles (es. welcome.html per la risoluzione stanza
+    quando manca ?room=, vedi commit 3100ce2)."""
+    profile = {
+        "device_id":    cfg["device_id"],
+        "role":         "touchdesigner",
+        "room":         cfg["stanza"],
+        "ip":           _get_ip(),
+        "capabilities": _capabilities(),
+        "services":     {n: _service_status(n) for n in _services},
+        "sw_version":   "1.0",
+        "ts":           int(time.time() * 1000),
+    }
+    dat.publish(f"gaia/devices/{cfg['device_id']}/profile", json.dumps(profile).encode('utf-8'), retain=True)
 
 
 def _apply_command(cmd):
@@ -166,17 +212,23 @@ def _apply_command(cmd):
     svc = _services.get(service)
     print(f"[GAIA Agent] Comando: {cmd}")
 
+    def _run(fn, label):
+        try:
+            fn()
+        except Exception as e:
+            _record_error(f"{label}({service})", e)
+
     if action in ("enable", "disable", "restart") and not svc:
         print(f"[GAIA Agent] Servizio '{service}' non registrato (register_service mai chiamato)")
     elif action == "enable" and svc.get("start"):
-        svc["start"]()
+        _run(svc["start"], "start")
     elif action == "disable" and svc.get("stop"):
-        svc["stop"]()
+        _run(svc["stop"], "stop")
     elif action == "restart" and svc:
         if svc.get("stop"):
-            svc["stop"]()
+            _run(svc["stop"], "stop")
         if svc.get("start"):
-            svc["start"]()
+            _run(svc["start"], "start")
     elif action == "status":
         pass
     else:
