@@ -13,7 +13,7 @@ flowchart LR
         Broker[("Mosquitto\nMQTT broker\n192.168.1.142:1883")]
         Ollama["Ollama\nlocal LLM"]
         Pi["Raspberry Pi nodes\n(ingresso, ...)"]
-        OPS["OPS node\n(soggiorno)\nmocap + camera"]
+        OPS["OPS node\n(studio)\nmocap + camera"]
         Core --- Broker
         Pi -- "gaia/device/*, gaia/mediapipe/pose" --- Broker
         OPS -- "gaia/device/*, gaia/mediapipe/pose" --- Broker
@@ -146,3 +146,50 @@ Six generative features, each independently controllable and DMX/composite-linke
 - **Envoy** runs an MCP server inside TD (port 9870) so an AI agent can query and mutate the live network directly — used to build and debug everything in `Bridge/`. **Envoy is a development-time tool, not a runtime dependency**: the MCP server binds to `127.0.0.1` only (never touches the network at runtime) and needs internet exactly once, to pip-install its own venv (`mcp`, `attrs`, `pyyaml`) on first launch. With Envoy disabled, its liveness watchdog idles at negligible cost (one no-op timer tick every 4s). Embody's `Performmode` toggle suspends Envoy cleanly for a live show (stops the server, greys out its parameters, restores on exit) without touching the `Envoyenable` config.
 - **Portability**: `Bridge/gaia_config` centralizes the only machine-specific values (MQTT broker host/port, Gaia Core host for OSC/Web/Ollama) via parameter expressions consumed project-wide; `Bridge/gaia_config/camera_resolver` derives camera stream URLs at runtime from the MQTT device registry instead of hardcoded IPs; `gaia_agent`'s `Deviceid` derives from the machine hostname. Combined with the native-`mqttclientDAT` rewrite (section 4), the project runs standalone on any machine with just TD — no Envoy, no external Python packages, no hardcoded network addresses.
 - Git LFS tracks `*.toe`/`*.tox` (binary); `Backup/`, `TDImportCache/`, `.tdn_backup/`, `.venv/`, `logs/` are regenerated locally and gitignored — git history replaces Embody's own local numbered-`.toe` backups.
+
+## 7. Roadmap — Nursery (proposed, review requested)
+
+**Status: design only, nothing built yet.** Written for review by Gaia's own agent (Node-RED/Core side) before implementation starts — flag any assumption below that doesn't hold on the Gaia side, or any signal/topic name that collides with something already in use.
+
+### Problem
+
+For the Milano talk, TD should autonomously deploy new visual components in response to things Gaia discovers about itself or the house — a newly identified room, a newly recognized person, a mood shift, a nightly reflection — with no human approving each activation, and without this repo's Claude Code / Envoy session needing to be live during the show (Envoy is explicitly dev-time only, §6).
+
+### Proposed design
+
+Splits along the same OSC-data-plane / MQTT-service-plane line already established in §1:
+
+- **Decision-making stays on the Gaia side.** Node-RED consumes the same signals it already builds the canvas feed from (mood, room state, one-shot events — §2) plus reflection/dream text, asks the local Ollama instance to pick from a **bounded menu** of candidate components (never free-form generation of code or parameters), and publishes the decision as a new MQTT message.
+- **Execution stays on the TD side.** A new `Bridge/gaia_nursery` extension, built the same way as `gaia_control` (§4: native `mqttclientDAT`, no threads, callbacks dispatched on TD's main thread) subscribes to the decision topic and activates/deactivates a pre-built, pre-tested tox component from a dedicated Nursery library inside `Visuals/`.
+
+```mermaid
+flowchart LR
+    subgraph House["Gaia — Core"]
+        NR["Node-RED\n(reads mood/reflection/events,\nqueries Ollama)"]
+        Ollama["Ollama\n(bounded choice: pick from\ncandidate list, not free-gen)"]
+        NR <--> Ollama
+    end
+    Broker[("MQTT Broker")]
+    subgraph TD["This repo"]
+        Nursery["Bridge/gaia_nursery\n(native mqttclientDAT,\nvalidates against whitelist)"]
+        Lib["Nursery library\n(pre-built, pre-tested tox,\nbuilt offline with Envoy)"]
+        Nursery --> Lib
+    end
+    NR == "gaia/nursery/activate\n{component, params}" ==> Broker ==> Nursery
+```
+
+### Why not generate components live
+
+Considered and rejected for showtime: generating new tox/operators on demand (via Claude Code + Envoy, or an LLM writing TD Python directly at runtime). Two reasons:
+
+1. Envoy/Claude Code is explicitly dev-time only (§6) — pulling it into the runtime loop reintroduces the exact dependency that the native-`mqttclientDAT` rewrite (§4) deliberately removed.
+2. Live network mutation carries real crash risk (GPU memory, cook cascades, GLSL failures — see `.claude/rules/performance.md`) with nobody watching to catch it mid-show.
+
+So the nursery only **toggles pre-validated components** — it never writes new ones at runtime. New component types are added to the library offline, the normal way this repo already works (Envoy + Claude Code, reviewed, committed).
+
+### Open questions for Gaia-side review
+
+- **Trigger schema**: which existing signals (canvas tick fields, one-shot events per §2 — `level_up`, `dream_new`, `face_enrolled`, `person_recognized`, `plant_note`) vs. new ones should map to "activate a nursery component"?
+- **Ollama contract**: response must be constrained to an enum of known component IDs plus a small parameter schema (name / color seed / room / person id). TD must hard-whitelist this regardless, since MQTT payloads on the broker aren't authenticated.
+- **Lifecycle**: how does a component retire (person leaves, room goes quiet) — TTL, an explicit deactivate event, or both?
+- **Resource budget**: cap on concurrent active nursery components, checked against the GPU/CPU thresholds in `performance.md`.

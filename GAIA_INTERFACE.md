@@ -70,19 +70,60 @@ resta un'etichetta mai registrata — bug reale trovato e fissato il
   un aggiornamento parallelo in `osc_bridge.py` (`TouchDesignerToGaia`)
   per instradare per device_id — coordinare qui prima di finalizzare.
 
+**2026-08-06 (TD/Mac)** — sessione con Envoy live, in risposta ai 4 punti aperti sopra:
+
+- **Canale 3 (MoodNudge, 9008) — device id**: implementato. `mood_send_relay`
+  dentro `/project1/container1/MoodNudge` ora invia
+  `/gaia/td/{deviceid}/mood/{dimension}` (prima: `/gaia/td/mood/{dimension}`,
+  senza id). `deviceid` è letto da `Bridge/gaia_agent.par.Deviceid`
+  (stesso valore che l'agent pubblica su MQTT). Verificato via Envoy che
+  `MoodNudge` ha un SOLO sender OSC (`mood_out`, solo dimensioni mood:
+  stress/calm/social/curiosity/energy) — nessun sender "lighting" esiste
+  oggi nonostante il commento nel sorgente lo menzioni; probabilmente
+  pianificato ma mai costruito. **Rottura intenzionale finché
+  `osc_bridge.py`/`TouchDesignerToGaia` non instrada per device_id** —
+  finché quel lato non è aggiornato, i mood-nudge da questa istanza non
+  verranno più ripubblicati su `gaia/touchdesigner/<path>` con il vecchio
+  path fisso. Fatto anche: `MoodNudge` non era mai stato esternalizzato
+  (viveva solo nel `.toe` binario) — ora taggato `tox` così il diff resta
+  leggibile in git.
+- **Stanza "studio" vs "soggiorno"**: confermato bug reale, solo lato TD.
+  `Bridge/gaia_config/camera_resolver.py` (`_ROOM_TO_CAM`) cercava un
+  device con `stanza == "soggiorno"` per risolvere l'URL di
+  `Visuals/cam_soggiorno` — con la Registry reale che dichiara OPS su
+  "studio", quella entry non avrebbe MAI trovato match. Chiave corretta
+  in `"studio"`. Il nome dell'operatore (`cam_soggiorno`) non è stato
+  rinominato (cosmetico, rimando a un secondo passo se utile — impatta
+  wiring/riferimenti altrove in `Visuals`). Corretta anche l'etichetta
+  `(soggiorno)` per il nodo OPS nel diagramma di `ARCHITECTURE.md`.
+- **Freeze periodico / errore NumSamples+Time Slice**: causa probabile già
+  trovata e fixata **prima** di leggere questo file (commit locale
+  `cbbe63f`, la mattina del 2026-08-06): `canvas_bridge_clock` (LFO CHOP)
+  aveva Time Slice ON mentre `canvas_bridge` (lo Script CHOP a valle, che
+  ricostruisce un numero di canali variabile ad ogni cook via
+  `registry.GetCanvasNumeric()`) lo ha volutamente OFF — un mismatch
+  input/output che riproduce esattamente la classe di errore riportata
+  ("Time slice mode not supported chop.timeslice=false" ↔ "Editing
+  NumSamples is not supported in Time Slice mode", stesso errore TD,
+  fraseggio diverso). Fix: `canvas_bridge_clock.timeslice = False`,
+  verificato via restart (nessun errore, il valore persiste). Riverificato
+  ora via Envoy: nessun altro Script CHOP nel progetto che tocca
+  `numSamples` (i 3 dentro `Visuals/registry`, `event_watcher`,
+  `script_zone_colors`, `dream_visibility`) ha oggi un input CHOP wired
+  che possa reintrodurre lo stesso mismatch — tutti o non impostano
+  `numSamples`, o non hanno input a monte. **Non confermato**: se questo
+  sia davvero la causa dello specifico freeze dell'heartbeat
+  (20-40 min) — il nesso è plausibile ma non provato. Da osservare se il
+  freeze si ripresenta ora che il fix è in produzione da stamattina.
+- **Uso reale del canale 3**: verificato — oggi i 5 pulsanti `Send*` di
+  `MoodNudge` sono Pulse manuali, nessun trigger automatico nel
+  progetto (nessun Timer/Execute che li pulsa). Il canale non è mai
+  stato inviato automaticamente finora, solo su intervento manuale.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
-- `td-silvermini2` (OPS) risulta registrato su stanza **"studio"**, non
-  "soggiorno" come ipotizzato in precedenza (dato dal Device Registry
-  reale, `/gaia/devices`) — è il parametro `Stanza` giusto lato TD o va
-  corretto? Non toccabile da Gaia, solo da TD.
-- Freeze periodico dell'agent TD (heartbeat fermo 20-40 min, la
-  macchina/OPS resta sana) — possibile legame con l'errore "Visual
-  Canvas callback12: Editing NumSamples is not supported in Time Slice
-  mode" segnalato una volta, mai indagato a fondo. Serve accesso Envoy
-  live per capire la causa.
-- Il canale 3 (9008/MoodNudge) è realmente usato oggi da entrambe le
-  istanze o solo da una? Non verificato da questo lato.
+_(tutte e 3 le domande della entry precedente sono state risposte sopra,
+2026-08-06 TD/Mac — vedi changelog)_
