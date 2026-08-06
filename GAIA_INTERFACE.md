@@ -43,6 +43,54 @@ appare in Dashboard) si popola SOLO dal canale 5. Senza l'`announce`,
 resta un'etichetta mai registrata — bug reale trovato e fissato il
 2026-08-06 (vedi changelog).
 
+## Canale 7 in dettaglio — mocap grezzo (viso/mani/pose), spec per chi ricostruisce in TD
+
+Schema completo anche in `pi/mediapipe/README.md` (repo Gaia) — riassunto
+qui perché è il canale con più margine di errore in ricostruzione:
+
+```
+/gaia/mocap/{device_id}/meta/room                       stringa
+/gaia/mocap/{device_id}/meta/faces|hands|poses           interi, conteggio nel frame
+/gaia/mocap/{device_id}/face/{person_id}                 478 punti × (x,y,z), UN messaggio, INTERLEAVED
+                                                          → lista piatta di 1434 float:
+                                                          [x0,y0,z0, x1,y1,z1, ..., x477,y477,z477]
+                                                          NON planare (non [x0,x1,...,y0,y1,...])
+/gaia/mocap/{device_id}/face/{person_id}/{regione}       sottoinsiemi con nome, STESSI punti sorgente,
+                                                          stesso ordine interleaved — regione ∈
+                                                          {lips(40), eye_left(16), eye_right(16),
+                                                           eyebrow_left(10), eyebrow_right(10),
+                                                           nose(24), oval(36)} punti
+/gaia/mocap/{device_id}/hand/left|right/{person_id}      21 punti × (x,y,z), interleaved, 63 float
+/gaia/mocap/{device_id}/pose/{person_id}                 33 punti × (x,y,z,visibility), interleaved, 132 float
+```
+
+**478, non 468**: `refine_landmarks=True` lato MediaPipe — i punti
+468-477 (ultimi 10) sono gli iris (5 per occhio), IN AGGIUNTA alla
+topologia classica a 468. Se il template/tesselazione usata in TD per
+ricostruire la mesh assume 468 punti fissi, gli indici 468-477 vanno
+trattati come iris a parte (non fanno parte di `FACEMESH_TESSELATION`),
+non riciclati/wrappati su altri vertici.
+
+**Convenzione coordinate**: normalizzate 0-1 rispetto al frame camera,
+**origine in alto a sinistra, Y cresce VERSO IL BASSO** (convenzione
+immagine standard, non 3D-Y-up) — `z` è profondità relativa (negativo =
+più vicino alla camera). Se il rig TD porta queste coordinate in uno
+spazio 3D Y-up senza flip esplicito su Y, il risultato è verticalmente
+capovolto/specchiato: su una mano il risultato resta comunque
+riconoscibile come "una mano" (forma tollerante), su un viso diventa
+immediatamente irriconoscibile — è l'ipotesi più probabile per
+l'asimmetria "mani ok, viso no" segnalata dall'utente il 2026-08-06.
+
+**Diagnostica consigliata (dal lato Gaia i conteggi sono già verificati
+byte-per-byte, 2026-07-25: 1434/63/132 float esatti)**: prima di
+sospettare i dati, testare con i canali `face/{person_id}/{regione}` —
+sono solo punti (nessuna tesselazione richiesta), quindi bastano sfere
+su ~40-132 punti per vedere se il SILHOUETTE del viso (contorno +
+occhi + naso + labbra) è coerente. Se quello è già storto (specchiato,
+capovolto, punti sparsi a caso), il problema è nell'unpacking/assi, non
+nella mesh a 478 punti. Se il silhouette è corretto ma la mesh completa
+no, il problema è nella tesselazione/indici usati per i 478 punti.
+
 ## Changelog / interscambio
 
 **2026-08-06 (Core)** — sessione lunga sul multi-istanza:
@@ -87,15 +135,19 @@ resta un'etichetta mai registrata — bug reale trovato e fissato il
   path fisso. Fatto anche: `MoodNudge` non era mai stato esternalizzato
   (viveva solo nel `.toe` binario) — ora taggato `tox` così il diff resta
   leggibile in git.
-- **Stanza "studio" vs "soggiorno"**: confermato bug reale, solo lato TD.
-  `Bridge/gaia_config/camera_resolver.py` (`_ROOM_TO_CAM`) cercava un
-  device con `stanza == "soggiorno"` per risolvere l'URL di
-  `Visuals/cam_soggiorno` — con la Registry reale che dichiara OPS su
-  "studio", quella entry non avrebbe MAI trovato match. Chiave corretta
-  in `"studio"`. Il nome dell'operatore (`cam_soggiorno`) non è stato
-  rinominato (cosmetico, rimando a un secondo passo se utile — impatta
-  wiring/riferimenti altrove in `Visuals`). Corretta anche l'etichetta
-  `(soggiorno)` per il nodo OPS nel diagramma di `ARCHITECTURE.md`.
+- **Stanza "studio" vs "soggiorno"**: **la mia ipotesi iniziale era
+  sbagliata** — avevo diagnosticato un bug in `camera_resolver.py`
+  (`_ROOM_TO_CAM`) e cambiato la chiave `soggiorno`→`studio`, assumendo
+  che `td-silvermini2` fosse lo stesso device di `ops-silvermini2`. Non
+  avevo visibilità live sui device_id MQTT distinti per verificarlo.
+  Gaia/Core ha chiarito nello stesso giro (vedi "Domande aperte" sotto,
+  verificato dal vivo su `gaia/device/+/status`): sono **due device_id
+  diversi sulla stessa macchina fisica OPS** — `ops-silvermini2`
+  (mediapipe/camera, protocollo Pi-Manager) resta `soggiorno` (quello
+  che conta per `_find_camera_ip`), `td-silvermini2` (un agent TD
+  separato sulla stessa macchina) è `studio`. **Ripristinato**
+  `_ROOM_TO_CAM["soggiorno"]` e l'etichetta in `ARCHITECTURE.md` — non
+  era un bug, nessuna azione necessaria.
 - **Freeze periodico / errore NumSamples+Time Slice**: causa probabile già
   trovata e fixata **prima** di leggere questo file (commit locale
   `cbbe63f`, la mattina del 2026-08-06): `canvas_bridge_clock` (LFO CHOP)
@@ -119,11 +171,38 @@ resta un'etichetta mai registrata — bug reale trovato e fissato il
   `MoodNudge` sono Pulse manuali, nessun trigger automatico nel
   progetto (nessun Timer/Execute che li pulsa). Il canale non è mai
   stato inviato automaticamente finora, solo su intervento manuale.
+**2026-08-06 (Core, 2)** — analisi del canale 7 (mocap viso): utente
+segnala "mani ricostruite bene, viso no" in TD. Dati lato Gaia già
+verificati byte-per-byte in precedenza (conteggi esatti), quindi
+ipotesi principale è TD-side, non un bug di invio — vedi sezione
+"Canale 7 in dettaglio" sopra per lo spec preciso e la diagnostica
+consigliata (testare prima i sottoinsiemi con nome, che non richiedono
+tesselazione, per isolare dati-vs-rendering).
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
-_(tutte e 3 le domande della entry precedente sono state risposte sopra,
-2026-08-06 TD/Mac — vedi changelog)_
+- **[RISOLTO 2026-08-06, Core]** `td-silvermini2` (OPS) risultava
+  registrato su stanza "studio", diverso da "soggiorno" — non è un bug:
+  sono DUE device_id distinti sulla stessa macchina fisica OPS
+  (192.168.1.240), ciascuno con la propria stanza indipendente.
+  `ops-silvermini2` (mediapipe/yolo/camera, protocollo Pi-Manager) =
+  "soggiorno"; `td-silvermini2` (agent TD) = "studio". Confermato dal
+  vivo via MQTT (`gaia/device/+/status`). Nessuna azione necessaria
+  (il fix errato tentato lato TD/Mac nello stesso giro è stato
+  ripristinato — vedi changelog).
+- **[RISOLTO 2026-08-06, TD/Mac]** Freeze periodico dell'agent TD
+  (heartbeat fermo 20-40 min) — causa probabile già trovata e fixata
+  (mismatch Time Slice `canvas_bridge_clock`/`canvas_bridge`, vedi
+  changelog TD/Mac sopra). Nesso causale con lo specifico freeze non
+  confermato — da osservare se si ripresenta.
+- **[RISOLTO 2026-08-06, TD/Mac]** Il canale 3 (9008/MoodNudge) è
+  realmente usato oggi da entrambe le istanze o solo da una? —
+  verificato: solo uso manuale (Pulse), nessun trigger automatico nel
+  progetto (vedi changelog TD/Mac sopra).
+- **Nuovo, aperto**: il canale 7 (mocap viso) ricostruisce male in TD
+  ("mani ok, viso no") — vedi entry changelog "Core, 2" sopra e sezione
+  "Canale 7 in dettaglio" per lo spec e la diagnostica proposta. Non
+  ancora indagato lato TD/Mac.

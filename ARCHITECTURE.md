@@ -13,7 +13,7 @@ flowchart LR
         Broker[("Mosquitto\nMQTT broker\n192.168.1.142:1883")]
         Ollama["Ollama\nlocal LLM"]
         Pi["Raspberry Pi nodes\n(ingresso, ...)"]
-        OPS["OPS node\n(studio)\nmocap + camera"]
+        OPS["OPS node\n(soggiorno)\nmocap + camera"]
         Core --- Broker
         Pi -- "gaia/device/*, gaia/mediapipe/pose" --- Broker
         OPS -- "gaia/device/*, gaia/mediapipe/pose" --- Broker
