@@ -89,6 +89,13 @@ azzerato dopo un successo, contraddicendo l'intento dichiarato ("resta
 finche' non arriva un successo") — un errore transitorio sarebbe rimasto
 visibile in Admin per sempre. _run() ora azzera _last_error quando fn()
 non solleva eccezioni.
+
+AGGIUNTO 2026-08-06 (3): fps/target_fps/dropped_frames nello status —
+project.cookRate (via _target_fps) è SOLO il target configurato, non
+l'fps reale (idea iniziale scartata su correzione esplicita). fps vero
+misurato in perf_tick() (nuova chiamata, OGNI frame, non throttlata come
+tick()) confrontando il tempo reale trascorso tra due frame consecutivi —
+va aggiunta anche in agent_lifecycle.py, vedi lì.
 """
 import json
 import socket
@@ -107,6 +114,54 @@ def _record_error(context, exc):
     global _last_error
     _last_error = {"context": context, "message": str(exc), "ts": int(time.time() * 1000)}
     print(f"[GAIA Agent] Errore in {context}: {exc}")
+
+
+# ── Performance reale (2026-08-06) ─────────────────────────────────────
+# project.cookRate e' solo il TARGET configurato, non l'fps effettivo —
+# qui si misura il vero framerate confrontando il tempo REALE trascorso
+# tra due chiamate consecutive di perf_tick() (chiamata ogni frame, NON
+# throttlata come tick()). Puro Python/time.time(), nessuna API di
+# performance specifica di TD: zero rischio di parametro/path sbagliato.
+_PERF_WINDOW = 90         # campioni recenti tenuti per la media fps
+_perf_intervals = []      # secondi tra un frame e il successivo
+_perf_last_time = None
+_perf_dropped_window = 0  # frame "persi" stimati, azzerato ad ogni publish di status
+
+
+def perf_tick():
+    """Chiamare OGNI frame da onFrameStart (agent_lifecycle.py), non
+    throttlata — a differenza di tick()."""
+    global _perf_last_time, _perf_dropped_window
+    now = time.time()
+    if _perf_last_time is not None:
+        dt = now - _perf_last_time
+        _perf_intervals.append(dt)
+        if len(_perf_intervals) > _PERF_WINDOW:
+            _perf_intervals.pop(0)
+        target = _target_fps()
+        if target and dt > 0:
+            # quanti frame ci si aspettava in questo intervallo al target
+            # configurato — più di 1 vuol dire che qualcuno è saltato
+            expected = dt * target
+            if expected > 1.5:
+                _perf_dropped_window += int(round(expected)) - 1
+    _perf_last_time = now
+
+
+def _target_fps():
+    """SOLO come riferimento per stimare i frame persi sopra — non è
+    l'fps reale, è il target configurato nel progetto."""
+    try:
+        return round(float(project.cookRate), 2)
+    except Exception:
+        return None
+
+
+def _measured_fps():
+    if len(_perf_intervals) < 2:
+        return None
+    avg_dt = sum(_perf_intervals) / len(_perf_intervals)
+    return round(1.0 / avg_dt, 1) if avg_dt > 0 else None
 
 
 def _get_ip():
@@ -175,23 +230,28 @@ def _capabilities():
 
 
 def _publish_status():
+    global _perf_dropped_window
     dat = _mqtt()
     if dat is None or not dat.isConnected:
         return
     cfg = _read_config()
     payload = {
-        "device_id":  cfg["device_id"],
-        "name":       cfg["name"],
-        "stanza":     cfg["stanza"],
-        "role":       "touchdesigner",
-        "ip":         _get_ip(),
-        "services":   {n: _service_status(n) for n in _services},
-        "uptime":     int(time.time() - _START_TS),
-        "last_error": _last_error,
-        "ts":         int(time.time() * 1000),
+        "device_id":      cfg["device_id"],
+        "name":           cfg["name"],
+        "stanza":         cfg["stanza"],
+        "role":           "touchdesigner",
+        "ip":             _get_ip(),
+        "services":       {n: _service_status(n) for n in _services},
+        "uptime":         int(time.time() - _START_TS),
+        "last_error":     _last_error,
+        "fps":            _measured_fps(),
+        "target_fps":     _target_fps(),
+        "dropped_frames": _perf_dropped_window,
+        "ts":             int(time.time() * 1000),
     }
     dat.publish(f"gaia/device/{cfg['device_id']}/status", json.dumps(payload).encode('utf-8'), retain=True)
     _publish_profile(dat, cfg)
+    _perf_dropped_window = 0   # finestra chiusa, riparte da zero fino al prossimo publish
 
 
 def _publish_profile(dat, cfg):
