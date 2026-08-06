@@ -1,6 +1,7 @@
 def onFrameStart(frame):
 	op('project_services').module.register_all()
 	op('gaia_device_agent').module.tick()
+	op('gaia_device_agent').module.perf_tick()
 	return
 
 # NOTA (riscrittura 2026-08-05): onCreate/onExit rimossi -- non serve piu'
@@ -15,3 +16,9 @@ def onFrameStart(frame):
 # stesso motivo di tick(): dopo uno strip/restore di Embody _services in
 # gaia_device_agent.py torna vuoto, senza questa chiamata i pulsanti in
 # Admin resterebbero di nuovo senza controlli finche' non si riavvia TD.
+#
+# AGGIUNTO 2026-08-06 (2): perf_tick() -- a differenza di tick() (throttlato
+# a 30s) va chiamata OGNI frame, senza throttling: misura l'fps reale
+# confrontando il tempo trascorso tra due chiamate consecutive, non ha
+# senso campionarla di rado o perderebbe proprio i frame lenti che deve
+# rilevare.
