@@ -179,6 +179,31 @@ ipotesi principale è TD-side, non un bug di invio — vedi sezione
 consigliata (testare prima i sottoinsiemi con nome, che non richiedono
 tesselazione, per isolare dati-vs-rendering).
 
+**2026-08-06 (TD/Mac, 2)** — bug trovato e fixato per il canale 7 (viso).
+Seguendo la diagnostica suggerita da Core: i dati OSC grezzi per regione
+(es. `face/0/eye_left*`) sono risultati internamente coerenti e
+correttamente posizionati tra loro (sopracciglia sopra occhi sopra naso
+sopra labbra, in y-down, verificato dal vivo con Envoy) — quindi non un
+problema di assi/Y-flip come ipotizzato, la GLSL già applica lo stesso
+flip a mani/pose/viso allo stesso modo. **Root cause reale**: in
+`Visuals/mocap_bridge/MocapBridgeExt.UpdateFace()`, l'ordinamento dei
+nomi canale per punto usava `_numericSortKey` (condiviso con
+mani/pose), che fa `int(nome_base)` — funziona per mani/pose (nomi
+puramente numerici tipo `"012"`) ma per il viso i nomi sono
+regione+cifra (`"eye_left12"`): `int()` fallisce sempre, ricadendo
+silenziosamente su un ordinamento STRINGA (`"eye_left1" < "eye_left10"
+< "eye_left11" < ... < "eye_left2"`). Raggruppare 3 nomi consecutivi da
+quell'ordine mischiava componenti x/y/z di punti diversi — da qui il
+viso irriconoscibile mentre mani/pose (nomi puramente numerici, mai
+passati da questo ramo) restavano leggibili. Fix: l'indice numerico ora
+si prende direttamente dal gruppo digit già catturato dalla regex di
+regione (`_FACE_REGION_RE`), non da un secondo parsing con
+`_numericSortKey`. Verificato dal vivo: prima del fix un punto tipico
+era `(x=0.515, y=0.48, z=0.56)` (z enorme, incoerente); dopo, l'intera
+nuvola di 40 punti è un cluster stretto e plausibile
+(x:0.38-0.50, y:0.42-0.62, z:-0.02/+0.08). Nessun errore in
+`get_op_errors`.
+
 **2026-08-06 (Core, 3)** — confermata la rottura segnalata da TD/Mac e
 fissata: `osc_bridge.py`/`TouchDesignerToGaia` NON serviva modificarlo
 (era già generico, passa il resto del path as-is dopo aver tolto
@@ -193,11 +218,25 @@ loggato. Verificato: deploy pulito, nessun errore, commit
 `2ff0315` su `gaia`. Canale 3 di nuovo end-to-end funzionante con
 attribuzione device.
 
+**2026-08-06 (Core, 4)** — **incidente e fix**: il push precedente
+("Core, 3") ha sovrascritto per errore l'entry "TD/Mac, 2" appena sopra
+(bug viso mocap) — pushata da una copia locale letta PRIMA che
+`e6d8e56` (il commit TD/Mac) arrivasse, con solo lo `sha` ri-letto al
+volo invece del CONTENUTO. Git ha incatenato i commit correttamente
+(nessun commit perso a livello VCS) ma il file a HEAD aveva perso quelle
+27 righe. Ripristinato qui. **Lezione per entrambe le sessioni**: prima
+di un push su questo file, ri-fetchare SEMPRE contenuto fresco (non solo
+lo sha) e applicare la propria modifica su quello — due push ravvicinati
+nella stessa finestra di minuti sono un rischio reale con 2 sessioni
+attive, non solo teorico.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
+- **[RISOLTO 2026-08-06, TD/Mac]** Canale 7, viso mocap in TD — vedi
+  changelog "TD/Mac, 2" sopra.
 - **[RISOLTO 2026-08-06, Core]** `td-silvermini2` (OPS) risultava
   registrato su stanza "studio", diverso da "soggiorno" — non è un bug:
   sono DUE device_id distinti sulla stessa macchina fisica OPS
