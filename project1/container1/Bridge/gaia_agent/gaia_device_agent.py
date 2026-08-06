@@ -96,6 +96,31 @@ l'fps reale (idea iniziale scartata su correzione esplicita). fps vero
 misurato in perf_tick() (nuova chiamata, OGNI frame, non throttlata come
 tick()) confrontando il tempo reale trascorso tra due frame consecutivi —
 va aggiunta anche in agent_lifecycle.py, vedi lì.
+
+TODO PER ENVOY 2026-08-06: canale di ritorno TD -> Gaia non distingue
+la sorgente con piu' istanze vive. MoodNudge (OSC Out, porta 9008,
+vedi ARCHITECTURE.md "OSC :9008 mood nudge, lighting" / operatore
+/project1/container1/MoodNudge) manda /gaia/td/mood/... e
+/gaia/td/lighting/... senza alcun identificativo del device. Sul lato
+Gaia, TouchDesignerToGaia (osc_bridge.py) ascolta su :9008 e ripubblica
+QUALSIASI pacchetto ricevuto su gaia/touchdesigner/<path>, indistinta-
+mente da chi l'ha mandato. Finche' esisteva una sola istanza TD andava
+bene; ora che ne girano 2 vive (Mac dev + OPS pre-prod, entrambe con
+MoodNudge potenzialmente attivo) i messaggi di due istanze diverse
+arriverebbero mescolati sullo stesso topic, senza modo di sapere quale
+TD ha generato quale mood-nudge o comando luci.
+Proposta (da verificare/applicare qui in TD, non lato Gaia): includere
+il proprio Deviceid nel path o come primo argomento OSC di MoodNudge,
+es. /gaia/td/{deviceid}/mood/... invece di /gaia/td/mood/... — coerente
+col resto del progetto dove ogni device si identifica sempre con
+Deviceid (vedi _read_config sopra). Se il path/schema cambia, serve un
+aggiornamento parallelo lato Gaia (osc_bridge.py, TouchDesignerToGaia)
+per instradare/attribuire per device_id invece di trattare :9008 come
+un'unica sorgente anonima — coordinare con la sessione Gaia prima di
+finalizzare la convenzione, cosi' i due lati restano allineati. Non
+implementato qui: nessun accesso Envoy/TD live in questa sessione per
+verificare la struttura reale di MoodNudge (ARCHITECTURE.md e' gia'
+risultato non allineato alla rete Visuals corrente in passato).
 """
 import json
 import socket
