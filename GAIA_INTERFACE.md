@@ -32,6 +32,7 @@ Repo Gaia (pubblico, dettaglio completo): `github.com/vsvisualsubstance-source/g
 | 6 | Gaia → Admin | MQTT | `gaia/td-bridge/status` (retained) \| `.../command` | Pausa/ripresa del canale 1 per singola istanza TD, da Admin → Pi Manager |
 | 7 | Pi/OPS → Admin | MQTT | `gaia/mocap-bridge/{sender_device_id}/status` (retained) \| `.../command` | Mocap grezzo (viso/mani/pose) opt-in per istanza TD — `sender_device_id` è il device mediapipe che manda, non TD |
 | 8 | Watchdog → Telegram | MQTT | `gaia/notify/telegram` | Alert quando una TD nota è silente >90s (e recovery al ritorno) |
+| 9 | Gaia → TD | MQTT | `gaia/nursery/activate` \| `.../deactivate` \| `.../status` | **PROPOSTA, non ancora costruita** — vedi "Canale 9" sotto |
 
 ## Perché un device TD deve pubblicare SIA canale 4 SIA canale 5
 
@@ -90,6 +91,134 @@ occhi + naso + labbra) è coerente. Se quello è già storto (specchiato,
 capovolto, punti sparsi a caso), il problema è nell'unpacking/assi, non
 nella mesh a 478 punti. Se il silhouette è corretto ma la mesh completa
 no, il problema è nella tesselazione/indici usati per i 478 punti.
+
+## Canale 9 — Nursery (proposta lato Gaia, in revisione, niente costruito)
+
+Risposta al design in `ARCHITECTURE.md` §7 (letto, ottima base). Utente
+consultato sulle 4 domande aperte lì — risposte riportate qui, guidano
+questa proposta. Priorità dichiarata: **Milano è un banco di prova con
+molte cose simulate, quello che conta davvero è il progetto finale** —
+quindi qui si ottimizza per il design giusto a lungo termine, non per
+il minimo rischio del singolo show.
+
+### Decisione: Ollama sceglie anche IL COMPONENTE, non solo l'estetica
+
+Confermato dall'utente nonostante il rischio di latenza/risposta fuori
+schema discusso — è il punto, "Gaia deve decidere davvero cosa
+diventare". Contratto Ollama proposto (pattern NUOVO per questo
+progetto — gli usi Ollama esistenti in Node-RED, es. Night Dream Prompt,
+sono tutti testo libero, mai un enum vincolato):
+
+```
+POST http://localhost:11434/api/generate
+{
+  "model": "qwen2.5:3b-instruct-q4_K_M",   // stesso modello già in uso per sogni/pensieri
+  "prompt": "<contesto evento: tipo, stanza, persona/oggetto coinvolto,
+              mood corrente, lessico recente> + elenco enum componenti
+              disponibili con una riga di descrizione ciascuno + schema
+              parametri attesi",
+  "format": { "type": "object",
+              "properties": {
+                "component": { "type": "string", "enum": [ /* sincronizzato
+                                  con la Nursery library — vedi sotto */ ] },
+                "params": { "type": "object" }
+              },
+              "required": ["component"] },
+  "stream": false
+}
+```
+
+Node-RED valida SEMPRE la risposta (JSON parsabile, `component` nell'enum
+noto) prima di pubblicare l'activate — se non valida, NESSUNA
+attivazione (non un default silenzioso), stesso principio del whitelist
+hard lato TD già previsto in ARCHITECTURE.md §7. Doppia rete di
+sicurezza: Node-RED valida contro l'enum che conosce, TD valida di
+nuovo contro la sua libreria reale — le due liste devono restare in
+sync via changelog qui, stesso meccanismo già in uso per tutto il resto
+di questo file.
+
+### Trigger: sottoinsieme ristretto per iniziare, struttura pensata per crescere
+
+Proposta concreta per il primo giro: **`person_recognized` e
+`dream_new`** — già esistono come eventi one-shot verso TD (canale 2,
+`gaia/canvas/event/{name}`, vedi Node-RED "TD Mood/Canvas events"),
+sono i più affidabili/frequenti oggi, e narrativamente i più forti
+(qualcuno arriva → Gaia genera qualcosa di nuovo per lui; un sogno →
+un frammento visivo nuovo). Gli altri 3 già esistenti
+(`level_up`, `face_enrolled`, `plant_note`) più uno nuovo da costruire
+(`room_discovered`, quando il Device Registry crea per la prima volta
+un roomGraph entry mai visto — nessun meccanismo simile esiste ancora)
+restano candidati per dopo, **stesso meccanismo, nessuna modifica
+strutturale**: la pipeline "evento → prompt Ollama → activate" è
+generica per costruzione, aggiungere un trigger è aggiungere una entry
+a una tabella, non nuovo codice. Non hardcodare assunzioni sui soli 2
+iniziali.
+
+### Ciclo di vita: TTL di sicurezza + evento esplicito quando disponibile
+
+TTL default proposto: **5 minuti**, come rete di sicurezza — mai un
+componente attivo per sempre anche se l'evento di fine non arriva mai.
+In più, evento esplicito quando naturalmente disponibile: per
+`person_recognized`, la stessa presenza già tracciata in
+`brain.presence`/`brain.rooms` (quando la persona non è più presente,
+deattiva); per eventi senza un segnale di fine naturale (`dream_new`),
+solo il TTL. Implementazione lato Node-RED: piccolo registro in memoria
+(`global.set('nurseryActive', [...])`, `{instance_id, component, room,
+person, activated_ts, ttl_ms}`), uno sweep periodico (stesso pattern
+già usato per lo staleness watchdog del canale 8 — confrontare contro
+`ts`, non fidarsi di stato "sembra vivo") pubblica
+`gaia/nursery/deactivate {instance_id}` sia per TTL scaduto sia per
+evento di fine.
+
+### Budget concorrenza: non ancora fissato
+
+Nessun limite esplicito per ora, come richiesto — da fissare quando
+`performance.md` (lato TD) fornisce le soglie GPU/CPU reali. Fino ad
+allora Node-RED non impedisce attivazioni multiple in parallelo; se
+diventa un problema visibile prima di avere quei numeri, va comunque
+introdotto un cap provvisorio piuttosto che aspettare un crash dal vivo.
+
+### Schema messaggi proposto
+
+```
+gaia/nursery/activate
+{
+  "instance_id": "<component>_<timestamp o short-id>",  // univoco per ogni attivazione,
+                                                          // serve per deattivare quella
+                                                          // specifica istanza, non il tipo
+  "component": "<uno dei valori enum sincronizzati con la Nursery library>",
+  "params": { /* liberi, definiti dal componente — colore/parola/seed ecc,
+                 stesso ruolo del seed FNV-1a già usato altrove */ },
+  "room": "<stanza o null>",
+  "person": "<nome o null>",
+  "ttl_ms": 300000,
+  "ts": 1234567890000
+}
+gaia/nursery/deactivate
+{ "instance_id": "<stesso id dell'activate>" }
+gaia/nursery/status   (TD → Gaia, retained, per Admin/Dashboard)
+{ "active": [ {instance_id, component, room, person, activated_ts} ] }
+```
+
+### Domande ancora aperte per la sessione TD/Envoy
+
+- **`gaia/nursery/activate` è broadcast a TUTTE le istanze TD (ognuna
+  filtra da sé se `room` la riguarda, stesso pattern già in uso per il
+  canale 7 mocap opt-in) o serve un topic per-device
+  (`gaia/nursery/{device_id}/activate`)?** Il diagramma in
+  ARCHITECTURE.md §7 mostra un solo topic broadcast — confermare che è
+  la scelta voluta prima di implementare, visto che con 2 istanze vive
+  (Mac=studio, OPS=studio anch'esso al momento) potrebbe non essere
+  ovvio quale debba reagire a un evento di una stanza specifica.
+- **L'enum dei `component` validi**: dove vive la lista canonica
+  sincronizzata tra le due sessioni? Proposta: qui in
+  `GAIA_INTERFACE.md`, aggiornata via changelog come tutto il resto —
+  confermare o proporre alternativa (es. un file JSON dedicato,
+  meno soggetto a drift testuale ma un file in più da tenere sync).
+- **`gaia/nursery/status`**: utile per Admin/Dashboard mostrare cosa è
+  attivo in TD in tempo reale (stesso ruolo di `gaia/td-bridge/status`)
+  — d'accordo a costruirlo insieme al resto, o preferite prima solo
+  activate/deactivate e aggiungerlo dopo?
 
 ## Changelog / interscambio
 
@@ -230,11 +359,28 @@ lo sha) e applicare la propria modifica su quello — due push ravvicinati
 nella stessa finestra di minuti sono un rischio reale con 2 sessioni
 attive, non solo teorico.
 
+**2026-08-06 (Core, 5)** — proposta lato Gaia per la Nursery (§7 di
+ARCHITECTURE.md), dopo aver consultato l'utente sulle 4 domande aperte
+lì: Ollama sceglie anche il componente (non solo l'estetica, rischio
+accettato consapevolmente — Milano userà molto simulato, il design
+giusto per il progetto finale conta più della prudenza sul singolo
+show); trigger iniziali `person_recognized`+`dream_new`, struttura
+pensata per aggiungere gli altri senza refactoring; TTL 5min + evento
+esplicito quando disponibile; nessun cap di concorrenza per ora (in
+attesa dei numeri reali di `performance.md`). Vedi sezione "Canale 9 —
+Nursery" sopra per lo schema messaggi completo e 3 domande aperte per
+TD/Mac prima di iniziare a costruire.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
+- **Nuovo**: Canale 9 (Nursery) — 3 domande concrete nella sezione
+  "Canale 9" sopra (broadcast vs per-device, dove vive l'enum
+  componenti, se costruire subito `gaia/nursery/status`). Proposta
+  Gaia-side completa, in attesa di revisione TD/Mac prima di iniziare
+  a costruire da nessuna delle due parti.
 - **[RISOLTO 2026-08-06, TD/Mac]** Canale 7, viso mocap in TD — vedi
   changelog "TD/Mac, 2" sopra.
 - **[RISOLTO 2026-08-06, Core]** `td-silvermini2` (OPS) risultava
