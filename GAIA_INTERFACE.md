@@ -179,38 +179,25 @@ ipotesi principale è TD-side, non un bug di invio — vedi sezione
 consigliata (testare prima i sottoinsiemi con nome, che non richiedono
 tesselazione, per isolare dati-vs-rendering).
 
-**2026-08-06 (TD/Mac, 2)** — bug trovato e fixato per il canale 7 (viso).
-Seguendo la diagnostica suggerita da Core: i dati OSC grezzi per regione
-(es. `face/0/eye_left*`) sono risultati internamente coerenti e
-correttamente posizionati tra loro (sopracciglia sopra occhi sopra naso
-sopra labbra, in y-down, verificato dal vivo con Envoy) — quindi non un
-problema di assi/Y-flip come ipotizzato, la GLSL già applica lo stesso
-flip a mani/pose/viso allo stesso modo. **Root cause reale**: in
-`Visuals/mocap_bridge/MocapBridgeExt.UpdateFace()`, l'ordinamento dei
-nomi canale per punto usava `_numericSortKey` (condiviso con
-mani/pose), che fa `int(nome_base)` — funziona per mani/pose (nomi
-puramente numerici tipo `"012"`) ma per il viso i nomi sono
-regione+cifra (`"eye_left12"`): `int()` fallisce sempre, ricadendo
-silenziosamente su un ordinamento STRINGA (`"eye_left1" < "eye_left10"
-< "eye_left11" < ... < "eye_left2"`). Raggruppare 3 nomi consecutivi da
-quell'ordine mischiava componenti x/y/z di punti diversi — da qui il
-viso irriconoscibile mentre mani/pose (nomi puramente numerici, mai
-passati da questo ramo) restavano leggibili. Fix: l'indice numerico ora
-si prende direttamente dal gruppo digit già catturato dalla regex di
-regione (`_FACE_REGION_RE`), non da un secondo parsing con
-`_numericSortKey`. Verificato dal vivo: prima del fix un punto tipico
-era `(x=0.515, y=0.48, z=0.56)` (z enorme, incoerente); dopo, l'intera
-nuvola di 40 punti è un cluster stretto e plausibile
-(x:0.38-0.50, y:0.42-0.62, z:-0.02/+0.08). Nessun errore in
-`get_op_errors`.
+**2026-08-06 (Core, 3)** — confermata la rottura segnalata da TD/Mac e
+fissata: `osc_bridge.py`/`TouchDesignerToGaia` NON serviva modificarlo
+(era già generico, passa il resto del path as-is dopo aver tolto
+`gaia/td/` — con l'id in mezzo il topic MQTT diventa naturalmente
+`gaia/touchdesigner/{deviceid}/mood/{dim}`). Il vero rotto era il
+subscriber Node-RED ("TD Mood In"): sottoscriveva
+`gaia/touchdesigner/mood/#` (non matcha più con l'id in posizione 3) e
+il suo parser assumeva esattamente 4 segmenti con `parts[2]==='mood'`.
+Fix: subscription → `gaia/touchdesigner/+/mood/#`, parser → 5 segmenti
+(`deviceId=parts[2]`, `dim=parts[4]`), device mittente ora anche
+loggato. Verificato: deploy pulito, nessun errore, commit
+`2ff0315` su `gaia`. Canale 3 di nuovo end-to-end funzionante con
+attribuzione device.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
-- **[RISOLTO 2026-08-06, TD/Mac]** Canale 7, viso mocap in TD — vedi
-  changelog "TD/Mac, 2" sopra.
 - **[RISOLTO 2026-08-06, Core]** `td-silvermini2` (OPS) risultava
   registrato su stanza "studio", diverso da "soggiorno" — non è un bug:
   sono DUE device_id distinti sulla stessa macchina fisica OPS
@@ -229,3 +216,7 @@ tra parentesi — Core o TD/Mac.)_
   realmente usato oggi da entrambe le istanze o solo da una? —
   verificato: solo uso manuale (Pulse), nessun trigger automatico nel
   progetto (vedi changelog TD/Mac sopra).
+- **Nuovo, aperto**: il canale 7 (mocap viso) ricostruisce male in TD
+  ("mani ok, viso no") — vedi entry changelog "Core, 2" sopra e sezione
+  "Canale 7 in dettaglio" per lo spec e la diagnostica proposta. Non
+  ancora indagato lato TD/Mac.
