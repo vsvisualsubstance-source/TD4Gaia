@@ -27,17 +27,23 @@ Uso: register_all() è idempotente (una seconda chiamata è no-op) — va
 richiamata a ogni onFrameStart (vedi agent_lifecycle.py), così si
 riapplica da sola dopo un eventuale strip/restore di Embody che azzera
 _services in gaia_device_agent.py.
-"""
-_done = False
 
+FIX 2026-08-06 (trovato dal vivo testando gli altri fix in questo stesso
+giro): l'idempotenza NON deve vivere in un flag locale a QUESTO modulo
+(_done) — se gaia_device_agent.py si ricarica da solo (es. edit diretto
+del file con syncfile, indipendente da questo file) il suo _services
+torna vuoto ma il _done qui resta True, quindi register_all() non
+ri-registra piu' nulla finche' non si riavvia tutta TD. Il controllo ora
+verifica lo stato REALE che sta impostando ('mocap_bridge' in
+agent._services), non un flag separato che puo' disallinearsi.
+"""
 _MOCAP_CHOPS = ('scriptchop_pose', 'scriptchop_hand_left', 'scriptchop_hand_right', 'scriptchop_face')
 
 
 def register_all():
-    global _done
-    if _done:
-        return
     agent = me.parent().op('gaia_device_agent').module
+    if 'mocap_bridge' in agent._services:
+        return
 
     # ── osc_in — riconnette l'ingresso OSC (oscin1, porta 7000) ──────────
     def _osc_in(active):
@@ -87,5 +93,3 @@ def register_all():
         stop=lambda: _mocap(False),
         status=lambda: (all(not c.bypass for c in _mocap_chops())
                          if _mocap_chops() else None))
-
-    _done = True

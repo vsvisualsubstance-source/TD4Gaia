@@ -1,6 +1,6 @@
 def onFrameStart(frame):
-	op('gaia_device_agent').module.tick()
 	op('project_services').module.register_all()
+	op('gaia_device_agent').module.tick()
 	return
 
 # NOTA (riscrittura 2026-08-05): onCreate/onExit rimossi -- non serve piu'

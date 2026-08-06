@@ -82,6 +82,13 @@ retained, stesso schema di pi/agent.py/ops/agent.py: capabilities derivate
 dai servizi REALMENTE registrati, non assunte) e _last_error nello status
 (ultima eccezione da un servizio, visibile in Admin senza dover aprire il
 Textport di TD).
+
+FIX 2026-08-06 (verificato dal vivo con Envoy, la stesura precedente era
+stata scritta e verificata solo offline): _last_error non veniva MAI
+azzerato dopo un successo, contraddicendo l'intento dichiarato ("resta
+finche' non arriva un successo") — un errore transitorio sarebbe rimasto
+visibile in Admin per sempre. _run() ora azzera _last_error quando fn()
+non solleva eccezioni.
 """
 import json
 import socket
@@ -213,8 +220,10 @@ def _apply_command(cmd):
     print(f"[GAIA Agent] Comando: {cmd}")
 
     def _run(fn, label):
+        global _last_error
         try:
             fn()
+            _last_error = None
         except Exception as e:
             _record_error(f"{label}({service})", e)
 
