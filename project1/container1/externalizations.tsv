@@ -118,9 +118,10 @@ path	type	strategy	rel_file_path	timestamp	dirty	build	touch_build	node_x	node_y
 /	base	tdn	NewProject.tdn	2026-07-25 09:00:11 UTC			099.2025.32820			
 /project1/container1/Bridge/gaia_agent/gaia_device_agent	text	py	project1/container1/Bridge/gaia_agent/gaia_device_agent.py	2026-08-05 08:53:00 UTC				0	0	0.9000,0.3000,0.4000
 /project1/container1/Bridge/gaia_agent/agent_lifecycle	execute	py	project1/container1/Bridge/gaia_agent/agent_lifecycle.py	2026-08-05 08:53:30 UTC				400	0	0.9000,0.3000,0.4000
-/project1/container1/Bridge/gaia_agent	base	tox	project1/container1/Bridge/gaia_agent.tox	2026-08-06 06:58:19 UTC	False	9	2025.33070	0	-1225	0.3250,0.8000,0.3000
+/project1/container1/Bridge/gaia_agent	base	tox	project1/container1/Bridge/gaia_agent.tox	2026-08-06 09:05:27 UTC	False	12	2025.33070	0	-1225	0.3250,0.8000,0.3000
 /project1/container1/Bridge/gaia_control	base	tox	project1/container1/Bridge/gaia_control.tox	2026-08-05 16:46:35 UTC	False	6	2025.33070	0	-1600	0.3250,0.8000,0.3000
 /project1/container1/Bridge/gaia_control/td_service_control	text	py	project1/container1/Bridge/gaia_control/td_service_control.py	2026-08-05 09:30:12 UTC				330	0	0.9000,0.3000,0.4000
 /project1/container1/Bridge/gaia_control/control_lifecycle	execute	py	project1/container1/Bridge/gaia_control/control_lifecycle.py	2026-08-05 09:30:43 UTC				660	0	0.9000,0.3000,0.4000
 /gaia_control_window	window	tox	gaia_control_window.tox	2026-08-05 13:08:02 UTC	False	4	2025.33070	150	-175	0.3250,0.8000,0.3000
 /project1/container1/Bridge/gaia_config	base	tox	project1/container1/Bridge/gaia_config.tox	2026-08-06 07:26:30 UTC	False	3	2025.33070	0	-2070	0.3250,0.8000,0.3000
+/project1/container1/Bridge/gaia_agent/project_services	text	py	project1/container1/Bridge/gaia_agent/project_services.py	2026-08-06 09:04:05 UTC				1200	0	0.9000,0.3000,0.4000

@@ -1,20 +1,27 @@
-"""
+﻿"""
 Collega servizi REALI all'agent TD (register_service in gaia_device_agent.py)
 — senza questo file l'agent compare in Admin/Pi Manager ma "services": {}
 resta vuoto, i pulsanti Enable/Disable/Restart non hanno niente da
 controllare (gap segnalato dall'utente il 2026-08-06: "al momento non fa
 quasi nulla").
 
-ATTENZIONE — PATH DA VERIFICARE DAL VIVO (marcati TODO sotto): scritto da
-una sessione SENZA accesso Envoy/TD live. L'unica fonte disponibile,
-ARCHITECTURE.md, risale al 2026-08-05 e la rete Visuals è già cambiata da
-allora (il tree attuale del repo mostra cam1/data/light1/soul_geo/
-zones_geo esternalizzati, NON più mocap_bridge/render1/dmx_out1 come
-descritto lì) — quei tre operatori potrebbero non esistere più con questi
-nomi/path, o non essere mai esistiti con questi nomi esatti. Prima sessione
-con Envoy: aprire ogni op(...) sotto nel network reale, correggere i path,
-verificare che il parametro giusto sia .par.active vs .bypass per QUEL
-tipo di operatore specifico, poi togliere questo paragrafo di avviso.
+Verificato dal vivo 2026-08-06 (sessione con Envoy) — tutti e 4 i path
+esistono nel network reale, ma due meccanismi della prima stesura (scritta
+senza accesso Envoy) erano sbagliati, non solo "da verificare":
+
+- dmx_out: la prima versione assegnava direttamente dmx_out1.par.active,
+  che ha un'espressione (op('dmx_ctrl').par.Dmxenable.eval()) legata
+  all'interruttore di sicurezza DMX — assegnare un valore costante la
+  distrugge silenziosamente (assegnare un par commuta sempre a CONSTANT,
+  vedi rules/parameters.md). Fix: pilotare dmx_ctrl.par.Dmxenable
+  direttamente — il vero interruttore — senza toccare l'espressione
+  derivata su dmx_out1.
+- mocap_bridge: bypassare il COMP contenitore non ferma nulla — verificato
+  dal vivo (scriptchop_pose continua a cuocere, totalCooks incrementa,
+  anche con mocap_bridge.bypass=True). Il COMP non ha connettori cablati:
+  i 4 Script CHOP interni sono letti per path relativo da chopto_pose/
+  chopto_hand_left/chopto_hand_right/chopto_face, indipendentemente dal
+  bypass del container. Fix: bypassare i 4 Script CHOP veri.
 
 Uso: register_all() è idempotente (una seconda chiamata è no-op) — va
 richiamata a ogni onFrameStart (vedi agent_lifecycle.py), così si
@@ -22,6 +29,8 @@ riapplica da sola dopo un eventuale strip/restore di Embody che azzera
 _services in gaia_device_agent.py.
 """
 _done = False
+
+_MOCAP_CHOPS = ('scriptchop_pose', 'scriptchop_hand_left', 'scriptchop_hand_right', 'scriptchop_face')
 
 
 def register_all():
@@ -31,10 +40,6 @@ def register_all():
     agent = me.parent().op('gaia_device_agent').module
 
     # ── osc_in — riconnette l'ingresso OSC (oscin1, porta 7000) ──────────
-    # .par.active confermato per QUESTO operatore dalla docstring originale
-    # di gaia_device_agent.py (esempio scritto dalla sessione che lavora
-    # dentro TD, quindi con visibilità reale) — unico dei 4 di cui sono
-    # ragionevolmente sicuro. TODO: verificare comunque il path assoluto.
     def _osc_in(active):
         o = op('/project1/container1/oscin1')
         if o:
@@ -46,10 +51,6 @@ def register_all():
                          if op('/project1/container1/oscin1') else None))
 
     # ── render — pausa/riprendi l'output visivo (blackout senza chiudere TD) ──
-    # TODO path e meccanismo NON verificati — .bypass è la proprietà Python
-    # più universale in TD (esiste su qualunque operatore), scelta apposta
-    # per non assumere un parametro specifico che potrebbe non esserci su
-    # questo tipo di operatore.
     def _render(paused):
         o = op('/project1/container1/Visuals/render1')
         if o:
@@ -60,30 +61,31 @@ def register_all():
         status=lambda: (not op('/project1/container1/Visuals/render1').bypass
                          if op('/project1/container1/Visuals/render1') else None))
 
-    # ── dmx_out — luci DMX separate dai visual (vedi i visual senza pilotare le luci reali) ──
-    # TODO path NON verificato.
+    # ── dmx_out — luci DMX, via il vero interruttore di sicurezza dmx_ctrl.Dmxenable ──
     def _dmx(active):
-        o = op('/project1/container1/Visuals/dmx_out1')
+        o = op('/project1/container1/Visuals/dmx_ctrl')
         if o:
-            o.par.active = active
+            o.par.Dmxenable = active
     agent.register_service('dmx_out',
         start=lambda: _dmx(1),
         stop=lambda: _dmx(0),
-        status=lambda: (bool(op('/project1/container1/Visuals/dmx_out1').par.active.eval())
-                         if op('/project1/container1/Visuals/dmx_out1') else None))
+        status=lambda: (bool(op('/project1/container1/Visuals/dmx_ctrl').par.Dmxenable.eval())
+                         if op('/project1/container1/Visuals/dmx_ctrl') else None))
 
-    # ── mocap_bridge — restart mirato del parser mocap (Script CHOP) ─────
-    # TODO path NON verificato. "Restart" da Admin (già esistente in
-    # td_service_control.py: stop()+start()) fa bypass=True poi bypass=False
-    # — nessuna logica di restart speciale necessaria qui.
+    # ── mocap_bridge — restart mirato del parser mocap (i 4 Script CHOP veri) ──
+    def _mocap_chops():
+        mb = op('/project1/container1/Visuals/mocap_bridge')
+        if mb is None:
+            return []
+        return [c for c in (mb.op(name) for name in _MOCAP_CHOPS) if c is not None]
+
     def _mocap(active):
-        o = op('/project1/container1/Visuals/mocap_bridge')
-        if o:
-            o.bypass = not active
+        for chop in _mocap_chops():
+            chop.bypass = not active
     agent.register_service('mocap_bridge',
         start=lambda: _mocap(True),
         stop=lambda: _mocap(False),
-        status=lambda: (not op('/project1/container1/Visuals/mocap_bridge').bypass
-                         if op('/project1/container1/Visuals/mocap_bridge') else None))
+        status=lambda: (all(not c.bypass for c in _mocap_chops())
+                         if _mocap_chops() else None))
 
     _done = True
