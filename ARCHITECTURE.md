@@ -75,6 +75,8 @@ flowchart LR
 
 Person-indexed (`person_id` consistent across pose/hand/face within one frame, best-effort by lateral position — not a persistent identity). Pooled defensively per body part (pose/hands: top-N by activity; face: **fixed per-region budget**, since pooling the whole face by activity let one busy region — e.g. lips while talking — starve the rest).
 
+The OSC address prefix (`gaia/mocap/{device_id}/...`) is **not hardcoded** — `MocapBridgeExt._devicePrefix()` reads the OPS device's id from `Bridge/gaia_config.Opsdevice` (default `ops-silvermini2`), so pointing this project at a different OPS node only means updating that one parameter. Also on `gaia_config`: `Corehost`/`Brokerhost` (channels 1/3) and `camera_resolver` (dynamic `videostreaminTOP` URLs) — all of this project's machine-specific values live in that single COMP.
+
 ## 4. Channel 3 detail — Device protocol (service plane)
 
 ```mermaid

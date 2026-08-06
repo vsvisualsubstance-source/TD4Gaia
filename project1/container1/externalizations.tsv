@@ -8,7 +8,7 @@ path	type	strategy	rel_file_path	timestamp	dirty	build	touch_build	node_x	node_y
 /project1/container1/Visuals/data/script_detections_callbacks	text	py	project1/container1/Visuals/data/script_detections_callbacks.py	2026-07-25 09:00:09 UTC				1200	1080	0.9000,0.3000,0.4000
 /project1/container1/Visuals/data	base	tox	project1/container1/Visuals/data.tox	2026-08-05 07:54:35 UTC	False	20	2025.33070	-355	920	0.3250,0.8000,0.3000
 /project1/container1/Visuals/cam1	cam	tox	project1/container1/Visuals/cam1.tox	2026-07-25 09:00:09 UTC	False	1	2025.32820	400	0	0.3250,0.8000,0.3000
-/project1/container1/Visuals	base	tox	project1/container1/Visuals.tox	2026-08-05 13:30:21 UTC	False	40	2025.33070	1000	200	0.3250,0.8000,0.3000
+/project1/container1/Visuals	base	tox	project1/container1/Visuals.tox	2026-08-06 07:26:30 UTC	False	41	2025.33070	1000	200	0.3250,0.8000,0.3000
 /project1/container1/Embody/window_tagging_menu	window	tox	project1/container1/Embody/window_tagging_menu.tox	2026-07-25 09:00:09 UTC	False	24	2025.32820	900	675	0.3250,0.8000,0.3000
 /project1/container1/Embody/window_manager	window	tox	project1/container1/Embody/window_manager.tox	2026-07-25 09:00:09 UTC	False	13	2025.32820	500	675	0.3250,0.8000,0.3000
 /project1/container1/Embody/windowHeader/title	text	tox	project1/container1/Embody/windowHeader/title.tox	2026-07-25 09:00:09 UTC	False	49	2025.32820	0	0	0.3250,0.8000,0.3000
@@ -112,7 +112,7 @@ path	type	strategy	rel_file_path	timestamp	dirty	build	touch_build	node_x	node_y
 /project1/container1/Embody/Collection	base	tox	project1/container1/Embody/Collection.tox	2026-07-25 09:00:09 UTC	False	1	2025.32820	200	-550	0.3250,0.8000,0.3000
 /project1/container1/Embody/CatalogManagerExt	text	py	project1/container1/Embody/CatalogManagerExt.py	2026-07-25 09:00:09 UTC				-300	300	0.9000,0.3000,0.4000
 /project1/container1/Embody	container	tox	project1/container1/Embody.tox	2026-08-05 11:46:17 UTC	False	671	2025.33070	162	434	0.3250,0.8000,0.3000
-/project1/container1	container	tox	project1/container1.tox	2026-08-06 06:58:22 UTC	False	25	2025.33070	250	131	0.3250,0.8000,0.3000
+/project1/container1	container	tox	project1/container1.tox	2026-08-06 07:28:00 UTC	False	26	2025.33070	250	131	0.3250,0.8000,0.3000
 /project1	container	tox	project1.tox	2026-07-25 09:00:09 UTC	False	1	2025.32820	200	100	0.3250,0.8000,0.3000
 /perform	window	tox	perform.tox	2026-07-25 09:00:09 UTC	False	1	2025.32820	-200	40	0.3250,0.8000,0.3000
 /	base	tdn	NewProject.tdn	2026-07-25 09:00:11 UTC			099.2025.32820			
@@ -123,4 +123,4 @@ path	type	strategy	rel_file_path	timestamp	dirty	build	touch_build	node_x	node_y
 /project1/container1/Bridge/gaia_control/td_service_control	text	py	project1/container1/Bridge/gaia_control/td_service_control.py	2026-08-05 09:30:12 UTC				330	0	0.9000,0.3000,0.4000
 /project1/container1/Bridge/gaia_control/control_lifecycle	execute	py	project1/container1/Bridge/gaia_control/control_lifecycle.py	2026-08-05 09:30:43 UTC				660	0	0.9000,0.3000,0.4000
 /gaia_control_window	window	tox	gaia_control_window.tox	2026-08-05 13:08:02 UTC	False	4	2025.33070	150	-175	0.3250,0.8000,0.3000
-/project1/container1/Bridge/gaia_config	base	tox	project1/container1/Bridge/gaia_config.tox	2026-08-05 14:04:43 UTC	False	2	2025.33070	0	-2070	0.3250,0.8000,0.3000
+/project1/container1/Bridge/gaia_config	base	tox	project1/container1/Bridge/gaia_config.tox	2026-08-06 07:26:30 UTC	False	3	2025.33070	0	-2070	0.3250,0.8000,0.3000
