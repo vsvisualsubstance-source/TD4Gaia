@@ -112,13 +112,13 @@ path	type	strategy	rel_file_path	timestamp	dirty	build	touch_build	node_x	node_y
 /project1/container1/Embody/Collection	base	tox	project1/container1/Embody/Collection.tox	2026-07-25 09:00:09 UTC	False	1	2025.32820	200	-550	0.3250,0.8000,0.3000
 /project1/container1/Embody/CatalogManagerExt	text	py	project1/container1/Embody/CatalogManagerExt.py	2026-07-25 09:00:09 UTC				-300	300	0.9000,0.3000,0.4000
 /project1/container1/Embody	container	tox	project1/container1/Embody.tox	2026-08-05 11:46:17 UTC	False	671	2025.33070	162	434	0.3250,0.8000,0.3000
-/project1/container1	container	tox	project1/container1.tox	2026-08-05 15:43:49 UTC	False	24	2025.33070	250	131	0.3250,0.8000,0.3000
+/project1/container1	container	tox	project1/container1.tox	2026-08-06 06:58:22 UTC	False	25	2025.33070	250	131	0.3250,0.8000,0.3000
 /project1	container	tox	project1.tox	2026-07-25 09:00:09 UTC	False	1	2025.32820	200	100	0.3250,0.8000,0.3000
 /perform	window	tox	perform.tox	2026-07-25 09:00:09 UTC	False	1	2025.32820	-200	40	0.3250,0.8000,0.3000
 /	base	tdn	NewProject.tdn	2026-07-25 09:00:11 UTC			099.2025.32820			
 /project1/container1/Bridge/gaia_agent/gaia_device_agent	text	py	project1/container1/Bridge/gaia_agent/gaia_device_agent.py	2026-08-05 08:53:00 UTC				0	0	0.9000,0.3000,0.4000
 /project1/container1/Bridge/gaia_agent/agent_lifecycle	execute	py	project1/container1/Bridge/gaia_agent/agent_lifecycle.py	2026-08-05 08:53:30 UTC				400	0	0.9000,0.3000,0.4000
-/project1/container1/Bridge/gaia_agent	base	tox	project1/container1/Bridge/gaia_agent.tox	2026-08-05 16:46:35 UTC	False	7	2025.33070	0	-1225	0.3250,0.8000,0.3000
+/project1/container1/Bridge/gaia_agent	base	tox	project1/container1/Bridge/gaia_agent.tox	2026-08-06 06:58:19 UTC	False	9	2025.33070	0	-1225	0.3250,0.8000,0.3000
 /project1/container1/Bridge/gaia_control	base	tox	project1/container1/Bridge/gaia_control.tox	2026-08-05 16:46:35 UTC	False	6	2025.33070	0	-1600	0.3250,0.8000,0.3000
 /project1/container1/Bridge/gaia_control/td_service_control	text	py	project1/container1/Bridge/gaia_control/td_service_control.py	2026-08-05 09:30:12 UTC				330	0	0.9000,0.3000,0.4000
 /project1/container1/Bridge/gaia_control/control_lifecycle	execute	py	project1/container1/Bridge/gaia_control/control_lifecycle.py	2026-08-05 09:30:43 UTC				660	0	0.9000,0.3000,0.4000
