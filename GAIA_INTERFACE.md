@@ -500,7 +500,3 @@ tra parentesi — Core o TD/Mac.)_
   realmente usato oggi da entrambe le istanze o solo da una? —
   verificato: solo uso manuale (Pulse), nessun trigger automatico nel
   progetto (vedi changelog TD/Mac sopra).
-- **Nuovo, aperto**: il canale 7 (mocap viso) ricostruisce male in TD
-  ("mani ok, viso no") — vedi entry changelog "Core, 2" sopra e sezione
-  "Canale 7 in dettaglio" per lo spec e la diagnostica proposta. Non
-  ancora indagato lato TD/Mac.
