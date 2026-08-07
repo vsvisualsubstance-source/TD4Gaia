@@ -8,7 +8,7 @@ path	type	strategy	rel_file_path	timestamp	dirty	build	touch_build	node_x	node_y
 /project1/container1/Visuals/data/script_detections_callbacks	text	py	project1/container1/Visuals/data/script_detections_callbacks.py	2026-07-25 09:00:09 UTC				1200	1080	0.9000,0.3000,0.4000
 /project1/container1/Visuals/data	base	tox	project1/container1/Visuals/data.tox	2026-08-05 07:54:35 UTC	False	20	2025.33070	-355	920	0.3250,0.8000,0.3000
 /project1/container1/Visuals/cam1	cam	tox	project1/container1/Visuals/cam1.tox	2026-07-25 09:00:09 UTC	False	1	2025.32820	400	0	0.3250,0.8000,0.3000
-/project1/container1/Visuals	base	tox	project1/container1/Visuals.tox	2026-08-06 18:44:33 UTC	False	44	2025.33070	1000	200	0.3250,0.8000,0.3000
+/project1/container1/Visuals	base	tox	project1/container1/Visuals.tox	2026-08-07 14:07:28 UTC	False	45	2025.33070	1000	200	0.3250,0.8000,0.3000
 /project1/container1/Embody/window_tagging_menu	window	tox	project1/container1/Embody/window_tagging_menu.tox	2026-07-25 09:00:09 UTC	False	24	2025.32820	900	675	0.3250,0.8000,0.3000
 /project1/container1/Embody/window_manager	window	tox	project1/container1/Embody/window_manager.tox	2026-07-25 09:00:09 UTC	False	13	2025.32820	500	675	0.3250,0.8000,0.3000
 /project1/container1/Embody/windowHeader/title	text	tox	project1/container1/Embody/windowHeader/title.tox	2026-07-25 09:00:09 UTC	False	49	2025.32820	0	0	0.3250,0.8000,0.3000
@@ -112,7 +112,7 @@ path	type	strategy	rel_file_path	timestamp	dirty	build	touch_build	node_x	node_y
 /project1/container1/Embody/Collection	base	tox	project1/container1/Embody/Collection.tox	2026-07-25 09:00:09 UTC	False	1	2025.32820	200	-550	0.3250,0.8000,0.3000
 /project1/container1/Embody/CatalogManagerExt	text	py	project1/container1/Embody/CatalogManagerExt.py	2026-07-25 09:00:09 UTC				-300	300	0.9000,0.3000,0.4000
 /project1/container1/Embody	container	tox	project1/container1/Embody.tox	2026-08-05 11:46:17 UTC	False	671	2025.33070	162	434	0.3250,0.8000,0.3000
-/project1/container1	container	tox	project1/container1.tox	2026-08-06 18:44:33 UTC	False	28	2025.33070	250	131	0.3250,0.8000,0.3000
+/project1/container1	container	tox	project1/container1.tox	2026-08-07 14:07:29 UTC	False	29	2025.33070	250	131	0.3250,0.8000,0.3000
 /project1	container	tox	project1.tox	2026-07-25 09:00:09 UTC	False	1	2025.32820	200	100	0.3250,0.8000,0.3000
 /perform	window	tox	perform.tox	2026-07-25 09:00:09 UTC	False	1	2025.32820	-200	40	0.3250,0.8000,0.3000
 /	base	tdn	NewProject.tdn	2026-07-25 09:00:11 UTC			099.2025.32820			
@@ -126,6 +126,6 @@ path	type	strategy	rel_file_path	timestamp	dirty	build	touch_build	node_x	node_y
 /project1/container1/Bridge/gaia_config	base	tox	project1/container1/Bridge/gaia_config.tox	2026-08-06 17:50:50 UTC	False	5	2025.33070	0	-2070	0.3250,0.8000,0.3000
 /project1/container1/Bridge/gaia_agent/project_services	text	py	project1/container1/Bridge/gaia_agent/project_services.py	2026-08-06 09:04:05 UTC				1200	0	0.9000,0.3000,0.4000
 /project1/container1/MoodNudge	base	tox	project1/container1/MoodNudge.tox	2026-08-06 17:47:08 UTC	False	1	2025.33070	1400	-25	0.3250,0.8000,0.3000
-/project1/container1/Bridge/gaia_nursery	base	tox	project1/container1/Bridge/gaia_nursery.tox	2026-08-07 10:18:46 UTC	False	2	2025.33070	0	-2600	0.6700,0.6700,0.6700
-/project1/container1/Visuals/person_sigil	geo	tox	project1/container1/Visuals/person_sigil.tox	2026-08-07 07:36:12 UTC	False	2	2025.33070	-70	3400	0.3250,0.8000,0.3000
-/project1/container1/Visuals/dream_fragment	geo	tox	project1/container1/Visuals/dream_fragment.tox	2026-08-07 07:36:12 UTC	False	2	2025.33070	400	3400	0.3250,0.8000,0.3000
+/project1/container1/Bridge/gaia_nursery	base	tox	project1/container1/Bridge/gaia_nursery.tox	2026-08-07 14:07:28 UTC	False	2	2025.33070	-125	-2600	0.6700,0.6700,0.6700
+/project1/container1/Visuals/person_sigil	geo	tox	project1/container1/Visuals/person_sigil.tox	2026-08-07 14:10:31 UTC	False	1	2025.33070	-70	3400	0.3250,0.8000,0.3000
+/project1/container1/Visuals/dream_fragment	geo	tox	project1/container1/Visuals/dream_fragment.tox	2026-08-07 14:10:31 UTC	False	1	2025.33070	400	3400	0.3250,0.8000,0.3000
