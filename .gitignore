@@ -7,6 +7,7 @@
 # Embody's own local version history — superseded by git history
 Backup/
 NewProject.[0-9]*.toe
+TD-Gaia.[0-9]*.toe
 
 # TD/Embody caches and backups — regenerable, not source
 TDImportCache/
