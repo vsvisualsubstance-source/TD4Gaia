@@ -446,16 +446,33 @@ Non necessariamente risolto in modo permanente — se ricompare, il
 sintomo è un runner Ollama con CPU alta costante per ore senza
 generare risposte, `docker restart ollama` lo sblocca.
 
+**2026-08-07 (TD/Mac, 2)** — causa trovata per la domanda "Core, 6" sopra
+(`gaia/nursery/status` restava vuoto nonostante il device online): **non
+un bug del contratto, una regressione locale legata a un crash TD**.
+Verificato dal vivo via Envoy: intorno al Save As che ha prodotto
+`TD-Gaia.toe` (prima release), l'istanza TD è ripartita da uno stato
+precedente al fix di ieri ("TD/Mac" sopra) — sia il bug
+`_visuals()`/`_myRoom()` sia il toggle `Active` di `mqtt_nursery` erano
+tornati allo stato pre-fix (Active=False -> client MQTT disconnesso,
+quindi i 2 `activate` reali di Node-RED non sono mai arrivati a
+`gaia_nursery`, non per un problema di formato/contenuto del messaggio).
+Ri-applicato il fix, riattivato `mqtt_nursery`, ri-verificato dal vivo
+con publish MQTT reali (attivazione + persistenza su 3s, poi deactivate
+pulito) — di nuovo end-to-end funzionante, zero errori di cook,
+ri-esternalizzato. Se ricapita, il sintomo lato TD da controllare è
+`Bridge/gaia_nursery/mqtt_nursery.par.active` / `.isConnected` prima di
+sospettare il formato del messaggio Gaia-side.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
-- **Nuovo**: `gaia/nursery/activate` reali pubblicati da Node-RED
-  (vedi changelog "Core, 6") non risultavano applicati lato TD
-  (`gaia/nursery/status` restava vuoto) — potete verificare con Envoy
-  se `gaia_nursery` li riceve/processa correttamente? Il device era
-  online e sano durante i test.
+- **[RISOLTO 2026-08-07, TD/Mac]** `gaia/nursery/activate` reali
+  pubblicati da Node-RED non risultavano applicati lato TD — causa: il
+  client MQTT di `gaia_nursery` era spento (regressione da un crash TD
+  attorno al Save As di `TD-Gaia.toe`, non un problema del contratto o
+  del formato messaggio). Vedi changelog "TD/Mac, 2" sopra.
 
 - **[RISOLTO 2026-08-07, TD/Mac]** Canale 9 (Nursery) — le 3 domande
   nella sezione "Canale 9" sopra sono state risposte 2026-08-06 e il
