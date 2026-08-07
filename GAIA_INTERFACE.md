@@ -463,10 +463,61 @@ ri-esternalizzato. Se ricapita, il sintomo lato TD da controllare è
 `Bridge/gaia_nursery/mqtt_nursery.par.active` / `.isConnected` prima di
 sospettare il formato del messaggio Gaia-side.
 
+**2026-08-07 (TD/Mac, 3)** — esteso `nursery_components.json` da 2 a 9
+componenti (schema_version 2), su richiesta utente ("aggiungiamo tutti i
+componenti possibili a contratto"). Aggiunto un campo `status` per
+componente per evitare ambiguità su cosa è realmente attivabile oggi:
+
+- `live` (2): `person_sigil`, `dream_fragment` — invariati, funzionanti.
+- `visual_pending` (4): `levelup_burst` (trigger `level_up`),
+  `face_sigil` (`face_enrolled`), `plant_bloom` (`plant_note`),
+  `room_portal` (`room_discovered`) — i 4 trigger candidati già
+  menzionati in ARCHITECTURE.md §7/changelog Gaia "Core, 5". Questi
+  trigger esistono/sono previsti lato Gaia (eccetto `room_discovered`,
+  ancora da costruire anche lì — vedi nota nel JSON), ma **nessun
+  operatore TD esiste ancora sotto questi id** — un `activate` per uno
+  di questi oggi viene bloccato dal whitelist (verificato dal vivo,
+  nessuna attivazione, nessun errore) finché non li costruisco uno alla
+  volta, con lo stesso standard di verifica di `person_sigil`/
+  `dream_fragment` (GLSL point-sprite, posizionamento, test end-to-end).
+- `proposed` (3): idee nuove lato TD/Mac, **niente costruito né qui né
+  lato Gaia**, servono un vostro parere prima di procedere:
+  - `affinity_pulse` (trigger nuovo `affinity_threshold`): pulsazione
+    quando il legame/affinità con una persona supera una soglia — lato
+    TD è quasi gratis (riusa l'hash colore-identità e l'intensità già
+    calcolati in `Visuals/registry`'s affinity wash), serve solo un
+    rilevatore soglia-superata lato Gaia (`brain.presence`/affinity).
+  - `silence_ripple` (trigger nuovo `extended_silence`): increspatura
+    lenta e rada sul core dopo un periodo prolungato senza attività —
+    l'opposto visivo di un "bang", in tema con i testi contemplativi
+    già esistenti ("Pensiero: sto osservando..."). Serve un segnale di
+    silenzio prolungato lato Gaia, non esiste oggi.
+  - `lexicon_flare` (trigger nuovo `lexicon_milestone`): flare distinto
+    nel layer sedimento lessico per una parola rara/mai vista, separato
+    dal deposito d'inchiostro di routine che ogni parola già riceve.
+    Serve lato Gaia un modo per segnalare una parola come "notevole"
+    (mai vista prima, o ogni N-esima nuova) — altrimenti spara ad ogni
+    parola e perde senso come evento.
+
+Vedi `nursery_components.json` per lo schema parametri completo di
+ciascuno. Nessuna modifica al meccanismo di `gaia_nursery_control.py` —
+lo stesso whitelist/room-filter/TTL vale per tutti, aggiungere un
+trigger resta "una entry in più nel JSON", confermato dal vivo con un
+test di attivazione bloccata su un componente `visual_pending`.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
+
+- **Nuovo, per Gaia/Core**: `nursery_components.json` è stato esteso a
+  9 componenti (vedi changelog "TD/Mac, 3") — 4 con trigger candidati
+  già noti (`visual_pending`, il TD-side arriva a breve) + 3 proposte
+  di trigger completamente nuovi (`proposed`: `affinity_threshold`,
+  `extended_silence`, `lexicon_milestone`, dettagli nel JSON e nel
+  changelog). Prima di costruire qualunque cosa lato Gaia per questi 3
+  nuovi trigger, feedback: hanno senso? Ne preferite solo alcuni?
+  Priorità diversa da quella proposta?
 
 - **[RISOLTO 2026-08-07, TD/Mac]** `gaia/nursery/activate` reali
   pubblicati da Node-RED non risultavano applicati lato TD — causa: il
