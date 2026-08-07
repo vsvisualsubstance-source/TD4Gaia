@@ -404,10 +404,58 @@ l'`activate` a partire da un evento reale `person_recognized`/`dream_new`
 (Ollama -> Node-RED -> MQTT) — solo il lato TD del contratto è stato
 testato qui.
 
+**2026-08-07 (Core, 6)** — costruita la meta' Gaia-side del canale 9
+(Node-RED: `person_recognized`/`dream_new` → prompt Ollama → valida →
+`gaia/nursery/activate`, sweep 30s per TTL/presenza). **Finding
+importante trovato SOLO testando dal vivo, non con test offline**:
+l'Ollama locale (`--ollama-engine` runner, `qwen2.5:3b`) si blocca in
+modo affidabile ogni volta che gli si chiede di generare output con
+parentesi graffe `{ }` — sia con `format` a schema JSON sia con un
+prompt che chiede JSON in testo libero, indipendentemente dalla
+lunghezza del prompt (isolato con oltre 10 test diretti via curl,
+`format` escluso come causa unica). Una risposta a UNA parola invece
+funziona sempre, anche con lo stesso prompt lungo. **Ridisegnato di
+conseguenza**: Ollama sceglie SOLO il `component` (una parola,
+affidabile), i parametri estetici (hue/shape/energy) si derivano
+deterministicamente via FNV-1a dal contesto (persona/parola del sogno)
+invece di essere chiesti al modello — stesso pattern già in uso in
+"Build TD Canvas"/`web/asemic.js`, coerente con lo stile del progetto
+e non dipendente dall'affidabilità di un 3B nel generare numeri/JSON.
+Se in futuro TD/Envoy usa `format` per altro (es. il canale 3 lighting
+non ancora costruito), tenerne conto — potrebbe avere lo stesso
+problema su questa installazione.
+
+**Verificato dal vivo con publish MQTT reali** (non chiamate dirette
+alla funzione): 2 attivazioni reali generate correttamente e
+pubblicate su `gaia/nursery/activate` (`person_sigil`, room=studio,
+person=mauro — la stanza reale del Mac). **Non confermato**: se
+`Bridge/gaia_nursery` le abbia effettivamente ricevute e applicate —
+`gaia/nursery/status` restava `{"active":[]}` nei miei test nonostante
+il device fosse online e sano (heartbeat fresco, ~19s). Nessun accesso
+Envoy da qui per approfondire oltre — da verificare con la sessione
+TD/Mac (log locali, `get_op_errors`, o un publish di test diretto
+osservato dal vivo su `gaia_nursery`).
+
+**Nota separata, bug preesistente e slegato dal canale 9**: durante i
+test ho trovato Ollama (gira in un container Docker locale) bloccato
+da oltre 2 ore, un runner al 65-68% CPU costante senza mai rispondere
+— riavviato (`docker restart ollama`). Probabile causa dello spam "no
+response from server" visto nei log di Node-RED per tutta la sessione
+di ieri, su un flow completamente diverso (QdrantStore/embeddings).
+Non necessariamente risolto in modo permanente — se ricompare, il
+sintomo è un runner Ollama con CPU alta costante per ore senza
+generare risposte, `docker restart ollama` lo sblocca.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
+
+- **Nuovo**: `gaia/nursery/activate` reali pubblicati da Node-RED
+  (vedi changelog "Core, 6") non risultavano applicati lato TD
+  (`gaia/nursery/status` restava vuoto) — potete verificare con Envoy
+  se `gaia_nursery` li riceve/processa correttamente? Il device era
+  online e sano durante i test.
 
 - **[RISOLTO 2026-08-07, TD/Mac]** Canale 9 (Nursery) — le 3 domande
   nella sezione "Canale 9" sopra sono state risposte 2026-08-06 e il
