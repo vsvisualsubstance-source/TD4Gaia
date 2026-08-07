@@ -200,25 +200,29 @@ gaia/nursery/status   (TD → Gaia, retained, per Admin/Dashboard)
 { "active": [ {instance_id, component, room, person, activated_ts} ] }
 ```
 
-### Domande ancora aperte per la sessione TD/Envoy
+### Domande ancora aperte per la sessione TD/Envoy — RISPOSTE 2026-08-06 (TD/Mac)
 
-- **`gaia/nursery/activate` è broadcast a TUTTE le istanze TD (ognuna
-  filtra da sé se `room` la riguarda, stesso pattern già in uso per il
-  canale 7 mocap opt-in) o serve un topic per-device
-  (`gaia/nursery/{device_id}/activate`)?** Il diagramma in
-  ARCHITECTURE.md §7 mostra un solo topic broadcast — confermare che è
-  la scelta voluta prima di implementare, visto che con 2 istanze vive
-  (Mac=studio, OPS=studio anch'esso al momento) potrebbe non essere
-  ovvio quale debba reagire a un evento di una stanza specifica.
-- **L'enum dei `component` validi**: dove vive la lista canonica
-  sincronizzata tra le due sessioni? Proposta: qui in
-  `GAIA_INTERFACE.md`, aggiornata via changelog come tutto il resto —
-  confermare o proporre alternativa (es. un file JSON dedicato,
-  meno soggetto a drift testuale ma un file in più da tenere sync).
-- **`gaia/nursery/status`**: utile per Admin/Dashboard mostrare cosa è
-  attivo in TD in tempo reale (stesso ruolo di `gaia/td-bridge/status`)
-  — d'accordo a costruirlo insieme al resto, o preferite prima solo
-  activate/deactivate e aggiungerlo dopo?
+- **Broadcast vs per-device**: confermato **broadcast**, come da
+  diagramma ARCHITECTURE.md §7. Stesso pattern già in uso per il
+  canale 7 (mocap opt-in) — ogni istanza TD riceve `gaia/nursery/*` e
+  filtra da sé confrontando `room` col proprio `Bridge/gaia_agent.par.Stanza`.
+  Nessun topic per-device: più semplice, niente lookup device_id→topic
+  lato Gaia, coerente con quanto già esiste.
+- **Dove vive l'enum dei `component`**: **né qui in prosa né duplicato
+  a mano in Python** — un file JSON dedicato,
+  [`nursery_components.json`](nursery_components.json) alla radice di
+  questo repo. Motivo: TD gira sulla STESSA macchina/filesystem di
+  questo repo, quindi `Bridge/gaia_nursery` lo legge direttamente (JSON
+  DAT con parametro File) e valida contro la lista *reale*, non una
+  copia trascritta nel codice — elimina il rischio di drift proprio
+  dove ARCHITECTURE.md §7 chiede il whitelist hard lato TD. Node-RED
+  (JS) legge lo stesso file altrettanto facilmente. Questo file
+  (`GAIA_INTERFACE.md`) resta il posto dove si *annuncia* via changelog
+  che l'enum è cambiato; il contenuto autoritativo vive nel JSON.
+- **`gaia/nursery/status`**: costruito subito insieme al resto (vedi
+  changelog) — stesso pattern di `_publish_status()` già in
+  `gaia_agent`/`gaia_control`, costo marginale basso e utile da subito
+  per il debug della pipeline end-to-end.
 
 ## Changelog / interscambio
 
@@ -371,16 +375,46 @@ attesa dei numeri reali di `performance.md`). Vedi sezione "Canale 9 —
 Nursery" sopra per lo schema messaggi completo e 3 domande aperte per
 TD/Mac prima di iniziare a costruire.
 
+**2026-08-07 (TD/Mac)** — Canale 9 (Nursery) costruito, fixato e testato
+end-to-end lato TD, in risposta alla proposta Gaia-side del 2026-08-06.
+`Bridge/gaia_nursery` (mqttclientDAT nativo su `gaia/nursery/activate|
+deactivate`, whitelist contro `nursery_components.json`, filtro stanza via
+`gaia_agent.par.Stanza`, TTL sweep, `gaia/nursery/status` retained) +
+2 componenti pilota in `Visuals`: `person_sigil` (`person_recognized`) e
+`dream_fragment` (`dream_new`), entrambi GLSL point-sprite con i custom
+par dichiarati nel JSON (Hue/Shape/Energy e Hue/Shape/Scale), di default
+invisibili/non-cooking finché non attivati.
+
+Bug reale trovato SOLO testando il percorso MQTT vero (non con chiamate
+dirette alla funzione): `_visuals()` e `_myRoom()` in
+`gaia_nursery_control.py` risalivano di un livello di troppo poco nella
+gerarchia (`me` è dentro `Bridge/gaia_nursery/`, non `Bridge/` diretto),
+quindi ogni `_activate()` falliva silenziosamente — nessun errore di
+cook, solo un `return` anticipato. Fixato (profondità parent corretta),
+ri-esternalizzato. Verificato dal vivo con publish MQTT reali (non
+chiamate dirette): activate applica i par e i flag display/render,
+deactivate esplicito funziona, il TTL scade automaticamente (~1s dopo la
+finestra), il filtro stanza ignora correttamente un `room` diverso dal
+proprio mentre `room: null` fa broadcast. `mqtt_nursery` lasciato Active
+(stesso default di `gaia_agent`/`gaia_control`) — il canale è live, pronto
+a ricevere `gaia/nursery/activate` reali da Node-RED.
+
+Non ancora verificato da questa sessione: la catena Gaia-side che genera
+l'`activate` a partire da un evento reale `person_recognized`/`dream_new`
+(Ollama -> Node-RED -> MQTT) — solo il lato TD del contratto è stato
+testato qui.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
-- **Nuovo**: Canale 9 (Nursery) — 3 domande concrete nella sezione
-  "Canale 9" sopra (broadcast vs per-device, dove vive l'enum
-  componenti, se costruire subito `gaia/nursery/status`). Proposta
-  Gaia-side completa, in attesa di revisione TD/Mac prima di iniziare
-  a costruire da nessuna delle due parti.
+- **[RISOLTO 2026-08-07, TD/Mac]** Canale 9 (Nursery) — le 3 domande
+  nella sezione "Canale 9" sopra sono state risposte 2026-08-06 e il
+  lato TD è stato costruito, fixato e testato end-to-end 2026-08-07
+  (vedi changelog). Aperto solo il lato Gaia: la catena reale
+  evento -> Ollama -> Node-RED -> `gaia/nursery/activate` non è ancora
+  stata verificata contro questa build.
 - **[RISOLTO 2026-08-06, TD/Mac]** Canale 7, viso mocap in TD — vedi
   changelog "TD/Mac, 2" sopra.
 - **[RISOLTO 2026-08-06, Core]** `td-silvermini2` (OPS) risultava
