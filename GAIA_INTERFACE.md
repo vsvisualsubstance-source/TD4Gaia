@@ -914,13 +914,17 @@ tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
-- **[RISOLTO 2026-08-08, Core]** Il filtro canale 1 di "Core, 9" era
-  incompleto oltre a `vision.rooms` — mancavano `gaia/soul/*`,
+- **[RISOLTO 2026-08-08, Core + TD/Mac]** Il filtro canale 1 di "Core, 9"
+  era incompleto oltre a `vision.rooms` — mancavano `gaia/soul/*`,
   `gaia/lights/*`, `gaia/stats/*` e `gaia/rooms/*/persons_count`
   (lista verificata in "TD/Mac, 5", causa errori di cook attivi in
   produzione). Aggiunti tutti in "Core, 10"/"Core, 11", deployato e
-  verificato dal vivo lato Gaia — resta da confermare che gli errori di
-  cook lato TD siano spariti.
+  verificato dal vivo lato Gaia. **Confermato anche lato TD/Mac**: tutti
+  i canali mancanti presenti e con dati reali (`gaia/soul/lifeIndex=80`,
+  `stress=0`, `energy=100`, 117 canali `gaia/lights/*`,
+  `gaia/stats/totalPeopleCount=2`, `persons_count` per stanza), zero
+  errori di cook su `soul_geo`/`zones_geo`, 31fps. Chiuso su entrambi i
+  lati.
 
 - **[RISOLTO 2026-08-08, Core]** `gaia/vision/rooms/salotto/mediapipeActive`
   era 0/congelato durante un test dal vivo — regressione nel filtro
