@@ -603,10 +603,76 @@ Se/quando serve, o se preferite estendere il protocollo beacon con un
 campo `web_host` (richiederebbe un bump di `proto`, vedi
 `docs/discovery-protocol.md`), coordiniamo qui prima.
 
+**2026-08-08 (TD/Mac, 2)** — **proposta: filtrare il canale 1** (OSC/UDP
+7000, flatten grezzo, ~1900 indirizzi). Nato da un calo fps investigato
+dal vivo (6fps, poi auto-ripreso) — non causato dal canale 1
+direttamente, ma ha portato a controllare cosa TD legga davvero da
+`oscin1` (l'OSC In CHOP che riceve questo canale). Risposta, verificata
+riga per riga in tutto il progetto (ricerca di ogni riferimento a
+`oscin1`, non solo a occhio): **`oscin1` arriva a 9474 canali live**
+(non solo ~1900 — evidentemente ogni sotto-campo conta come indirizzo
+a parte, es. i punti mocap x/y/z), ma i prefissi effettivamente letti
+da qualche parte in TD sono solo:
+
+- `gaia/people/*` (`present`/`confidence`/`affinity`) — legenda persone
+  riconosciute + affinity wash
+- `gaia/rooms/*/objects/*` — legenda oggetti YOLO per stanza
+- `gaia/metrics/activeLights`, `gaia/metrics/activePeople`,
+  `gaia/metrics/averageLight` — 3 valori per il glow ambientale della
+  sfera
+
+Tutto il resto del flatten (la stragrande maggioranza dei 9474 canali)
+non ha nessun consumer in TD, verificato per esclusione — nessun altro
+`op()`/espressione nel progetto tocca `oscin1` oltre queste 3 categorie.
+**Nota separata**: `gaia/mocap/{device_id}/*` arriva sulla STESSA porta
+7000 ma da OPS direttamente (bypassa Core, vedi help di
+`gaia_config.Opsdevice`) — un mittente diverso da questo canale, quindi
+un eventuale filtro lato `osc_bridge.py`/Core non lo tocca e non serve
+includerlo nella proposta.
+
+**Proposta concreta**: se `osc_bridge.py` può applicare uno scope prima
+di pubblicare sul canale 1 (o un parametro di filtro lato TD in questo
+stesso file/registry), limitarlo a `gaia/people/*`,
+`gaia/rooms/*/objects/*` e i 3 `gaia/metrics/*` sopra ridurrebbe il
+lavoro di serializzazione/invio lato Gaia E il carico di ingest lato TD
+(oggi `oscin1` gestisce ~9500 canali dinamici ogni frame, Time Sliced,
+per una manciata usati davvero). Se preferite un approccio diverso
+(es. un canale 1-bis già filtrato, o estendere il curato canale 2 a
+coprire anche questi 3 gruppi così il grezzo diventa completamente
+inutile per TD), va bene lo stesso — l'obiettivo è solo smettere di
+mandare/ricevere ~1900+ indirizzi che nessuno legge.
+
+**Tentativo lato TD di oggi, poi abbandonato**: ho provato a filtrare
+localmente con `oscaddressscope` sull'OSC In CHOP. Primo tentativo (col
+canale attivo, ~9474 canali già allocati) **ha fatto crashare TD** —
+probabile riallocazione troppo pesante in concorrenza con dati live in
+arrivo. Rilanciato senza perdite (nessun CrashAutoSave, nulla di non
+salvato tranne il tentativo stesso). Riprovato disattivando il CHOP
+prima di cambiare lo scope: niente crash, ma il comportamento del
+parametro non ha corrisposto alla doc (un pattern che avrebbe dovuto
+includere non ha fatto passare nulla, poi con scope tornato aperto sono
+comparsi errori latenti — `noise1`/`transform1`/`glsl_zonelayout`,
+dipendenze indirette da `soul_geo` più ampie di quelle mappate via
+ricerca testuale — auto-risolti forzando il cook una volta ripristinato
+`*`). Progetto tornato pulito (0 errori, 30fps). Non insisto oltre in
+produzione — meglio la soluzione a monte (questa proposta) che
+un'ottimizzazione locale fragile.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
+
+- **Nuovo, per Gaia/Core**: è possibile filtrare il canale 1 (porta
+  7000) a `gaia/people/*`, `gaia/rooms/*/objects/*` e i 3
+  `gaia/metrics/*` elencati sopra, lato `osc_bridge.py` prima
+  dell'invio? Oggi manda ~1900+ indirizzi (TD ne alloca 9474 canali
+  live) di cui solo questi vengono letti da qualcosa in TD — vedi
+  changelog "TD/Mac, 2" per l'elenco completo verificato e i dettagli.
+  Va bene qualunque forma prendiate voi (scope sul bridge, un canale
+  1-bis già filtrato, o estendere il canale 2 curato a coprirli e
+  deprecare il grezzo) — non è un'implementazione richiesta subito, solo
+  un parere di fattibilità.
 
 - **[RISOLTO 2026-08-08, TD/Mac]** È possibile automatizzare/
   auto-scoprire alcuni parametri di `gaia_config` invece di un valore
