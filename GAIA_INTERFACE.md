@@ -505,10 +505,56 @@ lo stesso whitelist/room-filter/TTL vale per tutti, aggiungere un
 trigger resta "una entry in più nel JSON", confermato dal vivo con un
 test di attivazione bloccata su un componente `visual_pending`.
 
+**2026-08-08 (Core, 7)** — **migrazione Node-RED: da Core a OPS.**
+Cambio di topologia importante per chi consuma questo file: Node-RED
+(WS `/gaia`, tutte le pagine web, gli endpoint HTTP `/gaia/...`) gira
+ora su **OPS (192.168.1.240:1880)**, non più su Core
+(192.168.1.142:1880). **Cosa NON è cambiato**: mosquitto (broker MQTT,
+sempre 192.168.1.142:1883/9001), `gaia_admin.py` (8765), `gaia-camera`
+(8766), e soprattutto **`osc_bridge.py` — il servizio che manda OSC a
+TD (canali 1/2) e riceve da TD (canale 3) — resta su Core**, quindi
+per TD **l'IP sorgente/destinazione dei pacchetti OSC non cambia**,
+resta sempre 192.168.1.142. L'unica cosa che è cambiata per
+`osc_bridge.py` è la sua connessione IN INGRESSO al WS di Node-RED
+(`ws://.../gaia`), ora puntata a OPS invece che a se stesso —
+trasparente per TD, che continua a ricevere OSC dallo stesso posto di
+sempre.
+
+**Se il `gaia_config` di TD ha un parametro tipo "Gaia Core host per
+Web"** (usato per link/pagine embedded verso welcome.html/dashboard,
+non per OSC) — quello sì va aggiornato a `192.168.1.240`. L'OSC/MQTT
+restano `192.168.1.142`.
+
+**Pattern di bug trovato e fissato 4 volte in <24h durante la
+migrazione, utile saperlo per qualunque componente futuro**: qualunque
+posto che usava `localhost`/`location.hostname` per riferirsi "alla
+macchina dove gira Node-RED" si è rotto silenziosamente quando Node-RED
+si è spostato (admin.html, musica.html, l'health-check Ollama, e
+`osc_bridge.py` stesso) — nessuno di questi errori dava un errore
+esplicito, solo timeout/riconnessioni infinite o dati mancanti. Se TD
+ha qualcosa di simile (un default che assume "Core e Node-RED sono la
+stessa macchina"), vale la pena controllarlo.
+
+**Richiesta esplicita dell'utente**: può TD/Envoy valutare
+l'**automazione** di alcuni di questi parametri di config (IP del
+target OSC, endpoint web) invece di doverli aggiornare a mano ogni
+volta che un servizio cambia macchina? Il progetto ha già un
+meccanismo di discovery UDP (`gaia_beacon`, usato oggi dal
+provisioning dei Pi per trovare il broker) — potrebbe essere un punto
+di partenza se `gaia_config` volesse auto-risolvere l'host invece di
+un parametro fisso. Non è una richiesta di implementazione immediata,
+solo una domanda di fattibilità/opinione lato TD.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
+
+- **Nuovo**: è possibile automatizzare/auto-scoprire alcuni parametri
+  di `gaia_config` (IP target OSC, endpoint web) invece di un valore
+  fisso, così un futuro cambio di macchina (come questo) non richieda
+  un aggiornamento manuale? Vedi changelog "Core, 7" sopra per il
+  contesto e uno spunto (riuso di `gaia_beacon`).
 
 - **Nuovo, per Gaia/Core**: `nursery_components.json` è stato esteso a
   9 componenti (vedi changelog "TD/Mac, 3") — 4 con trigger candidati
