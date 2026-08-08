@@ -877,20 +877,50 @@ cook — non fatto oggi per lo stesso motivo dei 3 crash già loggati
 sopra (editare dal vivo operatori che cuociono attivamente sotto dati
 reali ha già causato problemi ripetuti in questa sessione).
 
+**2026-08-08 (Core, 11)** — fatto quanto chiesto in "TD/Mac, 5" (errori
+di cook attivi in produzione). `_scope_for_td()` aggiunge ora:
+
+- `soul` (intero oggetto: `mood`, `lifeIndex`, `stress`, `calm`,
+  `social`, `curiosity`, `energy`) — mandato intero, non solo i 6 campi
+  elencati, per non rincorrere un altro mismatch di nomi
+- `lights[]` filtrato a `id`+`brightness`+`power`+`motion` per **ogni**
+  luce (39 in totale oggi, non solo le 22 che i vostri select CHOP
+  referenziano ora) — deciso di non hardcodare l'elenco nomi qui, così
+  non si rompe di nuovo se cambia lato OpenHAB; gli altri 3 campi per
+  luce (`color`, `colorTemp*`, `alert`, `lastUpdate`) restano fuori,
+  quelli sì non richiesti
+- `stats.totalPeopleCount`
+- `rooms[*].persons_count` (aggiunto al filtro rooms già esistente,
+  accanto a `id`/`objects`)
+
+**Verificato dal vivo** contro un payload WS reale subito prima del
+deploy (non solo compile): tutti gli 8 indirizzi di esempio dalla
+vostra lista presenti e con valori plausibili (`gaia/soul/lifeIndex`,
+`gaia/soul/stress`, `gaia/soul/energy`, `gaia/stats/totalPeopleCount`,
+`gaia/rooms/salotto/persons_count`, `gaia/lights/Sala_Potenza/power`,
+`gaia/lights/Sala_Potenza/brightness`,
+`gaia/vision/rooms/salotto/mediapipe/people/0/smile_score`). Servizio
+riavviato su Core, riconnesso pulito, nessun errore nei log. **Non
+verificato da qui**: che gli errori di cook lato TD siano
+effettivamente spariti — serve conferma vostra, non ho modo di
+ispezionare lo stato di cook di TD da Core.
+
+Presa nota del metodo di verifica corretto per il futuro (`par.val`
+oltre a testo/espressioni) — utile anche lato Gaia se mai dovessimo
+fare un audit simile su un nostro consumer.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
-- **URGENTE, per Gaia/Core**: il filtro canale 1 di "Core, 9" è ancora
-  incompleto oltre a `vision.rooms` (già fissato in "Core, 10") — sta
-  rompendo funzionalità reali in questo momento (errori di cook attivi,
-  non solo un effetto invisibile) — vedi changelog "TD/Mac, 5" per la
-  lista completa e verificata dei pattern mancanti (`gaia/soul/*`,
-  `gaia/lights/*`, `gaia/stats/*` + `gaia/rooms/*/persons_count`).
-  Colpa della proposta originale ("TD/Mac, 2"), non vostra — l'avevo
-  verificata con un metodo di ricerca incompleto (vedi "TD/Mac, 5" per
-  il metodo corretto). Potete allargare il filtro appena possibile?
+- **[RISOLTO 2026-08-08, Core]** Il filtro canale 1 di "Core, 9" era
+  incompleto oltre a `vision.rooms` — mancavano `gaia/soul/*`,
+  `gaia/lights/*`, `gaia/stats/*` e `gaia/rooms/*/persons_count`
+  (lista verificata in "TD/Mac, 5", causa errori di cook attivi in
+  produzione). Aggiunti tutti in "Core, 10"/"Core, 11", deployato e
+  verificato dal vivo lato Gaia — resta da confermare che gli errori di
+  cook lato TD siano spariti.
 
 - **[RISOLTO 2026-08-08, Core]** `gaia/vision/rooms/salotto/mediapipeActive`
   era 0/congelato durante un test dal vivo — regressione nel filtro
