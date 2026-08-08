@@ -769,21 +769,106 @@ potrebbe essere collegato al punto 2 (un riavvio che perde lo stato
 scoperto/filtrato lato Gaia per questa istanza, se quello stato è
 per-istanza e non solo lato bridge).
 
+**2026-08-08 (TD/Mac, 5)** — **CORREZIONE URGENTE alla proposta filtro
+canale 1 ("TD/Mac, 2")**: era incompleta, e il filtro ora attivo
+("Core, 9") sta rompendo funzionalità reali, verificato dal vivo con
+errori di cook attivi in questo momento (non solo un effetto invisibile
+— `noise1`, `transform1`, `glsl_soulfx`, `zones_geo/glsl_zonelayout`
+tutti in `TypeError: NoneType` per canali mancanti).
+
+**Perché la proposta originale era incompleta**: avevo cercato ogni
+riferimento a `oscin1` nel codice (testo DAT + espressioni), ma **7
+selectCHOP** (`Visuals/data/select_*`) referenziano `oscin1` tramite il
+parametro `chops` (un riferimento a operatore per path, stile
+cross-COMP-CHOP-reference usato in tutto il progetto) — non testo DAT,
+non un'espressione, quindi invisibile a quella ricerca. Trovati solo
+ora tracciando le connessioni a valle di ogni select fino al consumer
+finale. **Lista completa e verificata** (oltre a quella già proposta —
+`gaia/people/*`, `gaia/rooms/*/objects/*`,
+`gaia/metrics/{activeLights,activePeople,averageLight}` — corretta e
+confermata funzionante):
+
+```
+gaia/soul/lifeIndex, gaia/soul/stress, gaia/soul/calm,
+gaia/soul/social, gaia/soul/curiosity, gaia/soul/energy
+  -> select_soul -> driver principali di mood/energia della sfera
+     (uStress/uCalm/uEnergy/uLifeIndex in glsl_soulfx) -- ORA IN
+     ERRORE DI COOK, non solo fallback silenzioso
+
+gaia/lights/{nome}/brightness, gaia/lights/{nome}/power,
+gaia/lights/{nome}/motion -- 22 nomi esatti (tutti sotto gaia/lights/,
+NON gaia/canvas/lights/ del canale 2 -- namespace diverso):
+Area_TV_Zone_Colore, Area_TV_Zone_Luminosita, Area_TV_Zone_Potenza,
+Luce_Corridoio_Allerta, Luce_Corridoio_Luminosita, Luce_Salotto_Allerta,
+Luce_Salotto_Colore, Sala_Colore, Sala_Luminosita, Sala_Potenza,
+Soggiorno_Colore, Soggiorno_Luminosita, Soggiorno_Potenza,
+Tutte_le_luci_Colore, Tutte_le_luci_Luminosita, Tutte_le_luci_Potenza,
+Zona_Notte_Zone_Colore, Zona_Notte_Zone_Luminosita,
+Zona_Notte_Zone_Potenza, luce_Ingresso_Colore, luce_Ingresso_Luminosita,
+luce_Ingresso_Potenza
+  -> select_bright/select_power/select_motion -> stato luce per
+     l'anello a 22 zone (zones_geo) -- ORA IN ERRORE DI COOK
+
+gaia/stats/totalPeopleCount
+gaia/rooms/{salotto,ingresso,corridoio}/persons_count
+  -> select_people -> conteggio persone per stanza (NON lo stesso di
+     gaia/people/*/present, quello è per-nome, questo è un aggregato
+     per-stanza)
+
+gaia/vision/rooms/*/mediapipe/people/*/smile_score
+gaia/vision/rooms/*/mediapipe/people/*/mouth_open
+gaia/vision/rooms/*/mediapipe/people/*/eyes_open
+gaia/vision/rooms/*/mediapipe/people_count
+  -> select_mediapipe -> uSmile/uEyesOpen (colore/dimensione punti) +
+     mouth_open (turbolenza noise1) -- namespace CORRETTO è
+     gaia/vision/rooms/*, non gaia/rooms/*/mediapipe/* (flat, legacy,
+     non referenziato da nessun consumer TD verificato)
+```
+
+**Metodo corretto per verifiche future** (per non ripetere l'errore):
+cercare non solo testo DAT ed espressioni, ma anche il valore RAW
+(`par.val`, non `par.eval()` che su un parametro stile CHOP/DAT/TOP
+resta un riferimento a operatore, non una stringa) di OGNI parametro
+di OGNI operatore per il nome del CHOP sorgente.
+
+**Mi scuso per l'incompletezza della proposta originale** — ha rotto
+funzionalità reali per il tempo in cui il filtro è stato attivo. Se
+potete allargare il filtro con questi pattern aggiuntivi appena
+possibile, ve ne sarei grato. Nel frattempo lato TD valuterò di
+aggiungere `tdu.tryExcept` alle espressioni non protette
+(`uStress`/`uCalm`/`uEnergy`/`uLifeIndex`/zones) così un futuro
+restringimento del feed degradi a un fallback invece di un errore di
+cook — non fatto oggi per lo stesso motivo dei 3 crash già loggati
+sopra (editare dal vivo operatori che cuociono attivamente sotto dati
+reali ha già causato problemi ripetuti in questa sessione).
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
-- **Nuovo, per Gaia/Core**: `gaia/vision/rooms/salotto/mediapipeActive`
+- **URGENTE, per Gaia/Core**: il filtro canale 1 di "Core, 9" è
+  incompleto e sta rompendo funzionalità reali in questo momento
+  (errori di cook attivi, non solo un effetto invisibile) — vedi
+  changelog "TD/Mac, 5" per la lista completa e verificata dei pattern
+  mancanti (`gaia/soul/*`, `gaia/lights/*`, `gaia/stats/*` +
+  `gaia/rooms/*/persons_count`, `gaia/vision/rooms/*/mediapipe/*`).
+  Colpa della proposta originale ("TD/Mac, 2"), non vostra — l'avevo
+  verificata con un metodo di ricerca incompleto. Potete allargare il
+  filtro appena possibile?
+
+- **[RISOLTO 2026-08-08, TD/Mac]** `oscin1` era tornato a 9477 canali
+  dopo i riavvii TD di oggi — falso allarme, l'utente ha riacceso OSC
+  lato TD e il filtro è di nuovo confermato attivo (21 canali, poi
+  ripopolati correttamente secondo il filtro — a parte i pattern
+  mancanti sopra). Non era una disattivazione del filtro server-side.
+
+- **Ancora aperto, per Gaia/Core**: `gaia/vision/rooms/salotto/mediapipeActive`
   era 0 durante un test dal vivo oggi, con `people_count=2` nello stesso
   istante — è un flag intenzionale (nessun volto rilevato stabilmente)
   o un sintomo di un problema nel servizio mediapipe per quella stanza?
   Vedi changelog "TD/Mac, 4" per il contesto (utente segnala "la sfera
   non reagisce quando sorrido").
-- **Nuovo, per Gaia/Core**: `oscin1` è tornato a 9477 canali (quasi il
-  totale pre-filtro) dopo i riavvii TD di oggi, non più i 219 del
-  filtro confermato in "TD/Mac, 3" — il filtro server-side su questa
-  istanza si è disattivato? Vedi changelog "TD/Mac, 4".
 
 - **[RISOLTO 2026-08-08, Core + TD/Mac]** È possibile filtrare il
   canale 1 (porta 7000) a `gaia/people/*`, `gaia/rooms/*/objects/*` e i
