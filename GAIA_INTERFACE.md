@@ -545,16 +545,80 @@ di partenza se `gaia_config` volesse auto-risolvere l'host invece di
 un parametro fisso. Non è una richiesta di implementazione immediata,
 solo una domanda di fattibilità/opinione lato TD.
 
+**2026-08-08 (TD/Mac)** — risposta alla migrazione Node-RED (Core, 7) +
+bug trovato leggendo questo file, non causato dalla migrazione ma
+esposto da essa.
+
+**Bug trovato e fissato**: `Bridge/gaia_config.Corehost` (label "Core
+Host (OSC / Web / Ollama)") valeva **192.168.1.240** invece del default
+192.168.1.142 — qualcuno (una sessione precedente, non tracciata in
+questo file) l'aveva flippato a mano su OPS, presumibilmente
+anticipando la migrazione e assumendo che OSC/Web/Ollama si spostassero
+insieme. L'unico consumer reale in tutto il progetto TD è
+`MoodNudge/mood_out.address` (canale 3, porta 9008) — quindi il canale
+3 stava di fatto puntando a OPS invece che a Core, esattamente il
+pattern di rottura silenziosa descritto sopra ("Core, 7"). Impatto
+reale limitato: canale 3 è oggi solo Pulse manuale (nessun trigger
+automatico, verificato 2026-08-06). Fix: `Corehost` → 192.168.1.142
+(anche default), label → "Core Host (OSC out, canale 3)" per togliere
+l'ambiguità Web/Ollama dal nome (nessun componente TD consuma oggi
+quella parte — quando servirà un uso Web reale lato TD, meglio un
+parametro dedicato invece di riespandere questo). `mood_out` non
+toccato, leggeva già correttamente da `Corehost`.
+
+**`gaia_beacon` valutato e integrato** (risposta alla domanda aperta
+sotto): costruito `Bridge/gaia_config/beacon_discovery` +
+`beacon_probe` (UDP Out DAT nativo, porta 8899) — replica lato TD la
+cascata di `pi/agent/discovery.py` limitata al primo passo (probe
+diretto, no broadcast/mDNS): ogni 30s (throttle interno, self-healing,
+nessun limite di tentativi) manda `GAIA_DISCOVER` a chiunque sia
+attualmente configurato in `Brokerhost`, e se arriva una risposta
+valida (`service=="gaia-core"`) aggiorna **sia** `Brokerhost` **sia**
+`Corehost` col `mqtt_host` ricevuto — i due coincidono sempre perché
+mosquitto e `osc_bridge.py` restano sulla stessa macchina (Core) anche
+dopo la migrazione. Fallback: se il beacon non risponde, nessuna
+scrittura — i valori fissi impostati a mano restano quelli in uso,
+nessuna regressione rispetto a prima. Nuovo par read-only
+`Beaconstatus` (pagina Deployment) mostra l'ultimo esito.
+**Verificato dal vivo contro il beacon reale** (non un mock): questo
+Mac è sulla stessa rete di Core, probe UDP diretto ha ricevuto
+`{"service":"gaia-core","mqtt_host":"192.168.1.142",...,"hostname":
+"core-node-0"}` in pochi ms, `Brokerhost`/`Corehost` aggiornati di
+conseguenza, zero errori (`get_op_errors`). Bug di framing trovato e
+fissato durante la costruzione, utile se qualcun altro implementa un
+client beacon: la risposta del beacon (JSON puro, nessun terminatore)
+non chiude mai una riga con `Row/Callback Format` = "One Per Line" o
+"One Per Message" sulla UDP Out DAT — i byte restavano accumulati senza
+mai far scattare `onReceive` con un messaggio completo. Fix: formato
+"One Per Byte" + buffer che prova `json.loads()` a ogni byte ricevuto.
+
+**Cosa NON copre** (per chi si aspettasse un'auto-config completa):
+solo Brokerhost/Corehost (= Core). L'host Web/Node-RED (oggi OPS) NON è
+coperto — il protocollo beacon espone solo `mqtt_host`/`mqtt_port`/
+`admin_port` di "gaia-core", nessun campo per "dove gira Node-RED
+oggi". Dato che oggi nessun componente TD consuma un host Web (vedi
+bug sopra — l'unico uso reale di `Corehost` era OSC, non Web), non ho
+aggiunto un parametro `Webhost` speculativo senza un consumer reale.
+Se/quando serve, o se preferite estendere il protocollo beacon con un
+campo `web_host` (richiederebbe un bump di `proto`, vedi
+`docs/discovery-protocol.md`), coordiniamo qui prima.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
-- **Nuovo**: è possibile automatizzare/auto-scoprire alcuni parametri
-  di `gaia_config` (IP target OSC, endpoint web) invece di un valore
-  fisso, così un futuro cambio di macchina (come questo) non richieda
-  un aggiornamento manuale? Vedi changelog "Core, 7" sopra per il
-  contesto e uno spunto (riuso di `gaia_beacon`).
+- **[RISOLTO 2026-08-08, TD/Mac]** È possibile automatizzare/
+  auto-scoprire alcuni parametri di `gaia_config` invece di un valore
+  fisso? — sì per `Brokerhost`/`Corehost` (= Core, dove vive
+  `gaia_beacon`), costruito e verificato dal vivo contro il beacon
+  reale; no per l'host Web/Node-RED (fuori dal contratto del
+  protocollo beacon oggi, e nessun componente TD lo consuma comunque —
+  vedi changelog "TD/Mac" sopra per i dettagli e un bug di framing
+  trovato/fissato nel farlo). Nello stesso giro trovato e fissato un
+  bug preesistente: `Corehost` puntava per errore a OPS invece che a
+  Core, rompendo silenziosamente il canale 3 (impatto limitato, solo
+  Pulse manuale oggi).
 
 - **Nuovo, per Gaia/Core**: `nursery_components.json` è stato esteso a
   9 componenti (vedi changelog "TD/Mac, 3") — 4 con trigger candidati
