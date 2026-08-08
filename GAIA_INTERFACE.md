@@ -702,17 +702,49 @@ canali lato `oscin1` (serve conferma da TD/Mac, non ho un modo per
 ispezionare TD da Core) — la logica e i dati sono confermati corretti,
 manca solo la controprova sul numero di canali allocati.
 
+**2026-08-08 (TD/Mac, 3)** — **conferma canale 1 filtrato**: `oscin1` è
+sceso da 9474 a **219 canali** live, solo i 4 prefissi attesi
+(`gaia/metrics`, `gaia/mocap`, `gaia/people`, `gaia/rooms`) — verificato
+dal vivo. Confermato anche che luci Hue e sensori stanza continuano a
+funzionare (domanda dell'utente): entrambi vivono sul canale 2 curato
+(`canvas_bridge`/`GaiaRegistryExt`), non sul canale 1, quindi il filtro
+non li tocca — verificato con dati reali (`Sala_Potenza/power`,
+`Luce_*_Colore/color`, `rooms/*/activity` tutti popolati).
+
+**Bug non correlato trovato mentre verificavo** (grazie alla domanda
+dell'utente su luci/sensori — altrimenti sarebbe rimasto silente):
+`GaiaRegistryExt._canvasChop()` risolveva `../../canvas_bridge` (un
+livello di troppo, `registry` e `canvas_bridge` sono entrambi figli
+diretti di `Visuals`) → sempre `None` → `GetRoomEnvironment()` sempre
+fallback (temperatura/buio/presenza/attività mai reali per nessuna
+stanza) e `UpdateObjects()`/`UpdateLexicon()` sempre no-op (early
+return), quindi gli slot oggetti/lessico dinamici di questo registry
+non si sono mai popolati. Preesistente, non legato al filtro di oggi.
+Fix: `../canvas_bridge`. Verificato dal vivo: temperatura/buio/presenza
+reali e differenziati per stanza dopo il fix (prima: fallback uniforme
+ovunque). Ri-esternalizzato (`Visuals.tox` build 48).
+
+**Nota per Core**: durante i test di oggi (sia sul filtro canale 1 sia
+su questo fix) TD è crashato 2 volte — una modificando un parametro
+dell'OSC In CHOP con ~9500 canali già allocati mentre riceveva dati
+live, una editando il sorgente di un'extension Python mentre i suoi
+metodi venivano chiamati ogni frame da altri Script CHOP (probabile
+race col re-init automatico dell'extension). Nessuna perdita di dati,
+solo per vostra visibilità se sentite freeze/crash periodici lato
+TD — non sembra legato al contratto, ma alla fragilità di editare certi
+operatori TD dal vivo mentre cuociono attivamente.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
-- **[RISOLTO 2026-08-08, Core]** È possibile filtrare il canale 1
-  (porta 7000) a `gaia/people/*`, `gaia/rooms/*/objects/*` e i 3
-  `gaia/metrics/*` elencati sopra, lato `osc_bridge.py` prima
-  dell'invio? — sì, fatto (vedi changelog "Core, 9"). Resta da
-  confermare lato TD/Mac che il conteggio canali di `oscin1` sia
-  effettivamente calato rispetto ai 9474 misurati in "TD/Mac, 2".
+- **[RISOLTO 2026-08-08, Core + TD/Mac]** È possibile filtrare il
+  canale 1 (porta 7000) a `gaia/people/*`, `gaia/rooms/*/objects/*` e i
+  3 `gaia/metrics/*` elencati sopra, lato `osc_bridge.py` prima
+  dell'invio? — sì, fatto (vedi changelog "Core, 9") e confermato lato
+  TD/Mac: `oscin1` scende da 9474 a 219 canali live (vedi changelog
+  "TD/Mac, 3").
 
 - **[RISOLTO 2026-08-08, TD/Mac]** È possibile automatizzare/
   auto-scoprire alcuni parametri di `gaia_config` invece di un valore
