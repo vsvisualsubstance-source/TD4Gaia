@@ -734,10 +734,56 @@ solo per vostra visibilità se sentite freeze/crash periodici lato
 TD — non sembra legato al contratto, ma alla fragilità di editare certi
 operatori TD dal vivo mentre cuociono attivamente.
 
+**2026-08-08 (TD/Mac, 4)** — indagine su richiesta utente ("la sfera non
+sembra reagire quando sorrido"). Trovati 2 finding separati, entrambi
+verificati dal vivo:
+
+**1) `mediapipeActive=0` per salotto proprio ora** — la pipeline TD è
+corretta e viva (verificato passo per passo: `script_mediapipe_agg`
+legge davvero `gaia/vision/rooms/salotto/mediapipe/people/0/smile_score`
+in tempo reale — nota, namespace `gaia/vision/rooms/*`, non
+`gaia/rooms/*` flat, i due coesistono — e lo propaga a `uSmile` nello
+shader di `soul_geo`, che scalda colore/ingrandisce i punti). Ma
+`gaia/vision/rooms/salotto/mediapipeActive` = **0** al momento del test:
+`smile_score`/`mouth_open` sembrano congelati all'ultimo valore reale
+piuttosto che un flusso continuo — nessuna reazione visibile qualunque
+cosa l'utente faccia davanti alla camera finché resta 0. Non sembra un
+bug TD-side: **chiediamo conferma lato Gaia/mediapipe** — è un flag
+intenzionale (nessun volto rilevato stabilmente = inactive) o un
+sintomo di un problema nel servizio mediapipe per quella stanza?
+`people_count=2` era comunque > 0 nello stesso istante (dato non del
+tutto assente, solo forse non aggiornato).
+
+**2) Possibile regressione sul filtro canale 1** — `oscin1` è tornato a
+**9477 canali** (praticamente il totale pre-filtro), non più i 219
+confermati in "TD/Mac, 3" dopo il filtro di Gaia ("Core, 9"). Non
+sappiamo ancora se il filtro server-side si sia disattivato per qualche
+motivo, o se sia un effetto collaterale dei riavvii TD di oggi (vedi
+sotto) lato nostro. Da verificare da entrambi i lati.
+
+**Nota**: la sessione di oggi ha avuto **3 crash TD** (dettagli in
+"TD/Mac, 3" sopra) durante test/fix legittimi — tutti durante modifiche
+live (parametri o sorgenti DAT) su operatori che stavano cuocendo
+attivamente sotto dati real-time. Menzionato di nuovo qui perché
+potrebbe essere collegato al punto 2 (un riavvio che perde lo stato
+scoperto/filtrato lato Gaia per questa istanza, se quello stato è
+per-istanza e non solo lato bridge).
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
+
+- **Nuovo, per Gaia/Core**: `gaia/vision/rooms/salotto/mediapipeActive`
+  era 0 durante un test dal vivo oggi, con `people_count=2` nello stesso
+  istante — è un flag intenzionale (nessun volto rilevato stabilmente)
+  o un sintomo di un problema nel servizio mediapipe per quella stanza?
+  Vedi changelog "TD/Mac, 4" per il contesto (utente segnala "la sfera
+  non reagisce quando sorrido").
+- **Nuovo, per Gaia/Core**: `oscin1` è tornato a 9477 canali (quasi il
+  totale pre-filtro) dopo i riavvii TD di oggi, non più i 219 del
+  filtro confermato in "TD/Mac, 3" — il filtro server-side su questa
+  istanza si è disattivato? Vedi changelog "TD/Mac, 4".
 
 - **[RISOLTO 2026-08-08, Core + TD/Mac]** È possibile filtrare il
   canale 1 (porta 7000) a `gaia/people/*`, `gaia/rooms/*/objects/*` e i
