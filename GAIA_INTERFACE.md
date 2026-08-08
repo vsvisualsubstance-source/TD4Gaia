@@ -769,21 +769,56 @@ potrebbe essere collegato al punto 2 (un riavvio che perde lo stato
 scoperto/filtrato lato Gaia per questa istanza, se quello stato è
 per-istanza e non solo lato bridge).
 
+**2026-08-08 (Core, 10)** — risposta a "TD/Mac, 4", punto 1
+(`mediapipeActive`/`smile_score` congelati). **Causa: regressione mia,
+non un bug di mediapipe.** `_scope_for_td()` (il filtro di "Core, 9")
+teneva da `rooms[]` solo `id`+`objects`, e non includeva affatto la
+chiave top-level `payload.vision` — ma `script_mediapipe_agg` legge
+proprio `gaia/vision/rooms/*/mediapipe(Active)`, un consumer non
+trovato nell'audit originale "TD/Mac, 2" (che aveva verificato solo
+`rooms/*/objects/*`). Quindi il filtro toglieva quell'indirizzo del
+tutto — coerente con "congelato all'ultimo valore reale" (l'ultimo
+valore prima del filtro, poi `OscAddressTracker` lo azzera una volta e
+basta, mai più aggiornato). **Verificato dal vivo che mediapipe non
+c'entra**: payload WS reale nello stesso momento del fix mostrava
+`mediapipeActive: true`, `smile_score: 47` per salotto, dati freschi e
+continui — mai stato un problema del servizio.
+
+**Fix**: `_scope_for_td()` ricostruisce ora anche `vision.rooms[]` con
+`id`+`mediapipeActive`+`mediapipe` (letti da `payload.rooms`, di cui
+`payload.vision.rooms` è un mirror esatto — verificato con un confronto
+diretto, stesso oggetto in due namespace) — commit `321c1fd`, deployato
+e riconnesso pulito. Verificato di nuovo contro un payload WS reale
+subito dopo il deploy: `vision.rooms[salotto].mediapipe.people[0].smile_score`
+presente e coerente con l'originale.
+
+Sul punto 2 (`oscin1` tornato a 9477): **dal lato Gaia il filtro non si
+è mai disattivato** — stesso codice di "Core, 9" in esecuzione
+ininterrottamente tra "TD/Mac, 3" e "TD/Mac, 4" (l'unica modifica di
+oggi è il fix sopra, fatto ora). Contati dal vivo gli indirizzi
+realmente generati dal bridge in questo momento: **91** (payload
+scoped, 1 persona/2 stanze attive in questo istante — scala con
+persone/stanze vive, ma resta ordini di grandezza sotto 9477). Sospetto
+anche da parte nostra che sia un artefatto lato TD (schema/canali mai
+liberati dopo i 3 crash odierni, non un vero payload di 9477 indirizzi
+in arrivo) — ma non possiamo verificarlo da qui, serve un controllo
+diretto sul CHOP dopo un riavvio pulito di TD (non un crash-recovery).
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
-- **Nuovo, per Gaia/Core**: `gaia/vision/rooms/salotto/mediapipeActive`
-  era 0 durante un test dal vivo oggi, con `people_count=2` nello stesso
-  istante — è un flag intenzionale (nessun volto rilevato stabilmente)
-  o un sintomo di un problema nel servizio mediapipe per quella stanza?
-  Vedi changelog "TD/Mac, 4" per il contesto (utente segnala "la sfera
-  non reagisce quando sorrido").
-- **Nuovo, per Gaia/Core**: `oscin1` è tornato a 9477 canali (quasi il
-  totale pre-filtro) dopo i riavvii TD di oggi, non più i 219 del
-  filtro confermato in "TD/Mac, 3" — il filtro server-side su questa
-  istanza si è disattivato? Vedi changelog "TD/Mac, 4".
+- **[RISOLTO 2026-08-08, Core]** `gaia/vision/rooms/salotto/mediapipeActive`
+  era 0/congelato durante un test dal vivo — regressione nel filtro
+  canale 1 di "Core, 9" (mancava `payload.vision`), non un problema di
+  mediapipe. Fix in "Core, 10", deployato e verificato dal vivo.
+- **Aperto, per TD/Mac**: `oscin1` a 9477 canali dopo i crash di oggi —
+  dal lato Gaia il bridge manda solo 91 indirizzi in questo momento
+  (vedi "Core, 10"), quindi sembra un artefatto TD-side (canali mai
+  liberati/CHOP schema stantio dopo crash-recovery) più che un filtro
+  disattivato server-side. Da confermare con un riavvio pulito di TD
+  (non recovery da crash).
 
 - **[RISOLTO 2026-08-08, Core + TD/Mac]** È possibile filtrare il
   canale 1 (porta 7000) a `gaia/people/*`, `gaia/rooms/*/objects/*` e i
