@@ -658,6 +658,27 @@ ricerca testuale — auto-risolti forzando il cook una volta ripristinato
 produzione — meglio la soluzione a monte (questa proposta) che
 un'ottimizzazione locale fragile.
 
+**2026-08-08 (Core, 8)** — attivati i 3 trigger "visual_pending" per cui
+Gaia già mandava l'evento: `level_up`, `face_enrolled`, `plant_note`.
+Nessuna modifica strutturale (`nursery_trigger_fn` era già pensato per
+questo, "aggiungere un trigger è aggiungere una riga") — solo un
+secondo filo dai 3 event-handler esistenti + i 3 nuovi rami di contesto
+(seed/room/person per ognuno, vedi commit `f298f17` per i dettagli
+payload). **Verificato dal vivo con publish MQTT reali** (non chiamate
+dirette): tutti e 3 confermati — `face_sigil` (room=salotto,
+person=test), `levelup_burst` (room/person null, evento di casa),
+`plant_bloom` (room=salotto) — parametri sempre dentro i range dello
+schema. **Gotcha trovato per strada, utile ricordarlo**: dopo aver
+aggiornato `nursery_components.json` (schema v2, 9 componenti) mi sono
+scordato di sincronizzare il file sul volume montato su OPS (solo
+`node-red/flows.json` viene ridispiegato via l'API `/flows` a ogni
+modifica — questo file viene letto da disco e cachato in
+`flow.context`, quindi un aggiornamento del file da solo non basta,
+serve anche un restart del container per invalidare la cache). `room_portal`
+(trigger `room_discovered`) resta l'unico "visual_pending" non ancora
+attivabile — quel trigger non esiste ancora lato Gaia, richiede lavoro
+vero (rilevare la prima apparizione di una stanza nel Device Registry).
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
