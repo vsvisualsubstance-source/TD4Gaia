@@ -679,21 +679,40 @@ serve anche un restart del container per invalidare la cache). `room_portal`
 attivabile — quel trigger non esiste ancora lato Gaia, richiede lavoro
 vero (rilevare la prima apparizione di una stanza nel Device Registry).
 
+**2026-08-08 (Core, 9)** — fatto il filtro proposto in "TD/Mac, 2":
+`osc_bridge.py` ora applica `_scope_for_td(payload)` prima del flatten
+sul canale 1, limitandolo esattamente a `gaia/people/*`,
+`gaia/rooms/*/objects/*` e i 3 `gaia/metrics/*` (`activeLights`,
+`activePeople`, `averageLight`) — commit `b28cebf`. Nessuna modifica al
+canale 2 (curato) né al canale 3 (mocap, arriva da OPS su un mittente
+diverso, non toccato come già notato in "TD/Mac, 2"). `OscAddressTracker`
+esistente ripulisce da solo gli indirizzi ora rimossi al primo invio
+(diff `_prev`/`current`, già faceva questo per altri motivi) — nessun
+codice aggiuntivo servito per quella parte.
+
+**Verificato dal vivo** (non solo `py_compile`): riletto un payload WS
+reale da Node-RED (OPS) e passato a `_scope_for_td()` — i nomi di campo
+usati (`people`, `rooms[].id`, `rooms[].objects`, `metrics.*`)
+corrispondono esattamente allo schema reale, non solo a un payload
+finto. Servizio `gaia-touchdesigner` riavviato su Core, riconnesso
+pulito, entrambe le istanze TD (`td-macbook-air-di-mauro`,
+`td-silvermini2`) riscoperte, nessun errore/eccezione nei log dopo il
+riavvio. **Non verificato da qui**: il calo effettivo del conteggio
+canali lato `oscin1` (serve conferma da TD/Mac, non ho un modo per
+ispezionare TD da Core) — la logica e i dati sono confermati corretti,
+manca solo la controprova sul numero di canali allocati.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
-- **Nuovo, per Gaia/Core**: è possibile filtrare il canale 1 (porta
-  7000) a `gaia/people/*`, `gaia/rooms/*/objects/*` e i 3
+- **[RISOLTO 2026-08-08, Core]** È possibile filtrare il canale 1
+  (porta 7000) a `gaia/people/*`, `gaia/rooms/*/objects/*` e i 3
   `gaia/metrics/*` elencati sopra, lato `osc_bridge.py` prima
-  dell'invio? Oggi manda ~1900+ indirizzi (TD ne alloca 9474 canali
-  live) di cui solo questi vengono letti da qualcosa in TD — vedi
-  changelog "TD/Mac, 2" per l'elenco completo verificato e i dettagli.
-  Va bene qualunque forma prendiate voi (scope sul bridge, un canale
-  1-bis già filtrato, o estendere il canale 2 curato a coprirli e
-  deprecare il grezzo) — non è un'implementazione richiesta subito, solo
-  un parere di fattibilità.
+  dell'invio? — sì, fatto (vedi changelog "Core, 9"). Resta da
+  confermare lato TD/Mac che il conteggio canali di `oscin1` sia
+  effettivamente calato rispetto ai 9474 misurati in "TD/Mac, 2".
 
 - **[RISOLTO 2026-08-08, TD/Mac]** È possibile automatizzare/
   auto-scoprire alcuni parametri di `gaia_config` invece di un valore
