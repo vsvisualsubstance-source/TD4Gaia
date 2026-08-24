@@ -1125,6 +1125,43 @@ collegati, `audio_services._NUM_CHANNELS` aggiornato a 49 (era 47,
 `audio_levels` ora vuoto — confermato con `mosquitto_sub` reale contro il
 broker, non solo simulazione interna.
 
+**2026-08-24 (TD/Mac, 6)** — Chiusura del lavoro su ControllerV7 in questa
+sessione:
+
+- **Preset per canale**: due bottoni "Save"/"Load" nella UI di
+  `/audioUI`, accanto a `next`/`prev` (stesso schema di selezione
+  canale, `/audioUI.par.Selectedchannel`). Save scrive un JSON con i 12
+  parametri del canale corrente in `presets/audio/ch{N}.json` (project-
+  relative, `project.folder`); Load li rilegge e li riapplica. Verificato
+  con un click reale attraverso l'intera catena di callback (non solo
+  chiamata diretta a `save_preset()`/`load_preset()`), incluso un
+  round-trip cambia→salva→cambia→carica→verifica sul valore effettivo
+  del parametro. Non esposto via MQTT per ora (solo UI locale) — se
+  Gaia dovesse controllare i preset da remoto è un'estensione separata,
+  non richiesta oggi.
+- **Bug di performance trovato e risolto**: le 14 istanze create con
+  `COMP.copy()` (i 12 canali riparati + i 2 nuovi) avevano ereditato il
+  flag **Viewer** attivo (`o.viewer == True`), assente sugli originali —
+  questo le forzava a cookare OGNI frame anche da nascoste, invece di
+  restare dormienti come gli altri canali quando non selezionate
+  (`display` via espressione, non collegato al cook). Sintomo: fps sceso
+  stabilmente a 12-19 (target 30) dopo la ricostruzione, confermato NON
+  transitorio (a differenza degli altri cali osservati in sessione) via
+  `get_op_performance` — `cookedThisFrame=True` sulle 14 istanze nuove,
+  `False` sugli originali, nello stesso istante. Fix: `o.viewer = False`
+  sulle 14 istanze. **Nota per chi userà `COMP.copy()` altrove in questo
+  progetto o in PatchDeck**: verificare il flag Viewer sulla copia, non
+  è ovvio che una copia headless via Python lo eviti.
+- Sessione chiusa con l'utente che ha poi sistemato la UI manualmente in
+  TD e salvato lui stesso (progetto ora a `ControllerV7.16.toe`). Stato
+  finale verificato: zero errori su `/audioUI` e `/gaia_device_agent`,
+  agente MQTT connesso. Fps momentaneamente basso (~11-13) al momento
+  del controllo post-salvataggio manuale, ma spiegato da contesa di
+  risorse con una SECONDA istanza TD aperta in parallelo sulla stessa
+  macchina (`PatchDeck V8/PATCHDECK_V8.toe`, ~53% CPU) — non un
+  regressione nel progetto (nessun canale con `cookedThisFrame`
+  anomalo, `activeOps` allineato al baseline sano).
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
