@@ -909,6 +909,37 @@ Presa nota del metodo di verifica corretto per il futuro (`par.val`
 oltre a testo/espressioni) — utile anche lato Gaia se mai dovessimo
 fare un audit simile su un nostro consumer.
 
+**2026-08-24 (TD/Mac)** — PatchDeck (device_id `td-MacBook-Air-di-Mauro.local`)
+ora pubblica servizi REALI sul canale 4 — `gaia_device_agent._services` era
+vuoto da quando l'agent è stato costruito (2026-08-18, vedi
+`GAIA_AGENT_BRIEF.md`/`GAIA_DEVICE_AGENT_BRIEF.md`), i comandi in arrivo
+restavano no-op loggati. Aggiunti 78 servizi via `register_service()` da un
+nuovo script locale (`gaia_device_agent/patchdeck_services`, non tocca il
+file condiviso `gaia_device_agent.py`):
+
+- `deck_a` / `deck_b` — toggle reale (start/stop/status tutti
+  significativi). `stop` = replica esatta del gesto "Clear A/B" già
+  esistente in console PatchDeck (scollega la patch dal deck, NON la
+  spegne — resta calda finché non riassegnata o fino al prossimo
+  `reconcileCooking()`). `start` = ricarica l'ultima patch che era su
+  quel deck prima dello stop (memoria locale lato TD, persa a un riavvio
+  del progetto — nessuna persistenza oggi).
+- `load_x{1..38}_{a|b}` (76 servizi) — fire-and-forget, SOLO `enable` ha
+  effetto (carica quella patch su quel deck, sostituendo quella
+  presente, stessa logica di autorizzazione dei pad fisici APC40).
+  `disable`/`restart` su questi vengono ignorati in silenzio (nessun
+  errore) — non hanno un'azione di stop naturale.
+
+Verificato dal vivo con `_apply_command()` diretto (non ancora con un
+publish MQTT reale dal lato Gaia): `load_x5_a` carica correttamente,
+`deck_a` stop/start scollega e ripristina come atteso, zero errori di
+cook. **Non verificato da qui**: se l'Admin/Pi-Manager UI lato Gaia/Core
+sappia già rendere pulsanti per un elenco arbitrario di `services` (se il
+rendering è generico dovrebbe funzionare a costo zero, stesso schema di
+Pi/OPS); se serve un trattamento speciale per il pattern
+`load_x{N}_{deck}` (es. una matrice patch×deck invece di 76 bottoni
+piatti), fateci sapere qui.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
