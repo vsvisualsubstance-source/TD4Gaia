@@ -28,7 +28,7 @@ Repo Gaia (pubblico, dettaglio completo): `github.com/vsvisualsubstance-source/g
 | 2 | Gaia → TD | OSC/UDP | `7001` | Feed curato "TD Canvas" (`/gaia/canvas/...`): mood+palette, oggetti YOLO con seed FNV-1a, luci pulite, lessico, sogno, eventi one-shot |
 | 3 | TD → Gaia | OSC/UDP | `9008` (`OSC_IN_PORT`) | `MoodNudge`: deltas mood/lighting da TD verso Gaia → ripubblicati su MQTT `gaia/touchdesigner/<path>`. **Non attribuito a un device specifico — vedi "Aperto" sotto** |
 | 4 | Gaia ↔ TD | MQTT | `gaia/device/{id}/status` \| `.../command` | Protocollo Pi-Manager: heartbeat leggero + start/stop/restart servizi (stesso schema di Pi/OPS/Core) |
-| 5 | Gaia ↔ TD | MQTT | `gaia/devices/{id}/announce` \| `.../config` \| `.../profile` | Device Registry autoritativo di Node-RED (room graph, capabilities). **Un device TD deve pubblicare SIA il canale 4 SIA questo — vedi sotto** |
+| 5 | Gaia ↔ TD | MQTT | `gaia/devices/{id}/announce` \| `.../config` \| `.../profile` \| `.../patchdeck_matrix` (solo PatchDeck) | Device Registry autoritativo di Node-RED (room graph, capabilities). **Un device TD deve pubblicare SIA il canale 4 SIA questo — vedi sotto**. `patchdeck_matrix` è specifico di PatchDeck (non pubblicato da altri device TD) — vedi changelog 2026-08-24 |
 | 6 | Gaia → Admin | MQTT | `gaia/td-bridge/status` (retained) \| `.../command` | Pausa/ripresa del canale 1 per singola istanza TD, da Admin → Pi Manager |
 | 7 | Pi/OPS → Admin | MQTT | `gaia/mocap-bridge/{sender_device_id}/status` (retained) \| `.../command` | Mocap grezzo (viso/mani/pose) opt-in per istanza TD — `sender_device_id` è il device mediapipe che manda, non TD |
 | 8 | Watchdog → Telegram | MQTT | `gaia/notify/telegram` | Alert quando una TD nota è silente >90s (e recovery al ritorno) |
@@ -939,6 +939,40 @@ rendering è generico dovrebbe funzionare a costo zero, stesso schema di
 Pi/OPS); se serve un trattamento speciale per il pattern
 `load_x{N}_{deck}` (es. una matrice patch×deck invece di 76 bottoni
 piatti), fateci sapere qui.
+
+**2026-08-24 (TD/Mac, 2)** — aggiunta alla voce sopra: PatchDeck pubblica
+ora anche `gaia/devices/{id}/patchdeck_matrix` (retained, canale 5),
+**non** i nomi dei 78 servizi da soli — una struttura meccanica esplicita
+così chi costruisce l'interfaccia lato Gaia non deve fare parsing dei
+nomi stringa `load_x{N}_{deck}`:
+
+```json
+{
+  "decks": ["A", "B"],
+  "patches": [1, 2, ..., 38],
+  "services": {
+    "deck_a": {"kind": "deck_toggle", "deck": "A"},
+    "deck_b": {"kind": "deck_toggle", "deck": "B"},
+    "load_x1_a": {"kind": "load_patch", "patch": 1, "deck": "A"},
+    ...
+  },
+  "device_id": "td-MacBook-Air-di-Mauro.local",
+  "ts": 1787564650455
+}
+```
+
+Nota: questa è solo la matrice MECCANICA (quale pulsante è cosa) — NON
+una mappa semantica di cosa sia visivamente/tematicamente ogni patch
+(mood, energia, temi). Se in futuro serve anche quella, è un lavoro
+separato (richiede che l'operatore umano descriva le 38 patch, non
+deducibile dal codice).
+
+Pubblicata da `patchdeck_services.publish_matrix()` (chiamata da
+`register_all()`, quindi ad ogni avvio pulito del progetto), retained
+quindi disponibile anche se PatchDeck non è online nel momento in cui la
+si legge. Verificato dal vivo con `mosquitto_sub` reale contro il broker
+(non solo la chiamata diretta alla funzione): payload completo, 78
+servizi, tutti classificati correttamente.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
