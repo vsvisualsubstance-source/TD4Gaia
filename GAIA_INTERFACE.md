@@ -27,7 +27,7 @@ Repo Gaia (pubblico, dettaglio completo): `github.com/vsvisualsubstance-source/g
 | 1 | Gaia → TD | OSC/UDP | `7000` | Flatten grezzo di tutto lo stato WS (`/gaia/...`, ~1900 indirizzi) |
 | 2 | Gaia → TD | OSC/UDP | `7001` | Feed curato "TD Canvas" (`/gaia/canvas/...`): mood+palette, oggetti YOLO con seed FNV-1a, luci pulite, lessico, sogno, eventi one-shot |
 | 3 | TD → Gaia | OSC/UDP | `9008` (`OSC_IN_PORT`) | `MoodNudge`: deltas mood/lighting da TD verso Gaia → ripubblicati su MQTT `gaia/touchdesigner/<path>`. **Non attribuito a un device specifico — vedi "Aperto" sotto** |
-| 4 | Gaia ↔ TD | MQTT | `gaia/device/{id}/status` \| `.../command` | Protocollo Pi-Manager: heartbeat leggero + start/stop/restart servizi (stesso schema di Pi/OPS/Core) |
+| 4 | Gaia ↔ TD | MQTT | `gaia/device/{id}/status` \| `.../command` | Protocollo Pi-Manager: heartbeat leggero + start/stop/restart servizi, più `action:"set"` per valori continui per-parametro (`register_param`, vedi changelog 2026-08-24) — solo ControllerV7 oggi (resto invariato, stesso schema di Pi/OPS/Core) |
 | 5 | Gaia ↔ TD | MQTT | `gaia/devices/{id}/announce` \| `.../config` \| `.../profile` \| `.../patchdeck_matrix` (solo PatchDeck) | Device Registry autoritativo di Node-RED (room graph, capabilities). **Un device TD deve pubblicare SIA il canale 4 SIA questo — vedi sotto**. `patchdeck_matrix` è specifico di PatchDeck (non pubblicato da altri device TD) — vedi changelog 2026-08-24 |
 | 6 | Gaia → Admin | MQTT | `gaia/td-bridge/status` (retained) \| `.../command` | Pausa/ripresa del canale 1 per singola istanza TD, da Admin → Pi Manager |
 | 7 | Pi/OPS → Admin | MQTT | `gaia/mocap-bridge/{sender_device_id}/status` (retained) \| `.../command` | Mocap grezzo (viso/mani/pose) opt-in per istanza TD — `sender_device_id` è il device mediapipe che manda, non TD |
@@ -973,6 +973,58 @@ quindi disponibile anche se PatchDeck non è online nel momento in cui la
 si legge. Verificato dal vivo con `mosquitto_sub` reale contro il broker
 (non solo la chiamata diretta alla funzione): payload completo, 78
 servizi, tutti classificati correttamente.
+
+**2026-08-24 (TD/Mac, 3)** — Nuova istanza TD sui canali 4/5: ControllerV7
+(device_id `td-controllerv7-macbook-air-di-mauro`, stessa macchina di
+PatchDeck ma progetto/Envoy/repo separati, porta 9871 vs 9870). Costruito
+lo stesso `gaia_device_agent`/`mqtt_agent`/`mqtt_agent_callbacks` verbatim
+di PatchDeck, con un file project-specific nuovo (`audio_services.py`) che
+registra:
+
+- `audio_device` — enable/disable/status sull'hardware reale (Audio
+  Device In CHOP, MOTU M Series, `/audioUI/audiodevin1`).
+- `audio_source_live` / `audio_source_file` — toggle mutuamente esclusivo
+  tra ingresso live e un file demo di test (`/audioUI/switch1`, stesso
+  pattern deck_a/deck_b di PatchDeck).
+
+**Estensione al motore condiviso `gaia_device_agent.py` (v3,
+`register_param`)** — questi 3 restano servizi booleani classici, ma
+ControllerV7 doveva esporre anche VALORI CONTINUI per canale (gain/soglie
+di un componente di analisi audio a 47 istanze) — `register_service` non
+li rappresenta. Aggiunta additiva al file condiviso su tutta la flotta:
+
+```python
+def register_param(name, get=None, set=None): ...
+```
+
+Comando MQTT: `{"action": "set", "param": "ch0_Lowgain", "value": 1.2}`
+sullo stesso topic `gaia/device/{id}/command`, azione nuova accanto a
+enable/disable/restart/status. Lo status pubblica ora anche un dict
+`"params"` accanto a `"services"`. **Nessun comportamento esistente
+cambia**: `_params` parte vuoto, PatchDeck non chiama mai
+`register_param` quindi il suo payload resta identico a prima
+(`"params": {}`). Applicata sia al file live di ControllerV7 sia al
+sorgente di PatchDeck su disco
+(`PATCHDECK/gaia_device_agent/gaia_device_agent.py`) — **non ancora
+reimportata nel TD live di PatchDeck** (V8.54, confermato attivo e
+funzionante) da questa sessione.
+
+ControllerV7 registra 564 parametri:
+`ch{0..46}_{Lowgain,Lowthresh,Lowsmooth,Midgain,Midthresh,Midsmooth,Highgain,Highthresh,Highsmooth,Kickthresh,Snarethresh,Rythmthresh}`
+— nomi presi dai parametri REALI del componente di analisi audio (non
+esiste un parametro "Width" su questo componente).
+
+Verificato dal vivo: connesso al broker (`isConnected=True`), heartbeat
+attivo, 3 servizi + 564 parametri effettivamente in `_services`/`_params`
+dopo un `register_all()`, zero errori TD. **Non verificato**: `onCreate`
+che rifà scattare `register_all()` automaticamente su un vero
+riavvio/riapertura del progetto (qui invocato manualmente dopo un
+`project.save()` di checkpoint, perché il reinit in-place del modulo
+Python non rifà scattare `onCreate` — stesso meccanismo già provato su
+PatchDeck, ma non ancora osservato su ControllerV7); nessun comando
+`set`/`enable`/`disable` reale ricevuto da Gaia via MQTT (solo stato
+interno controllato lato TD); canale 5 (`announce`/`profile`) pubblica
+ma non confermato con un subscriber MQTT esterno.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
