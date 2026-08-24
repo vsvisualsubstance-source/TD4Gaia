@@ -1090,6 +1090,41 @@ Verificato dal vivo con `mosquitto_sub` reale: payload corretto, cadenza
 ~997ms tra due messaggi consecutivi, nessun intervento manuale dopo il
 wiring nel tick per-frame.
 
+**2026-08-24 (TD/Mac, 5)** — Mappatura ControllerV7 ↔ PatchDeck completata:
+canale 0 = **Master** (audio in arrivo), canali 1-48 = i canali di
+PatchDeck. Prima erano 47 istanze (0-46), di cui 35-46 rotte (vedi voce
+sopra); ora sono 49 (0-48), tutte funzionanti.
+
+Diagnosi della rottura 35-46: non un parametro sbagliato isolato, ma un
+clone palette corrotto/incompleto — le espressioni `enable` di widget
+interni (slider/bottoni per mid/high/rythm/snare/spectralCentroid)
+sollevavano eccezione a runtime, affondando in helper annidati (es.
+`rowindexend = me.inputs[0].numRows - 1` con input scollegato). Verificato
+che NON è un problema di path .tox sbagliato (lo stesso pattern
+`externaltox` esiste identico sui canali funzionanti) e che i warning
+"Export not found for parameter ..." sono cosmetici e pre-esistenti anche
+sul canale 0 sorgente (58 warning, zero errori) — non hanno relazione col
+bug reale.
+
+Riparazione: cancellate le 12 istanze rotte (35-46) e ricreate come copie
+dirette di `audioAnalysis0` (`COMP.copy()`, che preserva il wiring
+interno), poi ricollegate a `audiodyna1` (input) e `merge3` (output,
+indice calcolato dinamicamente da `len(merge3.inputs)`, mai hardcoded).
+Stessa procedura usata per costruire ex-novo i canali 47 e 48. Fatto in
+batch (1 + 6 + 7 canali) con controllo performance tra un batch e
+l'altro — la cancellazione di massa (~14.000 operatori) ha causato un
+crollo momentaneo a 1 fps/11s-per-frame, **recuperato da solo in pochi
+secondi** senza intervento; nessun altro stop-condition incontrato nei
+batch di creazione successivi (14 canali × ~1300 operatori ≈ 18.200
+operatori nuovi in totale).
+
+Verificato dal vivo: tutti i 49 canali valutano `Kickdetection` (e gli
+altri 8 campi reattivi) senza eccezioni, `merge3` ha esattamente 49 input
+collegati, `audio_services._NUM_CHANNELS` aggiornato a 49 (era 47,
+588 parametri invece di 564), `channels_error` nel payload
+`audio_levels` ora vuoto — confermato con `mosquitto_sub` reale contro il
+broker, non solo simulazione interna.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
