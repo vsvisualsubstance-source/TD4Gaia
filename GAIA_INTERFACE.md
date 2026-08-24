@@ -27,7 +27,7 @@ Repo Gaia (pubblico, dettaglio completo): `github.com/vsvisualsubstance-source/g
 | 1 | Gaia → TD | OSC/UDP | `7000` | Flatten grezzo di tutto lo stato WS (`/gaia/...`, ~1900 indirizzi) |
 | 2 | Gaia → TD | OSC/UDP | `7001` | Feed curato "TD Canvas" (`/gaia/canvas/...`): mood+palette, oggetti YOLO con seed FNV-1a, luci pulite, lessico, sogno, eventi one-shot |
 | 3 | TD → Gaia | OSC/UDP | `9008` (`OSC_IN_PORT`) | `MoodNudge`: deltas mood/lighting da TD verso Gaia → ripubblicati su MQTT `gaia/touchdesigner/<path>`. **Non attribuito a un device specifico — vedi "Aperto" sotto** |
-| 4 | Gaia ↔ TD | MQTT | `gaia/device/{id}/status` \| `.../command` | Protocollo Pi-Manager: heartbeat leggero + start/stop/restart servizi, più `action:"set"` per valori continui per-parametro (`register_param`, vedi changelog 2026-08-24) — solo ControllerV7 oggi (resto invariato, stesso schema di Pi/OPS/Core) |
+| 4 | Gaia ↔ TD | MQTT | `gaia/device/{id}/status` \| `.../command` \| `.../audio_levels` (solo ControllerV7) | Protocollo Pi-Manager: heartbeat leggero + start/stop/restart servizi, più `action:"set"` per valori continui per-parametro (`register_param`) e `audio_levels` (telemetria live 1Hz, NON retained) — entrambi solo ControllerV7 oggi, vedi changelog 2026-08-24 (resto invariato, stesso schema di Pi/OPS/Core) |
 | 5 | Gaia ↔ TD | MQTT | `gaia/devices/{id}/announce` \| `.../config` \| `.../profile` \| `.../patchdeck_matrix` (solo PatchDeck) | Device Registry autoritativo di Node-RED (room graph, capabilities). **Un device TD deve pubblicare SIA il canale 4 SIA questo — vedi sotto**. `patchdeck_matrix` è specifico di PatchDeck (non pubblicato da altri device TD) — vedi changelog 2026-08-24 |
 | 6 | Gaia → Admin | MQTT | `gaia/td-bridge/status` (retained) \| `.../command` | Pausa/ripresa del canale 1 per singola istanza TD, da Admin → Pi Manager |
 | 7 | Pi/OPS → Admin | MQTT | `gaia/mocap-bridge/{sender_device_id}/status` (retained) \| `.../command` | Mocap grezzo (viso/mani/pose) opt-in per istanza TD — `sender_device_id` è il device mediapipe che manda, non TD |
@@ -1025,6 +1025,70 @@ PatchDeck, ma non ancora osservato su ControllerV7); nessun comando
 `set`/`enable`/`disable` reale ricevuto da Gaia via MQTT (solo stato
 interno controllato lato TD); canale 5 (`announce`/`profile`) pubblica
 ma non confermato con un subscriber MQTT esterno.
+
+**2026-08-24 (TD/Mac, 4)** — Aggiornamento alla voce sopra: i due punti
+"non verificato" sono ora chiusi con un test end-to-end reale (non solo
+simulato) contro il broker (`mosquitto_sub`/`mosquitto_pub` diretti,
+`192.168.1.142:1883`):
+
+- **Canale 4, comando reale**: `mosquitto_pub` di
+  `{"action":"enable","service":"audio_source_live"}` su
+  `gaia/device/td-controllerv7-macbook-air-di-mauro/command` ha
+  effettivamente cambiato `/audioUI/switch1.par.index` in TD (poi
+  ripristinato a "file" con lo stesso meccanismo, per non alterare lo
+  stato del progetto). Round-trip completo confermato, non solo
+  `_apply_command()` diretto.
+- **Canale 5**: `status`/`profile` visti con un subscriber MQTT esterno
+  reale (non solo `dat.isConnected`), payload completo e corretto.
+
+In più, sniffando brevemente `gaia/#` sul broker abbiamo trovato un terzo
+device_id TD su questa stessa macchina, `td-macbook-air-di-mauro`
+(minuscolo, senza `.local`, servizi `osc_in`/`render`/`dmx_out`/
+`mocap_bridge` — i nomi di esempio letterali dal docstring del motore
+condiviso, non i servizi reali di ControllerV7 o PatchDeck). Retained ma
+fermo da ~6h al momento del controllo (nessun heartbeat recente):
+probabile residuo di un altro progetto TD-Gaia non in esecuzione ora, non
+correlato a ControllerV7/PatchDeck. Non toccato, solo segnalato.
+
+**Nuovo: streaming audio live (canale 4, sub-topic)** — ControllerV7
+pubblica ora anche `gaia/device/{id}/audio_levels`, **NON retained**
+(telemetria live, non stato persistente), ogni ~1s via un tick dedicato
+(`audio_services.tick_levels()`, separato dall'heartbeat 30s di
+`status`). Payload:
+
+```json
+{
+  "device_id": "td-controllerv7-macbook-air-di-mauro",
+  "input_level": 0.235,
+  "channels": {
+    "0": {"Low": 0.0, "Mid": 0.0, "High": 0.0, "Kickdetection": 0.0,
+          "Snaredetection": 0.0, "Rythm": 0.0, "Spectralcentroid": 0.09,
+          "Smp": 0.48, "Fmp": 0.90},
+    "...": "..."
+  },
+  "channels_error": [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46],
+  "ts": 1787574813354
+}
+```
+
+- `input_level` — RMS grezzo del segnale audio (dopo lo switch live/
+  file, prima dei 47 rami di analisi), letto da
+  `/audioUI/audiodyna1.numpyArray()`.
+- `channels` — per ogni canale disponibile, i 9 valori REATTIVI
+  calcolati ogni frame dal componente di analisi audio (Low/Mid/High/
+  Kickdetection/Snaredetection/Rythm/Spectralcentroid/Smp/Fmp) — diversi
+  dai parametri di configurazione già su canale 4 (Lowgain ecc., quelli
+  restano su `register_param`/`action:"set"`, invariati).
+- `channels_error` — canali 35-46: non ancora costruiti/configurati in
+  ControllerV7 (stesso stato di placeholder che hanno in PatchDeck),
+  quindi i loro campi live sollevano eccezione se letti — riportati qui
+  esplicitamente invece di essere inventati o omessi silenziosamente.
+  **Non un bug**, uno stato atteso finché quei canali non vengono
+  costruiti.
+
+Verificato dal vivo con `mosquitto_sub` reale: payload corretto, cadenza
+~997ms tra due messaggi consecutivi, nessun intervento manuale dopo il
+wiring nel tick per-frame.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
