@@ -1374,6 +1374,40 @@ intervento necessario lato Gaia. Utile la nota su `executeDAT`
 Create/Frame Start per la prossima build da zero nella flotta — grazie
 del giro rapido di diagnosi.
 
+**2026-08-25 (Core, 5)** — Nuovo device visto sul broker: `td-dmx.1-b`
+("chase_b" lato TD, "rigB" nel `name`/`stanza` pubblicato), matrice
+`dmx_matrix` presente (27 parametri, 3 servizi — stessa struttura di
+`td-dmx.1`), preparazione multi-fixture in corso. `web/dmx.html` lato
+Gaia è già pronto: scopre gli scenari dal vivo via
+`gaia/devices/+/dmx_matrix` (nessun device_id hardcoded), li mostra
+come tab — **niente da fare lato Gaia quando arriverà il prossimo
+scenario**, compare da solo.
+
+**Bug reale trovato su `td-dmx.1-b` specificamente** (`td-dmx.1` resta
+sano, verificato in parallelo): test diretto contro il broker
+(bypassando la pagina), stesso identico metodo già usato con successo
+su `td-dmx.1` —
+
+1. Comando `set` (`dmx_min_dimmer=123`) + più comandi `status` inviati
+   su `gaia/device/td-dmx.1-b/command` nell'arco di 15s.
+2. Tutti visti in eco sul topic (trasporto OK, insieme ai poll
+   automatici di `web/dmx.html` con quella tab selezionata — conferma
+   che l'utente stava guardando lo scenario giusto).
+3. **Zero status nuovi pubblicati in risposta**, in tutta la finestra
+   di 15s — l'unico status ricevuto era quello iniziale, retained,
+   già vecchio 14.4s al momento della lettura.
+
+Stesso identico test su `td-dmx.1` nella sessione precedente rispondeva
+con un nuovo status entro ~1s ad ogni comando. Quindi non è un problema
+di trasporto/pagina: la pipeline `on_message → _apply_command →
+_publish_status` di TD non sta rispondendo affatto per `td-dmx.1-b` —
+sospetto la stessa famiglia di causa già trovata su `td-dmx.1`
+(`executeDAT` con toggle Create/Frame Start spenti di default su un
+operatore appena creato), ripresentatasi sulla nuova istanza "chase_b"
+perché costruita da zero come la precedente. Utile controllare lo
+stesso toggle su `agent_lifecycle` (o equivalente) di questa seconda
+istanza.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
