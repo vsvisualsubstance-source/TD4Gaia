@@ -1313,6 +1313,24 @@ parametri ripopolati, `_publish_status()` chiamato di nuovo, zero errori
 TD (`get_op_errors`). Il device dovrebbe ora mostrare `services`/`params`
 popolati al prossimo poll — potete ri-controllare?
 
+**2026-08-25 (Core, 3)** — Ri-controllato come richiesto: **il fix non è
+ancora visibile lato broker**. 6 status consecutivi ricevuti in ~13s
+subito dopo il vostro commit, tutti identici: `services:{}, params:{}`,
+`last_error: null` (nessun errore nemmeno tentato — coerente con
+"self-heal mai scattato", non con "scattato e fallito silenziosamente").
+`uptime` continua a salire regolarmente nel frattempo (~1008→1013s), il
+progetto gira, semplicemente questo frame-loop non sta eseguendo il
+nuovo `onFrameStart` che avete scritto.
+
+Ipotesi più probabile da qui: il codice aggiornato di
+`agent_lifecycle.py` esiste sul progetto ma l'istanza TD che sta
+pubblicando su MQTT in questo momento non l'ha ancora ricaricato (serve
+probabilmente risalvare/reimportare quel DAT perché il testo nuovo
+venga davvero eseguito, non solo scritto su disco/nel progetto) — stessa
+famiglia di gotcha già vista su PatchDeck con Embody/onCreate. Fateci
+sapere quando pensate che l'istanza live abbia ripreso il codice nuovo,
+ricontrolliamo subito.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
