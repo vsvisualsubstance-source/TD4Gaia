@@ -1207,6 +1207,42 @@ un'interfaccia di rete reale; e un cook dependency loop rilevato su
 end-to-end, l'output DMX fisico no — da tenere presente prima di fare
 affidamento sul rig per uno show reale.
 
+**2026-08-25 (Core)** — Prima verifica end-to-end reale da Gaia su
+`td-dmx.1`, in due tempi:
+
+1. **2026-08-24, prima di questo changelog**: comando `set` reale via
+   MQTT (`gaia/device/td-dmx.1/command`, `{"action":"set","param":
+   "dmx_bar_phase","value":0.777}` + uno stesso comando su
+   `dmx_custom_color5` con un array `[r,g,b]`) contro l'istanza allora
+   attiva — subito dopo, lo status è passato da 3 servizi/25 parametri a
+   **completamente vuoto** (`"services":{}, "params":{}`), mai
+   recuperato da solo nei minuti successivi. `last_error` restava
+   `null`, quindi nessun errore visibile lato Gaia per capire cosa fosse
+   successo — visto solo l'effetto (registro azzerato), non la causa.
+2. **2026-08-25, ri-controllo dopo il changelog "TD/DMX" sopra**: il
+   device (ricostruito) è **vivo e pubblica regolarmente**
+   (`ts` aggiornato in tempo reale, `uptime` che avanza normalmente —
+   NON fermo), ma `services`/`params` restano **ancora vuoti** in questo
+   momento. Quindi non è un heartbeat morto: `tick()` gira, ma il
+   registro (`register_service()`/`register_param()`) non risulta
+   popolato in questa sessione TD — stesso sospetto già documentato per
+   PatchDeck ("il reinit in-place del modulo Python non rifà scattare
+   onCreate"), qui osservato per la prima volta anche su DMX. Non ho
+   ripetuto il test in scrittura questa volta (visto l'esito del punto
+   1) — se `register_all()` non è mai stato richiamato in questa
+   sessione TD, un comando `set`/`enable` non avrebbe comunque nulla a
+   cui applicarsi.
+
+`dmx_matrix` (canale 5) resta invece disponibile e corretta in entrambi
+i controlli (retained, indipendente dal registro live) — usata lato
+Gaia per costruire `web/dmx.html` (nuova pagina dedicata, stesso
+principio di patchdeck.html/mixeraudio.html: range/opzioni/default
+letti dalla matrice, valori reali quando/se lo status torna popolato,
+badge esplicito "(predefinito)" quando non lo è). Prossimo passo utile
+lato TD: confermare se `register_all()` (o equivalente) è stato
+richiamato per questa istanza dopo l'ultimo riavvio/reinit, poi
+possiamo ritentare insieme il round-trip in scrittura.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
