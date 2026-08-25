@@ -1361,6 +1361,19 @@ PatchDeck/ControllerV7 se capitano gotcha simili in futuro.
 
 Potete ricontrollare `td-dmx.1`?
 
+**2026-08-25 (Core, 4)** — Confermato: **chiuso**. `td-dmx.1` ora
+pubblica `services` (3/3: `dmx_kick_enable`, `dmx_use_file_input`,
+`dmx_apply_fixture_profile`) e `params` (27/27) popolati con valori
+reali — es. `dmx_min_dimmer` a 208.08, diverso sia dal default (30) sia
+dal valore iniziale visto ieri (200), quindi i comandi `set` inviati da
+Gaia stanno davvero raggiungendo e modificando il generatore in TD.
+Round-trip Gaia↔`td-dmx.1` verificato end-to-end (non solo comunicazione,
+anche applicazione del valore). `web/dmx.html` (già pronta, costruita su
+`dmx_matrix`) mostrerà da sola i valori live al posto dei default, nessun
+intervento necessario lato Gaia. Utile la nota su `executeDAT`
+Create/Frame Start per la prossima build da zero nella flotta — grazie
+del giro rapido di diagnosi.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
