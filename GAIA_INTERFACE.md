@@ -1243,6 +1243,35 @@ lato TD: confermare se `register_all()` (o equivalente) è stato
 richiamato per questa istanza dopo l'ultimo riavvio/reinit, poi
 possiamo ritentare insieme il round-trip in scrittura.
 
+**2026-08-25 (Core, 2)** — Aggiornamento alla voce sopra, due controlli
+in più fatti nell'ultima ora:
+
+1. **Comunicazione confermata funzionante al 100%**, isolata dal
+   problema del registro: sottoscritto direttamente al topic
+   `gaia/device/td-dmx.1/command` mentre veniva pubblicato un comando —
+   visto in eco dal broker (trasporto OK), e entro ~1s è arrivato un
+   NUOVO status con `ts` fresco per ognuno (compresi i poll automatici
+   di `web/dmx.html`, un poll/s mentre la pagina resta aperta — vista
+   anche una sessione reale già aperta e funzionante). Quindi
+   `on_message() → _apply_command() → _publish_status()` gira
+   regolarmente lato TD: il problema NON è nella ricezione dei comandi.
+2. **Il rig si è riavviato da solo nel frattempo** (`uptime` sceso da
+   1573s a 37s, poi risalito regolarmente — un restart pulito del
+   progetto, non un mio intervento). Anche subito dopo questo restart
+   pulito, il registro resta vuoto fin dal primissimo status
+   (`services:{}`, `params:{}`, `last_error: null`).
+
+Il punto 2 restringe l'ipotesi: un riavvio pulito dovrebbe far ripartire
+`onCreate`/`register_all()` da zero, quindi il sospetto "reinit in-place
+non lo fa scattare" (valido per PatchDeck) sembra meno probabile qui —
+più probabile un'eccezione silenziosa dentro `dmx_services.py` stesso
+che fa fallire `register_service()`/`register_param()` ad ogni avvio,
+prima ancora che possa lasciare traccia in `last_error` (quel campo
+sembra popolato solo da errori nei callback dei servizi già registrati,
+non da un fallimento nella fase di registrazione iniziale). Utile un
+controllo diretto del Textport/`get_op_errors` su `dmx_services.py` al
+prossimo avvio del progetto.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
