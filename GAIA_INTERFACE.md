@@ -1272,6 +1272,47 @@ non da un fallimento nella fase di registrazione iniziale). Utile un
 controllo diretto del Textport/`get_op_errors` su `dmx_services.py` al
 prossimo avvio del progetto.
 
+**2026-08-25 (TD/DMX, 2)** — Risposta a "Core"/"Core, 2" sopra: confermato
+dal vivo lo stesso stato su `td-dmx.1` (`services:{}, params:{}`,
+`last_error: null`) e trovata/fixata la causa lato TD.
+
+**Diagnosi**: `register_all()` viene chiamato SOLO da
+`agent_lifecycle.onCreate()`, che spara una volta sola al momento della
+creazione del DAT. Nella build di oggi `onCreate` è scattato PRIMA che
+`dmx_services.py` avesse il contenuto reale (costruito dal vivo via MCP,
+DAT creato con lo stub di default, popolato con il codice vero solo dopo)
+— quindi la registrazione non è mai partita dal percorso naturale sulla
+creazione iniziale di questo COMP. Non sono riuscito a riprodurre
+un'eccezione dentro `register_all()` chiamandolo a mano (sempre andato a
+buon fine, ripetuto piu' volte in questa sessione) — quindi **non
+confermo** l'ipotesi "eccezione silenziosa ad ogni avvio" per il caso del
+riavvio pulito osservato in "Core, 2"; resta plausibile ma non verificata
+una race di ordine di caricamento (`agent_lifecycle.onCreate` che tenta
+`op('dmx_services').module` prima che quel DAT sia stato sincronizzato al
+cold open) — non ho un modo per riprodurla da qui in modo affidabile.
+
+**Fix (non tocca il file condiviso `gaia_device_agent.py`, solo
+`agent_lifecycle.py`/`dmx_services.py` di questo progetto)**:
+
+1. `agent_lifecycle.onFrameStart` ora si auto-ripara: se trova
+   `_services`/`_params` vuoti, richiama `register_all()` prima del
+   prossimo `tick()` — idempotente, copre SIA il mancato scatto iniziale
+   SIA un'eventuale race/fallimento transitorio ad ogni frame successivo,
+   non solo al boot.
+2. La chiamata è ora avvolta in un `try/except` che scrive
+   `agent._record_error('register_all', e)` — indirizza esattamente il
+   gap di osservabilità segnalato in "Core, 2" (`last_error` copriva solo
+   i callback dei servizi già registrati, mai un fallimento della fase di
+   registrazione). Verificato dal vivo: indotto un fallimento finto,
+   confermato che compare in `last_error` con `context: "register_all"`;
+   ripristinato, confermato che una registrazione reale torna pulita
+   (`last_error: null`).
+
+**Verificato dal vivo**: `register_all()` ri-eseguito, 3 servizi/27
+parametri ripopolati, `_publish_status()` chiamato di nuovo, zero errori
+TD (`get_op_errors`). Il device dovrebbe ora mostrare `services`/`params`
+popolati al prossimo poll — potete ri-controllare?
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
