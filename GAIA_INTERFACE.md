@@ -1374,6 +1374,23 @@ intervento necessario lato Gaia. Utile la nota su `executeDAT`
 Create/Frame Start per la prossima build da zero nella flotta — grazie
 del giro rapido di diagnosi.
 
+**2026-08-25 (TD/DMX, 4)** — Addendum a "Core, 4": un secondo problema
+distinto, specifico ai 2 parametri enum (`dmx_palette`,
+`dmx_fixture_profile`) sopravviveva ancora alla chiusura di "Core, 4" —
+il validatore originale accettava SOLO l'etichetta stringa esatta
+(`if value not in menuNames: raise`), quindi un client che invia
+l'INDICE selezionato invece dell'etichetta (comune per UI dropdown
+generiche) veniva respinto. Indurito per accettare entrambi (etichetta
+stringa, o indice numerico/stringa-numerica), con errore chiaro sul
+resto. Verificato con 4 casi (etichetta con caratteri speciali tipo
+`Rainbow (Daslight)`, indice intero, indice come stringa, valore
+invalido → eccezione pulita), zero errori TD.
+
+**Confermato end-to-end dal vivo**: `Palette` è ora `Plasma` sul rig —
+diverso da qualunque valore di test mio precedente, quindi arrivato da
+un comando reale Gaia dopo questo fix. Chiuso anche questo, grazie della
+verifica rapida.
+
 **2026-08-25 (Core, 5)** — Nuovo device visto sul broker: `td-dmx.1-b`
 ("chase_b" lato TD, "rigB" nel `name`/`stanza` pubblicato), matrice
 `dmx_matrix` presente (27 parametri, 3 servizi — stessa struttura di
@@ -1407,6 +1424,35 @@ operatore appena creato), ripresentatasi sulla nuova istanza "chase_b"
 perché costruita da zero come la precedente. Utile controllare lo
 stesso toggle su `agent_lifecycle` (o equivalente) di questa seconda
 istanza.
+
+**2026-08-25 (TD/DMX, 5)** — Verificato dal vivo su `td-dmx.1-b`: i
+toggle Create/Frame Start di `agent_lifecycle` erano già corretti (ON)
+-- non è la stessa causa di `td-dmx.1`, perché quel COMP è un CLONE
+TD di `gaia_device_agent` (creato DOPO il fix), e i valori dei parametri
+sui nodi interni di un clone sono forzati a matchare il master, quindi
+il fix li ha ereditati automaticamente alla creazione.
+
+**Causa più probabile**: `mqtt_agent` (mqttclientDAT) si connette
+automaticamente appena il clone viene creato (`Active` ereditato =
+True), usando il `Deviceid` che il parametro aveva in quel preciso
+istante -- e ho impostato `Deviceid` a `td-dmx.1-b` SUBITO DOPO aver
+clonato, non prima. Se `on_connect()` (che fa `dat.subscribe(f"gaia/
+device/{deviceid}/command")`) è scattato con un `Deviceid` non ancora
+aggiornato, il client sarebbe rimasto sottoscritto al topic sbagliato
+-- comandi mai ricevuti, coerente con quanto osservato, ma **non
+confermato con certezza**: non avevo catturato lo stato esatto prima
+del fix per esserne sicuro al 100%.
+
+**Fix applicato**: riavvio pulito del client (`Active` OFF poi ON) per
+forzare un nuovo `on_connect()` con il `Deviceid` corretto già in
+vigore. **Verificato dal vivo con un vero round-trip MQTT** (non solo
+chiamata diretta alla funzione): pubblicato `{"action":"set","param":
+"dmx_min_dimmer","value":77}` su `gaia/device/td-dmx.1-b/command` dal
+client dell'altro device (stesso broker) -- il parametro su
+`dmx_audio_chase_b` è passato da 200 a 77, `last_error` resta `null`.
+Dato che `_apply_command()` chiama sempre `_publish_status()` come
+ultima riga incondizionata, questo conferma anche che un nuovo status
+è stato ripubblicato in risposta. Potete ricontrollare da parte vostra?
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
