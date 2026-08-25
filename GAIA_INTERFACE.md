@@ -28,7 +28,7 @@ Repo Gaia (pubblico, dettaglio completo): `github.com/vsvisualsubstance-source/g
 | 2 | Gaia → TD | OSC/UDP | `7001` | Feed curato "TD Canvas" (`/gaia/canvas/...`): mood+palette, oggetti YOLO con seed FNV-1a, luci pulite, lessico, sogno, eventi one-shot |
 | 3 | TD → Gaia | OSC/UDP | `9008` (`OSC_IN_PORT`) | `MoodNudge`: deltas mood/lighting da TD verso Gaia → ripubblicati su MQTT `gaia/touchdesigner/<path>`. **Non attribuito a un device specifico — vedi "Aperto" sotto** |
 | 4 | Gaia ↔ TD | MQTT | `gaia/device/{id}/status` \| `.../command` \| `.../audio_levels` (solo ControllerV7) | Protocollo Pi-Manager: heartbeat leggero + start/stop/restart servizi, più `action:"set"` per valori continui per-parametro (`register_param`) e `audio_levels` (telemetria live 1Hz, NON retained) — entrambi solo ControllerV7 oggi, vedi changelog 2026-08-24 (resto invariato, stesso schema di Pi/OPS/Core) |
-| 5 | Gaia ↔ TD | MQTT | `gaia/devices/{id}/announce` \| `.../config` \| `.../profile` \| `.../patchdeck_matrix` (solo PatchDeck) | Device Registry autoritativo di Node-RED (room graph, capabilities). **Un device TD deve pubblicare SIA il canale 4 SIA questo — vedi sotto**. `patchdeck_matrix` è specifico di PatchDeck (non pubblicato da altri device TD) — vedi changelog 2026-08-24 |
+| 5 | Gaia ↔ TD | MQTT | `gaia/devices/{id}/announce` \| `.../config` \| `.../profile` \| `.../patchdeck_matrix` (PatchDeck) \| `.../dmx_matrix` (DMX V7) | Device Registry autoritativo di Node-RED (room graph, capabilities). **Un device TD deve pubblicare SIA il canale 4 SIA questo — vedi sotto**. `patchdeck_matrix`/`dmx_matrix` sono matrici meccaniche specifiche del device (stesso schema: `kind`/`type`/`range`\|`options`/`default` per param, `kind`/`type` per service) — vedi changelog 2026-08-24 e 2026-08-25 |
 | 6 | Gaia → Admin | MQTT | `gaia/td-bridge/status` (retained) \| `.../command` | Pausa/ripresa del canale 1 per singola istanza TD, da Admin → Pi Manager |
 | 7 | Pi/OPS → Admin | MQTT | `gaia/mocap-bridge/{sender_device_id}/status` (retained) \| `.../command` | Mocap grezzo (viso/mani/pose) opt-in per istanza TD — `sender_device_id` è il device mediapipe che manda, non TD |
 | 8 | Watchdog → Telegram | MQTT | `gaia/notify/telegram` | Alert quando una TD nota è silente >90s (e recovery al ritorno) |
@@ -1161,6 +1161,51 @@ sessione:
   macchina (`PatchDeck V8/PATCHDECK_V8.toe`, ~53% CPU) — non un
   regressione nel progetto (nessun canale con `cookedThisFrame`
   anomalo, `activeOps` allineato al baseline sano).
+
+**2026-08-25 (TD/DMX)** — Nuovo device TD sui canali 4/5: DMX V7
+(device_id `td-dmx.1`, progetto/Envoy separato da PatchDeck/ControllerV7,
+porta Envoy 9872), Stanza="Consolle". Costruito `gaia_device_agent`/
+`mqtt_agent`/`mqtt_agent_callbacks` verbatim (stesso protocollo di
+Pi/OPS/PatchDeck/ControllerV7) dentro `/project1/gaia_device_agent`, più
+un file project-specific `dmx_services.py` che registra i controlli reali
+del generatore chase audio-reattivo (`dmx_audio_chase`) — il rig non ha
+ancora fixture patchate (routing table vuota), quindi sono esposti i
+parametri del generatore, non canali per-fixture:
+
+- 25 `register_param`: dimmer (`dmx_min_dimmer`/`dmx_max_dimmer` 0-255,
+  `dmx_dimmer_boost`, `dmx_dimmer_gamma`), smoothing/color shaping
+  (`dmx_smooth_factor`, `dmx_color_curve`/`_fade`/`_speed`/`_phase`,
+  `dmx_bar_phase`, `dmx_global_smooth`), audio/kick tuning
+  (`dmx_agc_release`, `dmx_min_range`, `dmx_kick_threshold`/`_boost`/
+  `_decay`/`_cooldown`/`_smooth`), fixture patch (`dmx_fixture_count`
+  1-64, `dmx_start_address` 1-512), enum validati contro `menuNames`
+  reali (`dmx_palette` 19 opzioni, `dmx_fixture_profile` 7 profili), 5
+  colori custom RGB (`dmx_custom_color{1-5}`).
+- 3 `register_service`: `dmx_kick_enable` (bool), `dmx_use_file_input`
+  (bool, toggle audio live/file), `dmx_apply_fixture_profile` (action,
+  ripulisce/riallinea `dmx_select`/`dmx_out` alla patch corrente).
+
+Pubblica anche `gaia/devices/{id}/dmx_matrix` (canale 5, retained),
+stesso schema meccanico di `patchdeck_matrix` — range/opzioni/default
+letti dai parametri TD reali via introspezione (`par.min`/`par.max`/
+`par.menuNames`), non hardcodati — vedi tabella "Canali attivi" riga 5
+aggiornata sopra.
+
+Verificato dal vivo: `mqtt_agent` connesso (`isConnected=True`,
+`tcp://192.168.1.142:1883`), get/set round-trip su un parametro reale,
+`_publish_status()`/`publish_matrix()` eseguiti senza eccezioni, zero
+errori TD (`get_op_errors`). **Non ancora verificato**: un comando MQTT
+reale ricevuto DAL broker (solo chiamate dirette alle funzioni finora,
+come i primi giri di PatchDeck/ControllerV7 prima della conferma
+end-to-end).
+
+**Non bloccante, preesistente nel progetto, non causato da questo
+lavoro**: `dmx_out` (dmxoutCHOP) — warning "Unable to specify local
+address", l'uscita DMX fisica probabilmente non raggiunge ancora
+un'interfaccia di rete reale; e un cook dependency loop rilevato su
+`dmx_generator` (scriptCHOP). Il protocollo device è verificato
+end-to-end, l'output DMX fisico no — da tenere presente prima di fare
+affidamento sul rig per uno show reale.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
