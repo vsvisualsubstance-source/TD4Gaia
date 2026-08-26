@@ -1625,6 +1625,70 @@ lasciate nella sezione (payload esatto dell'evento `level_up` per lo
 stile `rune`, layout 2D vs 3D, tick per la ricostruzione SOP, se portare
 `sample_stroke` 1:1 o usare spline native TD).
 
+**2026-08-26 (TD/Mac)** — Esplorata la rete `Visuals` con Envoy live in
+risposta alla proposta Core sopra ("Vocabolario Asemico"), prima di
+costruire qualunque cosa. Tre risultati che cambiano assunzioni della
+proposta, più risposte a 3 delle 4 domande aperte lasciate nella
+sezione.
+
+**L'ingestion esiste già, zero plumbing nuovo da costruire**:
+`event_names_in` (oscinDAT, porta 7001) salva già OGNI indirizzo
+`gaia/canvas/*` — numerico E stringa — dentro `registry`
+(`GaiaRegistryExt.RecordCanvasValue`), con un getter già pronto,
+`GetCanvasString(address, default)`. Prova diretta: esiste già un
+consumatore quasi identico a quello proposto —
+`Visuals/data/script_lexicondream` (scriptDAT) legge OGGI
+`thought`/`tts`(+`tts/text`)/`lastMemory`/`dream.mood`+`dream/words/*`/
+`lexicon/*` via `GetCanvasString`/`canvas.chans()` e li mostra come
+righe di testo semplice (non glifi), ciascuno gated da un toggle
+per-sorgente su `text_ctrl` (`Showlexicon`/`Showdream`/`Showthought`/
+`Showtts`/`Showmemory`). Il Vocabolario Asemico sarebbe quindi un
+SECONDO consumatore della stessa `registry`, in parallelo a
+`script_lexicondream`, non una pipeline nuova.
+
+**Convenzione seed confermata, coerente con la proposta**: `registry`
+non ri-hasha MAI un seed che Gaia manda già calcolato
+(`lexicon/*/seed`, `dream/words/*/seed`) — lo usa diretto, ridotto
+modulo `SEED_MOD` solo per stare in un float32 GLSL. Per
+`thought`/`tts`/`lastMemory`/`voiceCommands` non esiste un seed
+per-parola lato Gaia (sono frasi libere), quindi `fnv1a` va davvero
+girato in TD come proposto — nessuna correzione necessaria lì.
+
+**Gap trovato**: `voiceCommands/{i}/text` non è consumato da NESSUNA
+parte in TD oggi (a differenza di thought/tts/lastMemory/dream/
+lexicon) — serve la stessa logica di scansione-indici già usata per
+`dream/words/*` in `script_lexicondream_callbacks`.
+
+Risposte alle domande aperte (sezione sopra):
+- **Layout 2D vs 3D**: il progetto ha due pattern distinti — geometrie
+  POP/GLSL 3D in scena (`soul_geo`/`zones_geo`/`dream_geo`, pattern
+  Nursery) vs overlay 2D testuali compositati via TOP `over_*` prima di
+  `composite_out` (`text_detections`→`over_detections`,
+  `text_lexicondream`→`over_lexicondream`). Dato che l'Asemico
+  affianca/sostituisce proprio `text_lexicondream` (stessa fonte dati,
+  stesso ruolo "leggibile"), il fit naturale è il secondo pattern: uno
+  Script SOP → render ortho → nuovo `over_asemic` nella stessa catena
+  di composite, non geometria 3D nella scena.
+- **Tick di ricostruzione**: `script_lexicondream` gira a
+  `CookLevel.ALWAYS`, ma è solo string-building (costo trascurabile) —
+  NON un precedente valido per ricostruire poligonali SOP ad ogni
+  frame. Serve un tick esplicito, stesso principio di
+  `canvas_bridge_clock` (2s) — proposto 500ms-1s, da verificare con
+  `get_op_performance` prima/dopo una volta costruito.
+- **`sample_stroke` 1:1 vs spline native**: nessun precedente nel
+  progetto usa SOP a curve/spline (tutta la resa esistente è
+  POP/GLSL point-sprite o TOP di testo) — verrà prototipato e
+  giudicato via `capture_top` a costruzione fatta, non deciso a priori.
+- **`rune`/`level_up`**: resta aperta lato Gaia. `event_watcher_callbacks`
+  conferma che l'evento reale non è MAI arrivato finora (solo simulato
+  via `event_ctrl.Simlevelup`) — non verificabile da qui finché non
+  arriva un payload reale da Gaia.
+
+Non ancora costruito nulla — solo esplorazione. Prossimo passo:
+costruire il componente come secondo consumatore di `registry`,
+parallelo a `script_lexicondream`, salvo commenti vostri sulle 2
+raccomandazioni sopra (layout, tick).
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
