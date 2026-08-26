@@ -33,6 +33,7 @@ Repo Gaia (pubblico, dettaglio completo): `github.com/vsvisualsubstance-source/g
 | 7 | Pi/OPS → Admin | MQTT | `gaia/mocap-bridge/{sender_device_id}/status` (retained) \| `.../command` | Mocap grezzo (viso/mani/pose) opt-in per istanza TD — `sender_device_id` è il device mediapipe che manda, non TD |
 | 8 | Watchdog → Telegram | MQTT | `gaia/notify/telegram` | Alert quando una TD nota è silente >90s (e recovery al ritorno) |
 | 9 | Gaia → TD | MQTT | `gaia/nursery/activate` \| `.../deactivate` \| `.../status` | **PROPOSTA, non ancora costruita** — vedi "Canale 9" sotto |
+| — | Gaia → TD | (usa canale 2 esistente, nessun nuovo trasporto) | `/gaia/canvas/{thought,tts,lastMemory,voiceCommands,dream,lexicon}` | **Vocabolario Asemico — proposta di NUOVO CONSUMATORE lato TD, non ancora costruito** — vedi sezione dedicata sotto |
 
 ## Perché un device TD deve pubblicare SIA canale 4 SIA canale 5
 
@@ -223,6 +224,164 @@ gaia/nursery/status   (TD → Gaia, retained, per Admin/Dashboard)
   changelog) — stesso pattern di `_publish_status()` già in
   `gaia_agent`/`gaia_control`, costo marginale basso e utile da subito
   per il debug della pipeline end-to-end.
+
+## Vocabolario Asemico — component proposto per TD (proposta lato Gaia, niente costruito)
+
+Richiesta utente: portare in TD la stessa "lingua visiva" che Gaia già
+scrive su `welcome.html` e sul display del Pi (`docs/vocabolario-asemico.md`,
+repo Gaia) — glifi inventati ma **deterministici**: la stessa parola
+produce sempre lo stesso segno, su ogni superficie. Non decorazione
+casuale — un vocabolario apprendibile, la stessa identità visiva ovunque.
+
+**Nessun nuovo canale/porta**: tutti i dati necessari viaggiano già sul
+canale 2 esistente (`/gaia/canvas/...`, porta 7001, tick 2s). Questa è
+una proposta di NUOVO CONSUMATORE lato TD, zero modifiche a
+`osc_bridge.py`/Node-RED.
+
+### Dati già disponibili sul canale 2
+
+| Indirizzo | Contenuto | Forma |
+|---|---|---|
+| `/gaia/canvas/thought` | ultimo pensiero spontaneo | testo libero, frase intera |
+| `/gaia/canvas/tts`, `ttsTs`, `ttsRoom` | ultima frase pronunciata ad alta voce | testo libero, frase intera |
+| `/gaia/canvas/lastMemory` | riassunto ultimo ricordo | testo libero, frase intera |
+| `/gaia/canvas/voiceCommands/{i}/text,ts,stanza,via` | ultimi comandi vocali DELLE PERSONE | testo libero, frase intera — è il canale "umano parla" (ink `in`) |
+| `/gaia/canvas/dream/mood`, `words/{parola}/seed` | ultimo sogno notturno | seed GIÀ CALCOLATO per parola |
+| `/gaia/canvas/lexicon/{parola}/count,seed` | lessico personale di Gaia | seed GIÀ CALCOLATO per parola |
+| `/gaia/canvas/event/plant_note/{note,velocity,room,ts}` | nota MIDI AV Herbarium | numero nota MIDI 0-127, non parola — va mappato (vedi sotto) |
+| `/gaia/canvas/soul/mood_rgb/r,g,b` | palette mood corrente | stessi RGB di `web/asemic.js` |
+
+Due categorie diverse, trattamento diverso lato TD:
+- **Seed pre-calcolato** (`lexicon/*`, `dream/words/*`): TD può saltare
+  l'hashing, chiamare `mulberry32(seed)` direttamente.
+- **Frasi intere** (`thought`, `tts`, `lastMemory`, `voiceCommands`): TD
+  riceve testo libero, non pre-spezzato in parole — serve la pipeline
+  completa (hashing incluso) lato TD, una parola alla volta, stesso
+  comportamento di `AsemicField.say()` in `web/asemic.js`.
+
+### L'algoritmo di riferimento — MAI approssimare
+
+**Regola d'oro (`docs/vocabolario-asemico.md`, repo Gaia): "L'algoritmo
+È la lingua"**. Qualunque porting che replica seed e ordine di chiamate
+al PRNG produce gli stessi glifi; un refactor "equivalente" che cambia
+l'ordine delle chiamate a `rnd()` cambia TUTTA la lingua retroattivamente
+su ogni superficie che la mostra. Sotto il porting Python di riferimento
+già in produzione su `pi/screen/asemic_engine.py` (repo Gaia,
+dependency-free, verificato in parità con `web/asemic.js`) — **copiare
+verbatim in un Python DAT**, non "migliorare" la costruzione:
+
+```python
+def fnv1a(text: str) -> int:
+    h = 2166136261
+    for ch in text.lower():
+        h ^= ord(ch)
+        h = (h * 16777619) & 0xFFFFFFFF
+    return h
+
+
+def mulberry32(seed: int):
+    state = seed & 0xFFFFFFFF
+    def rnd() -> float:
+        nonlocal state
+        state = (state + 0x6D2B79F5) & 0xFFFFFFFF
+        t = state
+        t = ((t ^ (t >> 15)) * (t | 1)) & 0xFFFFFFFF
+        t = (t ^ ((t + (((t ^ (t >> 7)) * (t | 61)) & 0xFFFFFFFF)) & 0xFFFFFFFF)) & 0xFFFFFFFF
+        return ((t ^ (t >> 14)) & 0xFFFFFFFF) / 4294967296
+    return rnd
+
+
+def glyph_for(word: str) -> dict:
+    """Stessa costruzione (stesso ORDINE di chiamate rnd) di asemic.js."""
+    rnd = mulberry32(fnv1a(word.lower()))
+    strokes = []
+    n_strokes = min(5, 2 + len(word) // 3 + (1 if rnd() < 0.3 else 0))
+    for _ in range(n_strokes):
+        pts = []
+        n_pts = 2 + int(rnd() * 3)
+        x = 0.05 + rnd() * 0.30
+        y = 0.18 + rnd() * 0.64
+        for _i in range(n_pts):
+            pts.append((x, y))
+            x += 0.16 + rnd() * 0.34
+            y = max(0.04, min(0.96, y + (rnd() - 0.5) * 0.75))
+        strokes.append(pts)   # quadratiche verso i punti medi, vedi sample_stroke
+    # ATTENZIONE: il ternario corto-circuita in JS — le rnd() del punto
+    # diacritico si consumano SOLO se il primo test passa. Riprodurre lo
+    # stesso corto-circuito qui, non valutare sempre entrambi i rami.
+    dot = {"x": 0.2 + rnd() * 0.6, "y": 0.06 if rnd() < 0.5 else 0.97} if rnd() < 0.28 else None
+    return {"strokes": strokes, "dot": dot, "bar": rnd() < 0.18, "wide": 0.75 + rnd() * 0.45}
+```
+
+Campionamento tratto (quadratiche verso i punti medi, per un disegno
+morbido invece di segmenti spezzati) — `sample_stroke()` completa in
+`pi/screen/asemic_engine.py`, stesso repo. Se TD disegna con SOP/curve
+native (es. spline attraverso i punti di controllo), il campionamento
+manuale può non servire — verificare cosa produce il risultato visivo
+più fedele con gli strumenti nativi di TD prima di portare anche quella
+funzione.
+
+### Frase → glifi (equivalente di `AsemicField.say()`)
+
+Split su spazi, **cap 26 parole** per frase (stesso limite di
+`web/asemic.js`), un glifo per parola, layout sinistra→destra. Cache
+globale parola→glifo (evita ricalcolo, i glifi sono a costo quasi zero
+ma è comunque lo stesso pattern usato in tutte le implementazioni
+esistenti).
+
+### Stile/inchiostro — valori CONFERMATI da `web/asemic.js`
+
+| Stile | Sorgente | RGB | width | speed | note |
+|---|---|---|---|---|---|
+| `out` | Gaia parla (`thought`, `tts`) | `0,255,204` base, muta col mood (tabella sotto) | 1.7 | 1.0 | banda alta canvas (0.24) |
+| `in` | umano parla (`voiceCommands`) | `88,166,255` fisso | 2.2 | — | banda bassa (0.63), NON segue il mood — è identità, non stato |
+| `dream` | sogno notturno (`dream/*`) | `190,135,255` | 1.6 | 0.55 (lento) | tenuta lunghissima 75s (vs 9s normale) |
+| `herb` | nota pianta (`event/plant_note`) | `120,240,110` | 1.9 | — | banda 0.44; nota MIDI → parola solfeggio (`do,dodiesis,re,...`), non testo libero — mappa in `pi/screen/asemic_engine.py`/Node-RED |
+| `rune` | level-up gioco | `255,214,90` | 2.4 | — | **non ancora sul canale 2** — vedi domanda aperta sotto |
+
+`mood_rgb` (già su `/gaia/canvas/soul/mood_rgb`) guida SOLO l'inchiostro
+`out` — palette per mood: neutra `0,255,204`, calm `80,230,190`, stress
+`255,115,85`, social `255,195,100`, curiosity `190,135,255`. L'inchiostro
+`in` resta blu fisso apposta (identità della persona, non stato di Gaia).
+
+### Proposta di implementazione TD (da verificare/correggere con Envoy)
+
+1. **Python DAT "Module"** con `fnv1a`/`mulberry32`/`glyph_for` verbatim
+   sopra + una funzione `say(text, ink)` che spezza in parole e calcola
+   i glifi.
+2. **Buffer frasi correnti**, stesso principio di `pi/screen` (`_sentences`,
+   lista capata a poche voci — 3 lì, valore da tarare a occhio in TD):
+   ogni nuovo `thought`/`tts`/`lastMemory`/`voiceCommands`/`dream.mood`
+   ricevuto aggiunge una frase con timestamp+ink; le più vecchie
+   scadono/vengono espulse.
+3. **Script SOP/CHOP** che ad ogni cook (o a un tick più basso, il testo
+   non cambia a 60fps) ricostruisce le polilinee dai punti di
+   `glyph_for()` per le frasi correnti — colore/width/alpha dallo stile
+   della tabella sopra.
+4. **Superficie**: aperto — schermo 2D compositato (stesso principio di
+   `welcome.html`, un layer di scrittura sopra la scena) o geometria 3D
+   nella scena (proiettata su una parete/oggetto)? Decisione lato TD/
+   artistica, non ha impatto sui dati.
+
+### Domande aperte per la sessione TD/Envoy
+
+- **`rune` (level-up gioco)**: l'evento `/gaia/canvas/event/level_up/...`
+  esiste già sul canale 2 ma i campi esatti pubblicati oggi non sono
+  stati riverificati per questa proposta (memoria precedente: `{level,
+  class, asset}` lato Node-RED, non confermato cosa arriva letteralmente
+  su OSC). Se serve lo stile `rune`, prima verificare/completare quel
+  campo lato Gaia (aggiungere `asset`/parola runa al payload evento se
+  manca) — non assumere che sia già lì.
+- **Layout/superficie**: 2D compositato vs 3D in scena — quale si
+  adatta meglio al resto della rete TD attuale?
+- **Costo per-cook**: `glyph_for()` è economico ma un Python DAT che
+  ricostruisce SOP ad ogni frame per più frasi in parallelo può non
+  esserlo — serve un tick esplicito (es. ogni 500ms-1s, il testo non
+  cambia a frame-rate) invece di un cook continuo? Stesso principio già
+  usato per `canvas_bridge` (tick 2s, non ogni frame).
+- **`sample_stroke()` (campionamento quadratico)**: portarlo 1:1 o usare
+  spline native di TD sui punti di controllo grezzi? Impatto solo
+  estetico, non sul determinismo (che vive tutto in `glyph_for`).
 
 ## Changelog / interscambio
 
@@ -1453,6 +1612,18 @@ client dell'altro device (stesso broker) -- il parametro su
 Dato che `_apply_command()` chiama sempre `_publish_status()` come
 ultima riga incondizionata, questo conferma anche che un nuovo status
 è stato ripubblicato in risposta. Potete ricontrollare da parte vostra?
+
+**2026-08-26 (Core)** — Nuova proposta (niente costruito): **Vocabolario
+Asemico** come component TD, vedi sezione dedicata sopra ("Vocabolario
+Asemico — component proposto per TD"). Nessun nuovo canale/porta — usa
+dati già presenti sul canale 2 esistente (`thought`/`tts`/`lastMemory`/
+`voiceCommands`/`dream`/`lexicon`). Portato l'algoritmo di riferimento
+(`fnv1a`→`mulberry32`→`glyph_for`, verbatim da `pi/screen/asemic_engine.py`
+nel repo Gaia, già in produzione e parità-testato con `web/asemic.js`) più
+la mappa stili/inchiostro confermata dal codice sorgente. 4 domande aperte
+lasciate nella sezione (payload esatto dell'evento `level_up` per lo
+stile `rune`, layout 2D vs 3D, tick per la ricostruzione SOP, se portare
+`sample_stroke` 1:1 o usare spline native TD).
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
