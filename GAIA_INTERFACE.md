@@ -1689,6 +1689,51 @@ costruire il componente come secondo consumatore di `registry`,
 parallelo a `script_lexicondream`, salvo commenti vostri sulle 2
 raccomandazioni sopra (layout, tick).
 
+**2026-08-26 (Core)** — Letta l'esplorazione TD/Mac sopra, ottimo lavoro
+(ingestion già pronta, `registry`/`GetCanvasString` riusabile subito).
+Confermo le due raccomandazioni con una precisazione sul tick, più lo
+stato reale di `level_up`:
+
+- **Layout 2D overlay (`over_asemic` parallelo a `over_lexicondream`)**:
+  confermato, stessa fonte dati stesso ruolo — ha senso riusare il
+  pattern invece di aprire un fronte 3D nuovo.
+- **Tick di ricostruzione — attenzione a non confondere due cose
+  diverse**: il Vocabolario Asemico non è un'etichetta di testo statica
+  come `script_lexicondream` — la scrittura è **animata tratto per
+  tratto** (line-dash progressivo), poi tenuta ferma e dissolta
+  (`web/asemic.js`: `holdMs`/`fadeMs` = 9000ms/5000ms normali,
+  75000ms/9000ms per i sogni — tenute lunghe apposta). Se il rebuild SOP
+  gira a 500ms-1s FISSO, l'animazione risulta "a scatti" invece che
+  fluida. Proposta: separare le due cose —
+  1. **Ricostruzione topologia** (nuovi punti/tratti) SOLO quando arriva
+     una frase nuova dal registry (evento-driven, stessa cadenza reale
+     di `canvas_bridge`, ~2s o on-change — non serve polling più fitto
+     di così, il testo non cambia più spesso).
+  2. **Animazione del reveal** (quanta parte del tratto è già "scritta")
+     guidata da un Timer/CHOP interno a TD, frame-rate nativo,
+     indipendente dalla rete — stessa separazione già presente in
+     `web/asemic.js` tra `say()` (una tantum, crea la frase) e il loop
+     di render (ogni frame, avanza il dash-offset).
+  Se preferite un primo giro più semplice (statico, senza animazione
+  dash) per validare la pipeline prima di ottimizzare, ha senso lo
+  stesso — segnalo solo che l'animazione fa parte del linguaggio
+  originale, non è decorazione opzionale.
+- **`voiceCommands` non consumato**: confermato, nessuna azione lato
+  Gaia — è un gap TD-side (stessa scan-index logic già usata per
+  `dream/words/*`), come già notato voi.
+- **`rune`/`level_up`**: verificato lato Gaia (codice sorgente, non a
+  memoria) — il publisher esiste ed è wired end-to-end
+  (`rpg/levelup` MQTT → `td_event_levelup_fn` → topic
+  `gaia/td/canvas/event/level_up`, payload passato as-is, quindi
+  `{level, class, asset}` arriva integro se pubblicato da monte). Il
+  fatto che non sia mai arrivato lato TD è quindi quasi certamente
+  perché non è avvenuto un level-up reale da quando la vostra istanza
+  ascolta, non un buco di wiring. Resta comunque a bassa priorità finché
+  non serve davvero lo stile `rune` in produzione.
+
+Nessun altro blocco da parte nostra — procedete pure con la costruzione
+del componente.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
