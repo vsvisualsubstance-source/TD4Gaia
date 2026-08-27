@@ -1344,6 +1344,25 @@ parametri del generatore, non canali per-fixture:
   (bool, toggle audio live/file), `dmx_apply_fixture_profile` (action,
   ripulisce/riallinea `dmx_select`/`dmx_out` alla patch corrente).
 
+**REGOLA — `Deviceid` univoco e STABILE per ogni istanza, anche dentro
+lo stesso progetto TD (trovato dal vivo 2026-08-27, vedi changelog
+sotto per la cronologia completa)**: un rig DMX clonato per fare da
+"Rig B" a partire dal "Rig A" originale eredita `Deviceid`/`Name` dal
+master al momento della clonazione (stesso meccanismo già noto per
+`td-dmx.1-b`, sezione "TD/DMX, 5" sotto) — se non si rinominano
+ESPLICITAMENTE entrambi subito dopo aver clonato, i due rig finiscono
+per pubblicare con lo stesso nome (a volte anche lo stesso device_id),
+indistinguibili lato Gaia pur essendo canali MQTT tecnicamente separati.
+In più, se `Deviceid` viene generato automaticamente (non un valore
+fisso scritto a mano) invece di essere impostato manualmente una volta
+sola, OGNI riavvio di TD genera un ID nuovo — il vecchio resta orfano
+come retained sul broker (mai pulito da solo), il nuovo va riscoperto
+da zero lato Gaia. **Fix adottato**: `Deviceid` manuale e fisso per
+istanza (oggi `td-dmx-ops-a`/`td-dmx-ops-b` per i due rig su OPS),
+mai rigenerato, mai condiviso tra istanze — vale per QUALUNQUE device
+agent clonato in futuro (DMX, PatchDeck, ControllerV7 o altro), non
+solo per questo rig specifico.
+
 Pubblica anche `gaia/devices/{id}/dmx_matrix` (canale 5, retained),
 stesso schema meccanico di `patchdeck_matrix` — range/opzioni/default
 letti dai parametri TD reali via introspezione (`par.min`/`par.max`/
@@ -1733,6 +1752,54 @@ stato reale di `level_up`:
 
 Nessun altro blocco da parte nostra — procedete pure con la costruzione
 del componente.
+
+**2026-08-27 (Core)** — Sessione di debug dal vivo su `web/dmx.html`
+(pagina Gaia), utente segnalava "fa fatica a partire" + "carico una
+palette da TD, canale B appare, canale A no". Cronologia reale trovata
+sul broker (non ricostruita a memoria):
+
+1. **Causa slowness**: `dmx.html` (+ admin/patchdeck/mixeraudio/musica)
+   caricavano `mqtt.js` da un CDN esterno (`unpkg.com`) ad ogni apertura
+   pagina — rottura diretta del principio "Gaia resta offline". I dati
+   MQTT stessi sono risultati istantanei nei test dal vivo (3ms per i
+   retained) — il collo di bottiglia era lo script esterno, non il
+   protocollo. Vendorizzato `mqtt.js` localmente su tutte e 5 le pagine,
+   fix lato Gaia, chiuso.
+2. **Causa "canale A non appare"**: **non un bug della pagina** — sul
+   broker, nell'arco della serata, sono comparsi e scomparsi in
+   sequenza `td-dmx.1` (mai tornato), `td-dmx.1-b`, `td-dmx.4`/`.5`
+   (residui da una macchina diversa, IP `.135`), `td-dmx.6`, `td-dmx.7`,
+   perfino un `td-dmx.7.toe` (suffisso file di progetto finito nell'id
+   per errore) — **6+ device_id diversi in una sera per quelli che
+   dovevano essere 2 rig fissi**. Causa root: `Deviceid` generato
+   automaticamente ad ogni riavvio TD invece di essere fisso, più
+   `Name` ereditato dal master alla clonazione mai corretto (entrambi
+   i rig risultavano "DMX Rig B" nello stesso momento) — vedi REGOLA
+   aggiunta sopra nella sezione DMX V7. **Fix applicato dall'utente**:
+   `Deviceid` manuale e stabile, ora `td-dmx-ops-a`/`td-dmx-ops-b`,
+   nomi distinti confermati ("DMX Rig A"/"DMX Rig B"), entrambi con
+   `dmx_matrix` + `status` pubblicati (27 parametri ciascuno,
+   verificato dal vivo). Pulito a mano il broker (14 topic retained
+   totali tra i vecchi id) su richiesta esplicita — nessun altro
+   device_id DMX residuo dopo la pulizia, verificato.
+3. **Due bug reali lato pagina, trovati per esclusione dopo aver
+   confermato che i dati sul cavo erano sani** (70s di ascolto passivo
+   + 40s di polling attivo identico a quello della pagina, mai un calo
+   di parametri): (a) la tab attiva di default era "il primo
+   `dmx_matrix` che arriva" — con più scenari registrati l'ordine di
+   consegna dei retained non è garantito, un reload poteva atterrare
+   su un device diverso ogni volta; aggiunta memoria (localStorage)
+   dell'ultima tab scelta, con timeout di grazia 5s se il device
+   ricordato non si ripresenta più. (b) una tab appena attiva
+   costruiva subito gli slider con i valori di DEFAULT della matrice
+   (vicini a zero) prima che arrivasse il primo status live —
+   percepito come "appare a zero poi vedo i valori poi torna a zero";
+   ora mostra un'attesa esplicita finché non arriva un status vero,
+   niente più valori fittizi spacciati per reali.
+
+Nessuna azione richiesta a voi per i punti 1 e 3 (chiusi lato Gaia).
+Per il punto 2, la regola nella sezione DMX V7 sopra vale per qualunque
+device agent clonato in futuro, non solo per questo rig.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
