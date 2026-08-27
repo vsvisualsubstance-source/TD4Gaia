@@ -29,7 +29,7 @@ Repo Gaia (pubblico, dettaglio completo): `github.com/vsvisualsubstance-source/g
 | 3 | TD → Gaia | OSC/UDP | `9008` (`OSC_IN_PORT`) | `MoodNudge`: deltas mood/lighting da TD verso Gaia → ripubblicati su MQTT `gaia/touchdesigner/<path>`. **Non attribuito a un device specifico — vedi "Aperto" sotto** |
 | 4 | Gaia ↔ TD | MQTT | `gaia/device/{id}/status` \| `.../command` \| `.../audio_levels` (solo ControllerV7) | Protocollo Pi-Manager: heartbeat leggero + start/stop/restart servizi, più `action:"set"` per valori continui per-parametro (`register_param`) e `audio_levels` (telemetria live 1Hz, NON retained) — entrambi solo ControllerV7 oggi, vedi changelog 2026-08-24 (resto invariato, stesso schema di Pi/OPS/Core) |
 | 5 | Gaia ↔ TD | MQTT | `gaia/devices/{id}/announce` \| `.../config` \| `.../profile` \| `.../patchdeck_matrix` (PatchDeck) \| `.../dmx_matrix` (DMX V7) | Device Registry autoritativo di Node-RED (room graph, capabilities). **Un device TD deve pubblicare SIA il canale 4 SIA questo — vedi sotto**. `patchdeck_matrix`/`dmx_matrix` sono matrici meccaniche specifiche del device (stesso schema: `kind`/`type`/`range`\|`options`/`default` per param, `kind`/`type` per service) — vedi changelog 2026-08-24 e 2026-08-25 |
-| 6 | Gaia → Admin | MQTT | `gaia/td-bridge/status` (retained) \| `.../command` | Pausa/ripresa del canale 1 per singola istanza TD, da Admin → Pi Manager |
+| 6 | Gaia → Admin | MQTT | `gaia/td-bridge/status` (retained) \| `.../command` | Pausa/ripresa del canale 1 per singola istanza TD, da Admin → Pi Manager. **Dal 2026-08-27**: lo stesso watchdog (`TDDeviceRegistry`) pulisce anche i retained (canale 4/5) di un device silente da 48h+, notifica su `gaia/notify/telegram` |
 | 7 | Pi/OPS → Admin | MQTT | `gaia/mocap-bridge/{sender_device_id}/status` (retained) \| `.../command` | Mocap grezzo (viso/mani/pose) opt-in per istanza TD — `sender_device_id` è il device mediapipe che manda, non TD |
 | 8 | Watchdog → Telegram | MQTT | `gaia/notify/telegram` | Alert quando una TD nota è silente >90s (e recovery al ritorno) |
 | 9 | Gaia → TD | MQTT | `gaia/nursery/activate` \| `.../deactivate` \| `.../status` | **PROPOSTA, non ancora costruita** — vedi "Canale 9" sotto |
@@ -1356,9 +1356,13 @@ indistinguibili lato Gaia pur essendo canali MQTT tecnicamente separati.
 In più, se `Deviceid` viene generato automaticamente (non un valore
 fisso scritto a mano) invece di essere impostato manualmente una volta
 sola, OGNI riavvio di TD genera un ID nuovo — il vecchio resta orfano
-come retained sul broker (mai pulito da solo), il nuovo va riscoperto
-da zero lato Gaia. **Fix adottato**: `Deviceid` manuale e fisso per
-istanza (oggi `td-dmx-ops-a`/`td-dmx-ops-b` per i due rig su OPS),
+come retained sul broker (**aggiornamento 2026-08-27 sera**: ora si
+ripulisce DA SOLO dopo 48h di silenzio, vedi "Canale 6" nella tabella
+sopra e il changelog "Core" più recente sotto — non serve più pulirlo a
+mano come stasera, ma nelle prime 48h resta comunque visibile/duplicato),
+il nuovo va riscoperto da zero lato Gaia. **Fix adottato**: `Deviceid`
+manuale e fisso per istanza (oggi `td-dmx-ops-a`/`td-dmx-ops-b` per i
+due rig su OPS),
 mai rigenerato, mai condiviso tra istanze — vale per QUALUNQUE device
 agent clonato in futuro (DMX, PatchDeck, ControllerV7 o altro), non
 solo per questo rig specifico.
@@ -1800,6 +1804,25 @@ sul broker (non ricostruita a memoria):
 Nessuna azione richiesta a voi per i punti 1 e 3 (chiusi lato Gaia).
 Per il punto 2, la regola nella sezione DMX V7 sopra vale per qualunque
 device agent clonato in futuro, non solo per questo rig.
+
+**2026-08-27 sera (Core)** — Su richiesta esplicita dopo l'ennesimo giro
+di rename/test DMX ("gli agent dmx hanno sporcato il broker"), esteso
+`TDDeviceRegistry` (`osc_bridge.py`, lo stesso watchdog del canale 6)
+con una pulizia automatica: un device TD (qualunque, non solo DMX —
+`role=="touchdesigner"` come per il resto della classe) silente da
+**48h+** viene ripulito da solo — tutti i retained canale 4/5
+(`status`/`announce`/`config`/`profile`/`dmx_matrix`/`patchdeck_matrix`)
+cancellati, notifica su `gaia/notify/telegram` con quanto era silente.
+Soglia deliberatamente molto più lunga dei 90s usati per l'alert
+online/offline esistente: un rig spento per la notte non deve perdere
+la sua matrice (configurazione/calibrazione vera) solo per una pausa
+breve. Verificato dal vivo end-to-end con un device sintetico (ts finto
+a 51h): REAP scattato al primo ciclo watchdog utile (30s), notifica
+Telegram ricevuta col testo giusto, zero retained residui dopo. Nessuna
+azione richiesta lato TD — è tutto lato Gaia, trasparente per voi;
+menzionato qui solo perché se un vostro test resta silente per 2 giorni
+la sua matrice sparirà da sola dal broker, non è un bug se poi non la
+trovate più.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
