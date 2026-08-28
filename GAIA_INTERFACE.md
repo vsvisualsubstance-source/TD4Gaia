@@ -2152,6 +2152,58 @@ supportare canali futuri, modulo Nursery opzionale. Nessuna azione
 richiesta a voi finché qualcuno non inizia davvero a costruirlo — è un
 brief, non un blocco.
 
+**2026-08-28 (TD/Mac)** — PatchDeck cambia device_id e agent Gaia: da
+`td-MacBook-Air-di-Mauro.local` (`gaia_agent`/`gaia_device_agent`, ora
+**eliminati** dal progetto, non solo disattivati) a `PatchDeck-Mac-Mauro`
+su un nuovo componente portabile `/gaia_client` (lo stesso che si vuole
+riusare su ogni progetto TD, vedi Embody/memoria locale — esportato
+anche come `gaia_client_portable.tox`).
+
+**Causa del cambio**: due istanze TD sulla stessa macchina (o due
+progetti diversi) generavano lo stesso device_id di default
+(`td-{hostname}`), collidendo sullo stesso topic retained. Fix
+lato TD/Mac: se `Deviceid` è lasciato vuoto, il default ora è
+`td-{nome progetto}-{hash a 6 char della cartella progetto}` — stabile
+tra un riavvio e l'altro, ma distinto per progetto/cartella. PatchDeck
+oggi usa comunque un id esplicito (`PatchDeck-Mac-Mauro`), non
+l'auto-generato.
+
+**Canale 5 (`patchdeck_matrix`, 78 servizi deck_a/deck_b + load_x1..38
+per deck)**: schema INVARIATO, stesso publish retained descritto nella
+voce 2026-08-24 sopra, solo spostato di file — lo script che lo
+pubblica ora vive in `/PATCHDECK/gaia_services/patchdeck_services.py`
+(un componente piccolo, tenuto FUORI da `gaia_client` apposta per non
+comprometterne la portabilità cross-progetto). Trovato e fissato nello
+stesso giro un bug di lunga data: `register_all()` usciva subito se i
+servizi erano già registrati, saltando anche `publish_matrix()` — la
+primissima registrazione (da `onCreate`, prima che l'MQTT si connetta)
+falliva quasi sempre il publish in silenzio, e nessuno lo ritentava mai
+più dopo. Verificato dal vivo con una sottoscrizione mirata al topic:
+retained message presente, 5172 byte.
+
+**Retained del vecchio id ripuliti lato TD**: pubblicati payload vuoti
+retained su `gaia/device/td-MacBook-Air-di-Mauro.local/status`,
+`gaia/devices/.../profile` e `.../patchdeck_matrix` — verificato che
+non tornano più nulla. **Non toccato, serve occhio lato Gaia**: nello
+stesso giro ho visto `td-MacBook-Air-di-Mauro.local` ancora presente
+come "target" nei payload propri di (almeno) `gaia/mocap-bridge/
+ops-silvermini2/status` e `gaia/td-bridge/status` — registri/stato
+persistiti lato Gaia (non retained MQTT), quindi il clear da qui non
+li tocca. Se qualche redirect (es. mocap diretto) chiave ancora su
+quell'id letterale, va aggiornato o spento a mano lato Gaia.
+
+**Cross-repo, da verificare lato Gaia**: il vecchio agent aveva un
+commento esplicito ("MUST be 'td-{hostname}' exactly to match
+mediapipe_node.py's direct-mocap redirect target") — non ho trovato
+`mediapipe_node.py` in questo repo per controllare/aggiornare il
+redirect, quindi se esiste altrove e tiene ancora
+`td-MacBook-Air-di-Mauro.local` come chiave per instradare il mocap
+diretto a PatchDeck, quel redirect è rotto da oggi. Il nuovo
+`gaia_client` pubblica già il proprio `ip` nello status/profile
+proprio per questo scopo — se il redirect può migrare a un match per
+IP invece che per device_id, evita che ricapiti lo stesso problema al
+prossimo cambio id.
+
 **2026-08-28 (Core)** — Migrazione di PatchDeck al nuovo Agent
 universale (device_id `td-MacBook-Air-di-Mauro.local` -> nuovi tentativi
 `ClieentTestportable`/`td-gaia_client_portable.1-f6f773` ->
