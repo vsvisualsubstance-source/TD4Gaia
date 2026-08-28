@@ -383,6 +383,115 @@ esistenti).
   spline native di TD sui punti di controllo grezzi? Impatto solo
   estetico, non sul determinismo (che vive tutto in `glyph_for`).
 
+## Gaia Agent Universale — proposta `.tox` riutilizzabile per TD (proposta lato Gaia, niente costruito)
+
+Motivazione diretta: la sessione di stasera (2026-08-27) su DMX/PatchDeck
+ha speso ore a inseguire sintomi (device che sparisce, palette che non
+si applica, bottoni che non si accendono) la cui causa reale era sempre
+la stessa manciata di problemi strutturali nell'agent copiato a mano
+progetto per progetto — vedi "REGOLA Deviceid" più sopra e il changelog
+"Core" del 27 agosto. Un `.tox` unico, versionato, pensato per essere
+droppato in qualunque progetto TD futuro, chiude quei problemi alla
+radice invece di continuare a riscoprirli.
+
+### 1. `Deviceid`/`Name` — il problema numero uno di stasera
+
+Parametro custom **vuoto di default**, mai auto-generato, mai popolato
+per default in fase di build/clone. Se vuoto, l'agent non si connette
+e il COMP mostra un badge rosso ben visibile ("Deviceid non
+impostato") — deve essere impossibile clonare un rig e dimenticarsene,
+a differenza di oggi dove il valore ereditato dal master sembrava
+valido e non lo era (stesso meccanismo già noto per `td-dmx.1-b`,
+sezione "TD/DMX, 5"). `Name`/`Stanza` stesso trattamento — se vuoto può
+derivare da `Deviceid` come fallback, mai il contrario.
+
+### 2. Affidabilità di `register_service()`/`register_param()` — il problema numero due
+
+Causa vista due volte stasera (PatchDeck e DMX Rig A prima del fix): un
+`executeDAT` con i toggle Create/Frame Start spenti di default,
+silenzioso, nessun errore visibile né lato TD né lato Gaia. Il `.tox`
+dovrebbe:
+- Accendere quei toggle esplicitamente come parte del proprio setup —
+  non fare affidamento sui default di TD per un operatore appena creato.
+- Un **self-check periodico**: se il componente si aspetta N servizi ma
+  il registro interno ne ha 0, loggare un warning ben visibile in TD
+  (non solo silenzio) e ritentare la registrazione da solo.
+- Un bottone manuale "Ri-registra" sul COMP per recuperare al volo
+  senza riavviare tutto TD.
+
+### 3. Discovery del broker — automatico + manuale, LAN prima di Tailscale
+
+Stesso principio già costruito lato Gaia (`net_resolve.py`, usato per
+Pi/OPS — vedi `docs/discovery-protocol.md` nel repo Gaia): prova prima
+la LAN (beacon locale `gaia_beacon`, già verificato dal vivo — vedi
+changelog "TD/Mac" per `Brokerhost`/`Corehost` auto-scoperti), timeout
+breve (~1-2s), poi Tailscale come fallback se configurato (hostname/IP
+manuale), altrimenti resta scollegato senza bloccare. **Mai un
+requisito online per il funzionamento base** — stesso principio "Gaia
+resta offline" già non negoziabile lato Gaia (vedi demo portatile,
+zero internet by design). Indicatore di stato connessione chiaro sul
+COMP (verde/rosso), non solo nei log.
+
+### 4. Pubblica SEMPRE entrambi i canali (4 e 5)
+
+Canale 4 (`gaia/device/{id}/status|command`, protocollo Pi-Manager) E
+canale 5 (`gaia/devices/{id}/announce|config|profile|{family}_matrix`,
+Device Registry) — vedi sezione "Perché un device TD deve pubblicare
+SIA canale 4 SIA canale 5" più sopra, bug reale già trovato e fissato
+il 2026-08-06 per lo stesso motivo (un device che pubblica solo il 4
+non compare mai nel room-graph/Dashboard). Il `.tox` deve farli
+scattare insieme dallo stesso trigger, non lasciarli come due pezzi
+separati da ricordarsi ogni volta.
+
+### 5. Servizi on/off — protocollo invariato, solo più robusto
+
+Tenere `{action:"enable"|"disable"|"restart"|"set", service|param,
+value}` così com'è — è quello testato dal vivo tutta la sera (DMX,
+PatchDeck, mediaplayer/livestream lato Pi). L'API di registrazione
+(`register_service(name, get, set)`/`register_param(name, get, set,
+range?, options?)`) resta il punto di estensione per lo script
+specifico del progetto (come `dmx_services.py` oggi) — il core del
+`.tox` deve restare generico e non sapere nulla di DMX/PatchDeck/altro.
+
+### 6. OSC multipli — dichiarativo, non hardcoded (pensando avanti)
+
+Oggi ogni canale OSC è un OSC In/Out DAT dedicato con porta fissa — se
+in futuro se ne aggiungono altri, ogni volta si tocca la struttura del
+componente. Meglio una **tabella** (DAT table, non hardcoded) di
+`{nome, porta, direzione, formato}` che il `.tox` legge per istanziare
+i listener/publisher dinamicamente — stesso spirito della "matrice
+meccanica" già usata per servizi/parametri (introspezione, non
+hardcoding). Aggiungere un canale OSC nuovo diventa una riga in
+tabella, non una modifica al componente.
+
+### 7. Controllo Nursery (canale 9) — modulo opzionale
+
+Diverso dai servizi on/off generici — è un protocollo a parte sopra lo
+stesso trasporto: sottoscrizione a `gaia/nursery/activate|deactivate`,
+validazione contro la whitelist locale (mirror di
+`nursery_components.json`), e un hook pulito che lo script specifico
+del progetto implementa (`on_nursery_activate(component, params)`) per
+reagire. Modulo **opzionale** dentro il `.tox` (non tutti i progetti
+avranno componenti Nursery), ma con l'interfaccia già pronta così
+quando serve non si riparte da zero.
+
+### Envoy — ruolo, non integrazione runtime
+
+Diverso ruolo da tutto il resto: è uno strumento di sviluppo (accesso
+MCP live agli operatori per chi costruisce/debugga), non fa parte del
+runtime Gaia↔TD. Non va integrato NEL `.tox` — quello che conta è
+tenere il codice del `.tox` leggibile e ben commentato (stessa
+disciplina già in questo file) così una sessione con Envoy può
+estenderlo/debuggarlo senza dover rileggere tutto da zero, come
+successo più volte stasera.
+
+### Non affrontato in questa proposta
+
+"Convoy" citato in conversazione lato Gaia ma non riconosciuto/non
+documentato da nessuna parte in questo progetto — se è un tool/sistema
+reale rilevante per il `.tox`, va chiarito da chi lo costruisce prima
+di includerlo qui.
+
 ## Changelog / interscambio
 
 **2026-08-06 (Core)** — sessione lunga sul multi-istanza:
@@ -1823,6 +1932,21 @@ azione richiesta lato TD — è tutto lato Gaia, trasparente per voi;
 menzionato qui solo perché se un vostro test resta silente per 2 giorni
 la sua matrice sparirà da sola dal broker, non è un bug se poi non la
 trovate più.
+
+**2026-08-27 tardo pomeriggio (Core)** — Nuova proposta (niente
+costruito): **Gaia Agent Universale**, un `.tox` unico riutilizzabile
+per qualunque progetto TD futuro, vedi sezione dedicata sopra. Nasce
+direttamente dalla sessione di debug DMX/PatchDeck dello stesso
+pomeriggio (vedi entry precedente) — stessa manciata di problemi
+strutturali (Deviceid instabile, registrazione servizi silenziosamente
+vuota) ripetuta su progetti diversi, un componente condiviso li chiude
+alla radice. 7 punti: Deviceid/Name obbligatori e non ereditabili,
+self-check sulla registrazione servizi, discovery LAN+Tailscale a due
+livelli, pubblicazione sempre su entrambi i canali 4+5, protocollo
+servizi invariato, OSC dichiarativo via tabella (non hardcoded) per
+supportare canali futuri, modulo Nursery opzionale. Nessuna azione
+richiesta a voi finché qualcuno non inizia davvero a costruirlo — è un
+brief, non un blocco.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
