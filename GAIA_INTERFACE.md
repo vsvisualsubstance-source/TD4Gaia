@@ -419,6 +419,44 @@ dovrebbe:
 - Un bottone manuale "Ri-registra" sul COMP per recuperare al volo
   senza riavviare tutto TD.
 
+**Aggiornamento 2026-08-28 — successo una TERZA volta, stessa identica
+firma**: dopo la migrazione di PatchDeck al nuovo Agent universale
+(vedi changelog sotto), il device rinominato (`PatchDeck-Mac-Mauro`)
+ha ripresentato lo stesso identico sintomo di stasera su DMX Rig A e
+sul vecchio PatchDeck — a questo punto e' un pattern consolidato, non
+un caso isolato:
+
+**Firma per riconoscerlo** (verificato dal vivo su 3 device diversi):
+- `patchdeck_matrix`/`dmx_matrix` (canale 5) pubblica correttamente e
+  si aggiorna regolarmente — la struttura (nomi servizi/parametri) e'
+  sempre corretta.
+- `status.services`/`status.params` (canale 4) restano **`{}` vuoti**,
+  anche dopo un comando `_poll` esplicito, anche con `ts`/`uptime`
+  freschi (l'agent e' vivo, non e' un problema di connessione).
+- Nessun errore visibile ne' lato TD ne' lato Gaia (`last_error: null`).
+
+**Due cause sospette gia' documentate in questo file, mai confermate
+con certezza al 100%** (vedi "TD/DMX, 5" e "Core, 9"/"Core, 10" sopra):
+1. Un `executeDAT` con i toggle Create/Frame Start spenti di default su
+   un operatore appena creato/clonato.
+2. Un reinit in-place del modulo Python (edit+save senza vera
+   ricreazione dell'operatore) non fa ripartire `onCreate()`, lasciando
+   il registro popolato dalla sessione precedente (vuoto, se e' la
+   prima volta) invece che da quella corrente.
+
+**Checklist diagnostica suggerita per la prossima volta** (per
+distinguere le due cause invece di ipotizzare): dentro una sessione con
+Envoy, chiamare `register_service()`/`register_param()` a mano una
+volta sola dal Python shell di TD sull'operatore in questione — se il
+registro si popola subito, la funzione stessa e' sana e la causa e' che
+non viene MAI chiamata automaticamente (indizio verso causa 2, onCreate
+non scattato); se anche la chiamata manuale fallisce o non produce
+nulla, il problema e' nella funzione stessa o nei toggle
+dell'executeDAT che dovrebbe chiamarla (causa 1). Finora e' sempre
+stato risolto ricreando/riavviando l'operatore da zero, mai isolata la
+causa esatta con questo metodo — vale la pena farlo la prossima volta
+che si ripresenta, prima che sparisca di nuovo con un riavvio.
+
 ### 3. Discovery del broker — automatico + manuale, LAN prima di Tailscale
 
 Stesso principio già costruito lato Gaia (`net_resolve.py`, usato per
@@ -1947,6 +1985,32 @@ servizi invariato, OSC dichiarativo via tabella (non hardcoded) per
 supportare canali futuri, modulo Nursery opzionale. Nessuna azione
 richiesta a voi finché qualcuno non inizia davvero a costruirlo — è un
 brief, non un blocco.
+
+**2026-08-28 (Core)** — Migrazione di PatchDeck al nuovo Agent
+universale (device_id `td-MacBook-Air-di-Mauro.local` -> nuovi tentativi
+`ClieentTestportable`/`td-gaia_client_portable.1-f6f773` ->
+`PatchDeck-Mac-Mauro`, quest'ultimo quello rimasto attivo). Due
+conseguenze lato Gaia, entrambe fixate:
+1. `web/patchdeck.html` aveva il device_id **hardcoded** sul vecchio —
+   sistemato con scoperta dal vivo (wildcard su `patchdeck_matrix`,
+   memoria in localStorage, si libera se il device ricordato non
+   conferma un vero status entro 5s), stesso principio gia' in
+   `dmx.html`.
+2. Bug trovato nello stesso giro in `dmx.html`: la riassegnazione
+   automatica della tab (quando il device ricordato risulta morto) non
+   veniva mai salvata in localStorage — ogni reload ripartiva da capo
+   dal device morto invece di ricordare la scelta buona della volta
+   prima. Fixato + finestra di grazia accorciata da 5s a 1.5s.
+
+**Sul problema di fondo** (`status.services` vuoto sul nuovo
+`PatchDeck-Mac-Mauro`): vedi l'aggiornamento nella sezione "2.
+Affidabilita' di register_service/register_param" sopra — e' la STESSA
+firma gia' vista due volte prima stasera (DMX Rig A, vecchio
+PatchDeck), ormai un pattern ricorrente non un caso isolato. Aggiunta
+una checklist diagnostica concreta per isolare la causa esatta (toggle
+executeDAT vs onCreate non ri-scattato) la prossima volta che si
+ripresenta, invece di continuare a ricrearlo alla cieca senza mai
+confermare quale delle due sia la causa reale.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
