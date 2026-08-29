@@ -540,6 +540,47 @@ stato risolto ricreando/riavviando l'operatore da zero, mai isolata la
 causa esatta con questo metodo — vale la pena farlo la prossima volta
 che si ripresenta, prima che sparisca di nuovo con un riavvio.
 
+**Aggiornamento 2026-08-29 (TD/Mac) — QUARTA occorrenza, checklist
+eseguita per la prima volta, causa 2 confermata al 100%**: stessa
+identica firma su ControllerV7/V8 (`gaia_device_agent` a livello
+progetto, non il vecchio PatchDeck) — `_services`/`_params` a 0,
+`last_error: null`, matrice/heartbeat sani. Eseguita dal vivo via
+Envoy la checklist diagnostica proposta sopra, la prima volta che viene
+davvero applicata invece di limitarsi a ricreare l'operatore alla
+cieca:
+
+- Toggle Create/Frame Start dell'`executeDAT` (`agent_lifecycle`)
+  controllati con `get_op`: **entrambi `True`** — causa 1 esclusa.
+- `register_all()` chiamato a mano dal Python shell (via
+  `execute_python`): si popola immediatamente e senza eccezioni (3
+  servizi, 588 parametri) — la funzione stessa è sana, non è mai
+  chiamata automaticamente dopo la creazione iniziale del DAT.
+
+**Causa 2 è quindi la causa reale, non solo la più plausibile**:
+`onCreate()` di `agent_lifecycle` è one-shot e non riparte su un
+reinit in-place del modulo (edit+save via `syncfile`, reimport TDN),
+lasciando il registro vuoto per il resto della sessione finché non
+arriva un riavvio pulito — coerente con perché "ricreare l'operatore"
+ha sempre risolto empiricamente senza mai spiegare perché.
+
+**Fix applicato** (solo lato progetto, `agent_lifecycle.py` — stesso
+approccio del fix DMX del 2026-08-25 sopra, **non** portato nel file
+condiviso `gaia_device_agent.py`): `onFrameStart` ora si auto-ripara,
+stesso pattern esatto del fix DMX — se `_services`/`_params` sono
+entrambi vuoti richiama `register_all()` prima del prossimo `tick()`,
+avvolto in un `try/except` che scrive `_record_error('register_all',
+e)`. Verificato dal vivo: registro svuotato manualmente, ripopolato da
+solo al frame successivo (`last_error: null`), fps tornato al target
+subito dopo, zero errori TD.
+
+**Per chi costruirà il `.tox` Gaia Agent Universale**: la causa 2 va
+considerata risolta nel design, non solo mitigata caso per caso — il
+self-check periodico già proposto nel punto 2 sopra è esattamente
+questo self-heal in `onFrameStart`, ora verificato dal vivo su 2
+progetti diversi (DMX, ControllerV7/V8) con la stessa implementazione.
+Andrebbe promosso nel motore condiviso `gaia_device_agent.py` invece di
+essere reincollato a mano in ogni `agent_lifecycle.py` di progetto.
+
 ### 3. Discovery del broker — automatico + manuale, LAN prima di Tailscale
 
 Stesso principio già costruito lato Gaia (`net_resolve.py`, usato per
@@ -2533,6 +2574,53 @@ esternalizzati.
 - `DMX-OPSA` (l'istanza precedente, superata da `DMX-OPS`, non più
   aggiornata) ha ancora `family: "DMX"` maiuscolo — coerente col fatto
   che è quella vecchia, non un problema nella nuova.
+
+**2026-08-29 (TD/Mac, 3)** — ControllerV7/V8 (device_id
+`td-controllerv7-macbook-air-di-mauro`) migrato dal vecchio agent
+locale (bespoke `gaia_device_agent.py`, quello con la self-heal
+manuale loggata in "TD/Mac" sopra, sezione 2) al `gaia_client`
+Universale importato direttamente dal `.tox` portabile di TD4PatchDeck
+(`gaia_client_portable.tox`, build 27) — terzo consumer dopo
+PatchDeck/DMX, primo caso di import "a freddo" da un altro repo invece
+di essere il main-dev.
+
+**Import completo, poi potato**: `loadTox()` porta dentro l'INTERO
+bundle `gaia_client` di PatchDeck (device agent + fleet control +
+canvas/brain ingest + mocap diretto), non solo il core — confermato
+dal vivo (`oscin_mocap` è andato subito in errore di bind porta).
+ControllerV7 non fa fleet control né ingest coscienza/canvas di
+PatchDeck, quindi disattivati via i toggle nativi già pensati per
+questo (`Mocapingest`/`Devicecontrol`/`Canvasingest` = 0, più
+`mqtt_control`/`mqtt_ingest` disattivati a livello di DAT visto che
+quei due toggle non gate-ano la connessione stessa) — non cancellati,
+reversibili. **Nota per chi consuma il tox altrove**: se in futuro
+serve un export DAVVERO minimale (solo device agent + discovery, senza
+dover potare a mano ogni volta), potrebbe valere la pena un secondo
+export portabile lato TD4PatchDeck con solo quel sottoinsieme.
+
+**Verificato dal vivo il pezzo per cui è nata questa migrazione**: il
+self-heal generico (`register_project_registrar()`/`_self_check()`)
+ha ripopolato il registro (3 servizi, 588 parametri) **senza nessuna
+chiamata manuale** — a differenza del fix locale del 2026-08-29
+mattina (sezione 2 sopra), qui non serve più reincollare la stessa
+logica per ogni progetto. `_check_identity()` conferma `Identitystatus:
+ok` con `Family="controllerv7"` (minuscolo) impostato. Cutover fatto a
+caldo: vecchio agent disconnesso da MQTT un istante prima di attivare
+il nuovo con lo stesso `device_id`, zero doppie pubblicazioni
+osservate.
+
+**Intoppo non funzionale, per chi lo rivede**: l'export/tag di un COMP
+di questa dimensione (~120 op contando gli interni di 5 annotateCOMP)
+supera regolarmente il timeout MCP di 30s lato Envoy — l'operazione
+finisce comunque sul thread principale di TD (verificato: build/date
+del `.tox` aggiornati correttamente dopo il timeout), ma TD è apparso
+non rispondere per una manciata di minuti nel mezzo. Nessun crash, nessuna
+perdita di lavoro (stesso `td_pid` prima/dopo) — solo un'attesa più
+lunga del previsto. Segnalato come bug lato Envoy, non specifico di
+questo progetto.
+
+Vecchio `/gaia_device_agent` (COMP + .tox + .py di progetto) rimosso
+dopo verifica completa — nessun rollback necessario.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
