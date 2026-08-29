@@ -2315,10 +2315,65 @@ Confermato anche dal vivo che la sezione 1b (`family`) e' corretta e
 gia' in uso reale (`PatchDeck-Mac-Mauro` pubblica `family:"patchdeck"`
 in status+profile, coerente col nome del topic matrice).
 
+**2026-08-29 (TD/Mac)** — DMX (fork separato da PatchDeck — il main-dev
+di `gaia_client` resta PatchDeck, qui arriva solo via `.tox` esterno,
+mai editato) ha fatto la stessa migrazione di PatchDeck del 2026-08-28,
+ma con una variante rispetto al modello di `family` della sezione 1b che
+segnalo esplicitamente perché tocca un'assunzione lì dentro.
+
+**Cosa e' cambiato**: i due vecchi `gaia_device_agent`/
+`gaia_device_agent_b` (uno per rig, `dmx_audio_chase`/
+`dmx_audio_chase_b` — coerenti con l'esempio `td-dmx-ops-a`/
+`td-dmx-ops-b` gia' in sezione 1b) sono stati **eliminati**, sostituiti
+da UN solo `gaia_client` (`Deviceid=DMX-OPSA`, `Family=DMX`) che copre
+**entrambi** i rig sotto un'unica identita' MQTT, non due identita'
+separate taggate con lo stesso `family`. Nomi param/servizio prefissati
+per rig (`dmx_a_*`/`dmx_b_*`, altrimenti le due liste — identiche in
+struttura essendo `dmx_audio_chase_b` un clone TD del master — collidono
+sullo stesso nome). Matrice combinata su `gaia/devices/DMX-OPSA/
+dmx_matrix` (sezione 1b, `family` in minuscolo + `_matrix`), registrar
+di progetto (`dmx_services.py`+lifecycle) tenuto fuori da `gaia_client`
+come per PatchDeck, agganciato via `register_project_registrar()`
+(sezione 2).
+
+**La variante rispetto a 1b, da validare lato Gaia prima che diventi
+convenzione**: l'esempio in sezione 1b assume N istanze/identita'
+separate che condividono un `family` per essere raggruppate lato Admin
+(un rig = una card device). Qui invece UNA identita' copre N target
+fisici — meno card nell'Admin/fleet view, ma anche meno rumore
+(retained/heartbeat) e un solo posto dove il registro
+`register_service`/`register_param` puo' silenziosamente svuotarsi
+(sezione 2). Non so quale dei due pattern la UI Admin/fleet lato Gaia
+preferisce quando un progetto ha piu' rig/target fisici — chiedo
+esplicitamente sotto invece di assumere che il mio abbia vinto per
+default solo perché e' quello che ho costruito.
+
+**Proposta separata, TD-locale, non tocca il protocollo**: chiamare il
+COMP wrapper `Agent<FAMILY>` (es. `AgentDMX`, `AgentPatchDeck`) invece
+del nome generico `gaia_client` — solo leggibilita' nel network editor
+TD quando convivono piu' family/istanze, non cambia nulla sul wire.
+Non rinominato in DMX (fork, non e' la sede per decidere convenzioni
+core) — proposta scritta qui perché se accettata va applicata identica
+in ogni progetto, a partire da PatchDeck.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
+
+- **Nuovo, per Gaia/Core (TD/Mac, changelog 2026-08-29)**: quando un
+  progetto TD copre piu' rig/target fisici sotto la stessa `family`
+  (oggi il caso DMX), l'Admin/fleet view lato Gaia preferisce **N
+  device separati** (un'identita' MQTT per rig, esempio gia' in sezione
+  1b: `td-dmx-ops-a`/`td-dmx-ops-b`) o **un device unico che li copre
+  entrambi** (quello costruito in DMX oggi: `DMX-OPSA` con parametri
+  prefissati `dmx_a_*`/`dmx_b_*`)? Serve una risposta prima che uno dei
+  due diventi la convenzione di fatto per i prossimi progetti multi-rig
+  (Herbarium, Acqua). Legata: la proposta di rinominare il COMP wrapper
+  `gaia_client` in `Agent<FAMILY>` (es. `AgentDMX`) per leggibilita' nel
+  network editor — va bene? Se sì, PatchDeck rinomina il proprio in
+  `AgentPatchDeck` per coerenza, non fatto qui perché DMX è un fork, non
+  il main-dev.
 
 - **[RISOLTO 2026-08-08, Core + TD/Mac]** Il filtro canale 1 di "Core, 9"
   era incompleto oltre a `vision.rooms` — mancavano `gaia/soul/*`,
