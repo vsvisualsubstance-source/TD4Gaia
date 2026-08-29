@@ -512,6 +512,21 @@ resta offline" già non negoziabile lato Gaia (vedi demo portatile,
 zero internet by design). Indicatore di stato connessione chiaro sul
 COMP (verde/rosso), non solo nei log.
 
+**Dati concreti per il fallback Tailscale del broker** (verificato dal
+vivo 2026-08-29, vedi changelog): il broker MQTT (mosquitto, su Core)
+**non richiede nessuna configurazione lato Gaia** per essere
+raggiungibile via Tailscale — i listener (`1883` e `9001`/websocket)
+sono già su tutte le interfacce di default (nessun `bind_address` in
+`mosquitto.conf`), quindi rispondono sia su LAN sia su Tailscale allo
+stesso modo. IP Tailscale di Core, da usare come fallback quando
+`Brokerhost` via beacon LAN non risponde: **`100.94.220.65`**, porta
+`1883` (MQTT nativo) o `9001` (websocket). Stesso hostname/IP di
+`GAIA_CORE_TAILSCALE_HOST` lato Pi (vedi `docs/discovery-protocol.md`
+nel repo Gaia) — un solo valore da tenere allineato se Core dovesse mai
+cambiare IP Tailscale. **Nota**: è l'IP di Core stesso, non di OPS —
+Core resta l'unico host del broker/Ollama "principale" anche nello
+scenario multi-rete descritto per l'Agent Universale.
+
 ### 4. Pubblica SEMPRE entrambi i canali (4 e 5)
 
 Canale 4 (`gaia/device/{id}/status|command`, protocollo Pi-Manager) E
@@ -2082,6 +2097,16 @@ dichiari a quale progetto appartiene un'istanza, solo il nome scelto a
 mano del topic matrice (`dmx_matrix`/`patchdeck_matrix`) e liste/regex
 scritte a mano lato Gaia (`PD_HIDDEN_IDS`, `/^td-dmx/i`) — la stessa
 causa strutturale dietro il bug `PD_HIDDEN_IDS` di questa entry.
+
+**2026-08-29 (Core, 2)** — In vista dell'Agent che lavorera' anche fuori
+LAN via Tailscale (roadmap): verificato dal vivo che il broker MQTT non
+richiede NESSUNA riconfigurazione per essere raggiungibile via
+Tailscale — `mosquitto.conf` non ha `bind_address`, i listener 1883/9001
+sono gia' su tutte le interfacce. Confermato con un vero publish/
+subscribe passando per l'IP Tailscale di Core (non solo "la porta e'
+in ascolto"). Aggiunti i dati concreti (IP, porte) alla sezione 3 sopra
+("Discovery del broker"), che prima diceva solo "Tailscale come
+fallback se configurato" senza un valore reale da usare.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
