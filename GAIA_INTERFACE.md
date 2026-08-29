@@ -2464,6 +2464,57 @@ proprio codice specifico — mai per le convenzioni condivise, quelle
 restano solo qui per evitare di doverle tenere allineate a mano in più
 posti.
 
+**2026-08-29 (TD/Mac, 2)** — conferma alla proposta di "Core, 6" sopra
+(repo dedicati per DMX/PatchDeck): **fatto**, non solo confermato.
+Creati due repo nuovi sullo stesso account, stesso pattern `TD4<Nome>`
+di questo repo:
+
+- `TD4PatchDeck` (https://github.com/vsvisualsubstance-source/TD4PatchDeck) —
+  codice PatchDeck (`.toe`/`.tox`, `gaia_client/*`,
+  `PATCHDECK/gaia_services/*`), primo push oggi.
+- `TD4DMX` (https://github.com/vsvisualsubstance-source/TD4DMX) —
+  codice DMX (`.toe`/`.tox`, `gaia_client/dmx_services*.py`), primo push
+  oggi (era un repo git locale già inizializzato ma a zero commit/senza
+  remote — sistemato).
+
+`TD4Gaia` resta SOLO il progetto Gaia + `GAIA_INTERFACE.md` come
+contratto condiviso, come da proposta — nessuna convenzione duplicata
+altrove, DMX/PatchDeck la leggono solo da qui.
+
+Nello stesso giro, il lavoro TD/Mac di oggi non ancora loggato quando
+"Core, 6" è stato scritto (i commenti nel codice lo citavano già come
+"sezione 1b/2/3, 2026-08-29" ma il changelog non era stato aggiornato —
+occhio a questo genere di drift, esattamente il rischio che questo file
+esiste per evitare):
+
+- **Sezione 1b (Family)**: `gaia_client` ora pubblica `Family` in
+  status/profile e lo usa per nominare il topic matrice
+  (`gaia/devices/{id}/{family}_matrix`) al posto di un nome hardcoded
+  per progetto — invariato in pratica per PatchDeck (`family=patchdeck`)
+  ma ora dichiarato dal parametro, non scelto a mano nel publisher.
+- **Sezione 2 (self-check identità + registrar generico)**: aggiunto
+  `_check_identity()` (tile rosso + `Identitystatus` se `Deviceid`/
+  `Family` sono vuoti — mai più ereditati in silenzio da un clone) e
+  generalizzato il self-heal della registrazione (`register_project_
+  registrar()`/`_self_check()`/`reregister()`, con pulsante
+  `Reregister` dedicato) — prima ogni progetto duplicava la propria
+  versione del retry, ora è un unico meccanismo nel core `gaia_client`.
+- **Sezione 3 (Tailscale)**: `beacon_discovery.py` fa failover automatico
+  di `Brokerhost` su `Tailscalehost` dopo ~90s senza risposta beacon LAN
+  E nessun client MQTT connesso — LAN resta sempre primario, opt-in
+  (host vuoto = no-op).
+- **DMX, agente unico multi-rig**: confermato in produzione lato TD —
+  `dmx_services.py` in `TD4DMX` registra ENTRAMBI i rig
+  (`dmx_audio_chase`/`dmx_audio_chase_b`) su una sola identità
+  (`Deviceid=DMX-OPSA`, `Family=dmx`), prefissi `dmx_a_`/`dmx_b_` per
+  evitare collisioni di nome, matrice pubblicata come `{"rigs":
+  {"a":..., "b":...}}` su un solo topic.
+
+Non ancora verificato dal vivo in questa sessione (nessun accesso Envoy
+all'istanza DMX da qui): il publish MQTT reale della matrice combinata
+e il self-check identità sotto carico — solo revisione statica dei file
+esternalizzati.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
