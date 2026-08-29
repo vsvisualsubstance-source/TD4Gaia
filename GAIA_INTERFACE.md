@@ -2534,6 +2534,37 @@ esternalizzati.
   aggiornata) ha ancora `family: "DMX"` maiuscolo — coerente col fatto
   che è quella vecchia, non un problema nella nuova.
 
+**2026-08-29 (Core, 8)** — `web/dmx.html` riscritta per il nuovo schema
+Agent unico multi-rig, testata dal vivo (browser reale + listener MQTT
+parallelo, stesso metodo di tutta la sessione). Ogni rig di un device
+multi-rig diventa uno scenario/tab virtuale (`${device_id}::a`/`::b`),
+riusando quasi tutto il rendering esistente — solo lo strato di
+discovery/comando è cambiato: status (piatto, prefissato) viene
+"scoped" per rig per combaciare con la matrice (senza prefisso dentro
+`rigs.a`/`rigs.b`), i comandi ri-aggiungono il prefisso prima di
+pubblicare sul device reale. Retrocompatibile: un device senza `rigs`
+nella matrice genera uno scenario singolo come prima, zero regressione
+per eventuali agent ancora sul vecchio schema.
+
+Due bug reali trovati e fissati nello stesso giro (nessuno dei due
+esisteva prima della riscrittura di oggi, o era latente e mai esposto
+da meno scenari contemporanei):
+1. Una race sull'ordine matrice/status poteva bloccare la pagina su
+   "nessun dato" per sempre (12 run di test, 1 falliva prima del fix).
+2. **Stessa identica firma** del secondo bug di PatchDeck di stamattina
+   ("status arrivato prima della matrice veniva scartato") — fix
+   identico (buffer dell'ultimo status per device_id, riapplicato
+   quando la matrice mancante arriva). Segnalo perché è il terzo posto
+   in cui questa esatta causa si ripresenta (PatchDeck, ora DMX) — se
+   l'Agent Universale finisce per avere un componente Gaia-side
+   condiviso in futuro, vale la pena risolverla una volta sola lì
+   invece di riscoprirla ad ogni nuova pagina.
+
+Verificato end-to-end: comandi servizio e parametro su entrambi i rig
+ricevuti sul topic giusto con il prefisso corretto, 27 parametri + 3
+servizi renderizzati per rig, nessuna regressione sugli scenari a rig
+singolo.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
