@@ -2622,6 +2622,59 @@ questo progetto.
 Vecchio `/gaia_device_agent` (COMP + .tox + .py di progetto) rimosso
 dopo verifica completa — nessun rollback necessario.
 
+**2026-08-29 (TD/Mac, 4)** — PatchDeck V8: il componente DMX interno
+(`/PATCHDECK/DMX/dmx_audio_chase`, sempre esistito ma mai esposto lato
+Gaia) ora pubblica come agent Gaia **indipendente** dal device PatchDeck
+esistente, non come servizi aggiunti al device `patchdeck` — richiesta
+esplicita dell'utente dopo un primo tentativo (poi revertato in toto,
+zero residui) che li aveva registrati per errore sul device condiviso.
+
+- **Identità nuova**: `Deviceid=PatchDeck-DMX`, `family=dmx` (minuscolo,
+  regola rispettata). Distinta sia da `PatchDeck-Mac-Mauro`/`patchdeck`
+  (il device PatchDeck esistente, non toccato) sia da qualunque
+  identità del progetto DMX V8 standalone (visto `DMX-OPSA` nel suo
+  codice al momento della sessione — **non verificato contro questo
+  file**, quindi possibile che sia già stato superato da `DMX-OPS` come
+  documentato sopra; irrilevante per la distinzione, comunque un
+  `device_id` diverso).
+- **Convenzione seguita** (stessa di DMX V8/`DMX-OPSA`, invariata anche
+  in `DMX-OPS`): un device unico con parametri prefissati per rig
+  (`dmx_a_*` su `status`/`profile` canale 4 flat; `rigs.a.params.*`
+  annidato su `dmx_matrix` canale 5) — qui un solo rig (`a`), PatchDeck
+  non ha un rig B. Aggiunge un terzo data point alla domanda aperta
+  sopra ("N device separati vs uno unico multi-rig") senza risolverla —
+  resta una scelta consapevole di continuità con l'unico precedente
+  conosciuto al momento, non un voto implicito per quella convenzione.
+- **Naming COMP non allineato alla proposta `Agent<FAMILY>`**: usato
+  `gaia_dmx_client` (stesso schema di nome del `gaia_client` esistente
+  di PatchDeck), non `AgentDMX` — la proposta in sospeso sopra non è
+  stata decisa nel frattempo, quindi non applicata; `/gaia_client`
+  (PatchDeck) NON rinominato in `AgentPatchDeck` per lo stesso motivo
+  già dato per DMX (non è la sessione che decide la convenzione).
+- **Core copiato a mano, non da un `.tox` distribuibile**: `gaia_client_portable.tox`
+  esiste già in questo repo (visto ma non riletto in dettaglio da questa
+  sessione) — non usato qui. `gaia_device_agent.py`/`agent_lifecycle.py`
+  sono stati copiati VERBATIM (stesso self-heal `_self_check()`/causa-2
+  già incluso) in un nuovo COMP minimale costruito da zero (solo
+  `mqtt_device`+callbacks, device agent, lifecycle, nessun mocap/fleet/
+  beacon) — scelta esplicita dell'utente tra "agente minimale" e "copia
+  completa del gaia_client ricco", non un limite tecnico del tox
+  portabile.
+- **Discovery broker semplificato**: nessun beacon LAN-first (a
+  differenza del `gaia_client` PatchDeck completo) — `Brokerhost`
+  impostato staticamente sull'IP Tailscale di Core (`100.94.220.65`),
+  deliberato per lo scope minimale, non un tentativo di beacon fallito.
+- **Verificato dal vivo**: connesso al broker, round-trip comando MQTT
+  reale testato con successo (servizio diagnostico temporaneo,
+  registrato/invocato/rimosso nella stessa sessione), `dmx_matrix`
+  pubblicata su `gaia/devices/PatchDeck-DMX/dmx_matrix`. Device
+  PatchDeck esistente confermato intatto dopo il revert: 78 servizi
+  (`deck_a`/`deck_b` + 76 `load_x{N}_{a,b}`), zero errori, round-trip
+  comando MQTT ri-testato con successo per escludere regressioni.
+- **Non verificato da questa sessione**: se un consumer/UI lato Gaia
+  vede correttamente il nuovo device (nessun accesso a Node-RED/Admin
+  da questa sessione, solo TD/Envoy) — verificare dal lato Gaia/Core.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
