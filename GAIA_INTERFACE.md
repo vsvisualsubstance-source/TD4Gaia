@@ -2565,6 +2565,31 @@ ricevuti sul topic giusto con il prefisso corretto, 27 parametri + 3
 servizi renderizzati per rig, nessuna regressione sugli scenari a rig
 singolo.
 
+**2026-08-29 (Core, 9)** — Segnalato lato Gaia: `web/mixeraudio.html`
+(`td-controllerv7-macbook-air-di-mauro`) mostra "nessun canale scoperto
+ancora" nonostante il device sia online. **Diagnosticato dal vivo,
+QUARTA occorrenza della stessa firma "services vuoto"** (DMX Rig A,
+vecchio PatchDeck, PatchDeck appena migrato, ora ControllerV7):
+`status.params` è `{}` vuoto — `mixeraudio.html` scopre i canali
+parsando chiavi `ch{N}_{Suffisso}` proprio da lì (nessun topic-matrice
+esiste per questo device, per design, vedi commento nel file). Il
+livello audio generale (`audio_levels`, topic separato, telemetria
+live 1Hz) funziona perfettamente — 9 canali con dati reali
+(Low/Mid/High/Kick/Snare/Rythm/...) — confermando che il device è vivo
+e la connessione è sana: è solo `register_param()` che non popola i
+preset per-canale, stessa causa esatta già documentata al punto 2
+sopra, non un problema di rete o di questa pagina.
+
+**Nota di contesto**: ControllerV7 non è stato toccato dalla
+migrazione di oggi (solo DMX/PatchDeck sono passati a `gaia_client`) —
+coerente che non abbia ricevuto automaticamente il fix self-check/
+self-heal appena costruito lì. Se ControllerV7 migrerà anch'esso a
+`gaia_client` in futuro, questo probabilmente si risolve da sé insieme
+al resto; se resta sul proprio agent attuale, serve lo stesso
+intervento manuale già fatto per gli altri tre casi (ricreare/riavviare
+l'operatore, o usare la checklist diagnostica del punto 2 per isolare
+la causa esatta invece di ipotizzare).
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
