@@ -2515,6 +2515,25 @@ all'istanza DMX da qui): il publish MQTT reale della matrice combinata
 e il self-check identità sotto carico — solo revisione statica dei file
 esternalizzati.
 
+**2026-08-29 (Core, 7)** — Verificato dal vivo sul broker quello che
+"TD/Mac, 2" sopra non aveva potuto controllare da parte loro:
+- **`family: "dmx"` confermato minuscolo** su `DMX-OPS` (l'istanza
+  attiva oggi) — la regola di convenzione applicata correttamente.
+- **Bug "matrice vuota" confermato risolto**: `gaia/devices/DMX-OPS/
+  dmx_matrix` non è più `{}`, contiene per davvero la struttura
+  annidata `{"device_id":"DMX-OPS", "rigs": {"a": {"params": {...},
+  "services": {...}}, "b": {...}}}`, coerente con quanto descritto.
+- **Nota per chi scrive un consumer/UI lato Gaia**: `status`/`profile`
+  (canale 4) usano chiavi PIATTE con prefisso (`dmx_a_min_dimmer`,
+  `dmx_b_min_dimmer`, ...), ma `dmx_matrix` (canale 5) usa struttura
+  ANNIDATA per rig (`rigs.a.params.dmx_min_dimmer`, senza prefisso
+  dentro il nodo del rig) — due forme diverse per lo stesso dato sui
+  due canali, un consumer deve gestire entrambe esplicitamente, non
+  assumere che la struttura combaci.
+- `DMX-OPSA` (l'istanza precedente, superata da `DMX-OPS`, non più
+  aggiornata) ha ancora `family: "DMX"` maiuscolo — coerente col fatto
+  che è quella vecchia, non un problema nella nuova.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
