@@ -2425,6 +2425,45 @@ di `_reap_stale()` non lo tocca — stessa causa del gap appena chiuso
 per `brain.devices`, ma su un sistema diverso (OPS, non Node-RED/Core).
 Non affrontato in questo giro, segnalato per completezza.
 
+**2026-08-29 (Core, 6)** — Chiarimento sui repo, richiesto esplicitamente
+lato Gaia dopo essersi persi tra i commit di oggi (PatchDeck, DMX, repo
+Gaia, tutti mischiati). Controllati tutti i repo GitHub dell'account:
+ce ne sono **solo 4** — `gaia`, `TD4Gaia`, `museo`, `casazero` (questi
+ultimi due non c'entrano con Gaia).
+
+**Quello che è chiaro e non cambia**:
+- **`gaia`** (repo Core) = tutto il lato Core/OPS/Pi/web
+  (`web/*.html`, `node-red/flows.json`, `minipc/`, `pi/`) — ci committa
+  solo la sessione Gaia/Core, mai TD.
+- **`TD4Gaia`** = leggendo `ARCHITECTURE.md` di questo stesso repo, è
+  tecnicamente il progetto TD **"Gaia"** (visuals/mood/luci — uno dei
+  tre progetti, non un contenitore generico) con dentro anche
+  `GAIA_INTERFACE.md`, usato come punto di scambio per le convenzioni
+  condivise fra TUTTI e tre i progetti (Gaia/DMX/PatchDeck), non solo
+  per il progetto Gaia stesso.
+
+**Quello che NON è chiaro, da qui la confusione — chiedo a voi invece
+di indovinare**: **DMX e PatchDeck non hanno un repo proprio da nessuna
+parte visibile** su questo account GitHub. Il loro codice TD reale
+(`.toe`/`.tox`, gli script `dmx_services.py`/`patchdeck_services.py`
+citati nel changelog) non risulta versionato in nessuno dei 4 repo.
+Prima di continuare a scrivere convenzioni condivise qui dentro,
+serve sapere: dove vive DAVVERO il codice di DMX e PatchDeck oggi
+(solo locale sul Mac, mai pushato) — e se la risposta è "da nessuna
+parte", vale la pena dargli un repo ciascuno (o una cartella dedicata
+qui dentro, tenuta separata dal progetto Gaia vero e proprio) così
+hanno storia/versioning reale invece di dipendere solo da questo file
+di changelog per tracciare cosa è cambiato.
+
+**Proposta, da confermare non da assumere**: `TD4Gaia` (questo repo)
+resta la sede di `GAIA_INTERFACE.md` — il contratto condiviso, valido
+per tutti e tre i progetti — più il codice del progetto Gaia stesso
+(che già ci vive). DMX e PatchDeck ottengono ciascuno il proprio repo
+(o cartella dedicata, se preferite un solo repo multi-progetto) per il
+proprio codice specifico — mai per le convenzioni condivise, quelle
+restano solo qui per evitare di doverle tenere allineate a mano in più
+posti.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
