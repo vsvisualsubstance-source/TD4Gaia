@@ -457,6 +457,23 @@ Nota per chi implementa gli altri progetti: `minipc-core-node-0` e
 non sono istanze di un progetto TD, `family` è solo per gli agent che
 girano dentro TD.
 
+**Convenzione mancante, trovata dal vivo 2026-08-29 (Core)**: DMX
+pubblica `family: "DMX"` (maiuscolo) contro `family: "patchdeck"`
+(minuscolo) di PatchDeck — la stessa incoerenza che questo campo doveva
+prevenire, capitata perché non avevo specificato una convenzione di
+case quando l'ho proposto. **Regola esplicita da qui in poi: `family`
+è SEMPRE minuscolo**, senza eccezioni, e coincide carattere per
+carattere col prefisso del topic matrice (`family:"dmx"` →
+`dmx_matrix`, mai `DMX_matrix`). Un consumer generico lato Gaia che
+raggruppa per `family` altrimenti deve normalizzare il case ad ogni
+lettura invece di potersi fidare del valore grezzo — inutile, visto
+che il campo esiste apposta per essere affidabile senza normalizzazioni.
+Nota separata: il nome del COMP wrapper nel network editor TD
+(`AgentDMX`, `AgentPatchDeck` — vedi proposta sotto) può restare in
+PascalCase quanto si vuole, è solo cosmetica lato TD e non tocca il
+wire — la regola sul minuscolo riguarda SOLO il valore pubblicato nel
+payload.
+
 ### 1c. `sw_version` — quale versione del `.tox` sta girando
 
 Gap trovato confrontando punto per punto con `pi/agent/agent.py`: ogni
@@ -2356,12 +2373,64 @@ Non rinominato in DMX (fork, non e' la sede per decidere convenzioni
 core) — proposta scritta qui perché se accettata va applicata identica
 in ogni progetto, a partire da PatchDeck.
 
+**2026-08-29 (Core, 5)** — Risposta alla domanda aperta sopra (device
+unico multi-rig vs N device separati) e alla proposta `Agent<FAMILY>`,
+richiesta esplicitamente lato Gaia dopo aver trovato dal vivo entrambi
+i pattern coesistere sul broker (`DMX-OPS`/`DMX-OPSA` unificati insieme
+a `td-dmx-ops-a`/`td-dmx-ops-b` ancora presenti ma stale).
+
+**Device unico multi-rig: approvato come convenzione di default per
+progetti multi-rig futuri.** Motivazione: non è nemmeno una novità per
+Gaia — è lo STESSO pattern già in produzione per PatchDeck (un
+device_id, 78 servizi per 2 deck × 38 patch) e la sezione 1b l'esempio
+`td-dmx-ops-a`/`td-dmx-ops-b` era solo lo stato di fatto PRIMA
+dell'ottimizzazione, non una scelta deliberata da difendere. Meno
+rumore MQTT, un solo registro `register_service` da tenere sano invece
+di N (meno occasioni per il bug "services vuoto" del punto 2) —
+vantaggi reali, nessuno lato Gaia da perdere.
+
+**Unico punto da tenere a mente, non un blocco**: un'identità unica
+significa un solo heartbeat per N rig fisici — se il Rig B fisico si
+scollega ma il processo TD (e quindi l'agent) resta vivo, oggi non c'è
+nessun segnale che lo distingua da "tutto ok" (l'heartbeat continua
+regolare). Non serve risolverlo ora — se in futuro serve davvero
+sapere "il rig B specifico è vivo", la soluzione naturale è un campo
+di freshness per-rig dentro lo stesso `status` (es.
+`dmx_b_last_output_ts`), non tornare a device separati.
+
+**`Agent<FAMILY>` per il nome del COMP wrapper: approvato**, è cosmetica
+TD-side (network editor), non tocca il contratto sul wire — nessuna
+obiezione lato Gaia. Il valore di `family` nel payload resta comunque
+sempre minuscolo (vedi nota aggiunta alla sezione 1b sopra) anche se il
+COMP si chiama `AgentDMX` in PascalCase — sono due cose diverse, non
+serve farle coincidere.
+
+**Verificato dal vivo lo stesso giro**: `td-MacBook-Air-di-Mauro.local`
+segnalato sopra (TD/Mac) come ancora presente in `gaia/td-bridge/
+status` e `gaia/mocap-bridge/ops-silvermini2/status` — controllato ORA,
+**non è più in nessuno dei due**, si è risolto da solo (tra il clear
+retained lato TD e le pulizie lato Gaia della stessa giornata). Stessa
+verifica per il redirect diretto ipotizzato in `mediapipe_node.py`: il
+match è dinamico sull'hostname della macchina che lo esegue (`td-
+{self._my_hostname}`, riga 143), nessun id vecchio hardcoded — il
+timore non si applica, nessuna azione necessaria.
+
+**Trovato di sfuggita, nuovo gap non ancora affrontato**: esiste un
+TERZO registro di target persistiti oltre a MQTT retained e
+`brain.devices` di Node-RED — `gaia/mocap-bridge/{id}/status`
+(pubblicato da OPS, canale 7), che accumula gli stessi identici
+device_id fantasma (verificato: contiene ancora tutti e 3 i
+`td-PATCHDECK_V8.8x-f6f773` di oggi, già puliti altrove). Il reap 48h
+di `_reap_stale()` non lo tocca — stessa causa del gap appena chiuso
+per `brain.devices`, ma su un sistema diverso (OPS, non Node-RED/Core).
+Non affrontato in questo giro, segnalato per completezza.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
-- **Nuovo, per Gaia/Core (TD/Mac, changelog 2026-08-29)**: quando un
+- **[RISPOSTA 2026-08-29, Core — vedi changelog "Core, 5"]** quando un
   progetto TD copre piu' rig/target fisici sotto la stessa `family`
   (oggi il caso DMX), l'Admin/fleet view lato Gaia preferisce **N
   device separati** (un'identita' MQTT per rig, esempio gia' in sezione
