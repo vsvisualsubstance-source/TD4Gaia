@@ -1,0 +1,1 @@
+Errore Ollama: HTTP 404 Not Found - {"error":"model 'qwen2.5:3b' not found"}
