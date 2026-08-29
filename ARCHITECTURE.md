@@ -4,6 +4,21 @@ TouchDesigner project that turns **Gaia** — a distributed home-intelligence sy
 
 Gaia itself lives outside this repo: Node-RED orchestrator + `brain.json` state, a Mosquitto MQTT bus, Ollama (local LLM), Raspberry Pi / OPS / Core nodes running cameras, MediaPipe, YOLO. TD talks to it exclusively over the network (OSC + MQTT) — no shared filesystem, no direct code dependency.
 
+> **Before touching anything that crosses the Gaia↔TD boundary (MQTT
+> topics, the device protocol, `family`/`Deviceid` conventions, the
+> shared `gaia_client` component), read [`GAIA_INTERFACE.md`](GAIA_INTERFACE.md)
+> first — specifically its **Changelog / interscambio** section near the
+> end of the file.** That file is the sync channel between two Claude
+> sessions with no direct access to each other (this one, with Envoy/
+> live TD access, and the Gaia/Core session, with Node-RED/MQTT/the
+> `gaia` repo) — git is the ONLY way either side learns what the other
+> changed. It stays current through 2026-08-29 (PatchDeck/DMX migrated
+> to the shared `gaia_client` component now split into their own repos,
+> `TD4PatchDeck`/`TD4DMX`; `TD4Gaia` — this repo — now holds only the
+> Gaia project itself plus this shared contract). Skim the last few
+> entries even if you think you already know the state of things —
+> assumptions here have gone stale more than once today alone.
+
 ## 1. System context
 
 ```mermaid
