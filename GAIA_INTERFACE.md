@@ -447,6 +447,30 @@ Conseguenze dirette, tutte a costo ~zero una volta che il campo esiste:
   compilando un solo campo sull'agent, non scrivendo codice nuovo sul
   lato Gaia per farlo apparire/nascondere correttamente.
 
+**Verificato dal vivo 2026-08-29**: `PatchDeck-Mac-Mauro` pubblica già
+`family: "patchdeck"` sia in `status` (canale 4) sia in `profile`
+(canale 5), esattamente come proposto sopra — TD ha già recepito questo
+punto prima ancora che fosse formalizzato qui. Il topic della matrice
+(`patchdeck_matrix`) coincide correttamente col valore di `family`.
+Nota per chi implementa gli altri progetti: `minipc-core-node-0` e
+`ops-silvermini2` (Core/OPS) **non** hanno `family` — corretto così,
+non sono istanze di un progetto TD, `family` è solo per gli agent che
+girano dentro TD.
+
+### 1c. `sw_version` — quale versione del `.tox` sta girando
+
+Gap trovato confrontando punto per punto con `pi/agent/agent.py`: ogni
+agent Pi pubblica `sw_version` nel proprio `profile` (versione del
+codice dell'agent stesso, non del progetto Gaia). Il `.tox` Universale
+non ha un equivalente. Diventa un problema reale nel momento in cui
+viene riusato su più progetti futuri (Herbarium, Acqua, altri) e poi
+aggiornato: senza un numero di versione self-reported, non c'è modo
+lato Gaia di sapere quali istanze girano su quale build del `.tox`
+quando ne esce una nuova — bisognerebbe chiedere manualmente istanza
+per istanza. Proposta: un campo `sw_version` (stringa libera, es.
+`"1.0.0"` o un hash breve) nel `profile`, bump ad ogni release del
+`.tox` — stesso trattamento di `pi/agent/config.py`'s `SW_VERSION`.
+
 ### 2. Affidabilità di `register_service()`/`register_param()` — il problema numero due
 
 Causa vista due volte stasera (PatchDeck e DMX Rig A prima del fix): un
@@ -592,6 +616,15 @@ range?, options?)`) resta il punto di estensione per lo script
 specifico del progetto (come `dmx_services.py` oggi) — il core del
 `.tox` deve restare generico e non sapere nulla di DMX/PatchDeck/altro.
 
+**Nota (2026-08-29)**: confrontato con `pi/agent/agent.py`, che ha
+invece una tabella FISSA di servizi per stanza (`_service_endpoints()`,
+hardcoded). Non serve portare quel modello su TD — `register_service()`/
+`register_param()` **è già** l'equivalente, solo dinamico e
+autodescrittivo (la matrice canale 5) invece che scritto a mano: ogni
+progetto dichiara i propri servizi introspezionando i propri operatori
+reali, non un elenco statico da mantenere allineato a parte. Nessuna
+azione da questo confronto, solo per chiarire che non è un gap.
+
 ### 6. OSC multipli — dichiarativo, non hardcoded (pensando avanti)
 
 Oggi ogni canale OSC è un OSC In/Out DAT dedicato con porta fissa — se
@@ -613,6 +646,38 @@ del progetto implementa (`on_nursery_activate(component, params)`) per
 reagire. Modulo **opzionale** dentro il `.tox` (non tutti i progetti
 avranno componenti Nursery), ma con l'interfaccia già pronta così
 quando serve non si riparte da zero.
+
+### 8. OTA — aggiornare un file mentre TD è vivo, non solo scaricarlo
+
+Gap trovato confrontando con `pi/agent/agent.py`: gestisce
+`{action:"ota_update", url, md5, filename}` — scarica un file,
+verifica l'MD5 (protetto da path-traversal sul nome), lo sostituisce,
+conferma su `gaia/devices/{id}/ota/ack` con `status:"updated"|"failed"`
++ eventuale errore. TD non ha nessun equivalente oggi.
+
+**Non è banale come "aggiungi il download" — la parte difficile è
+applicarlo**: su Pi, scrivere il file basta perché il servizio lo
+rilegge al prossimo restart (systemd). Un modulo Python dentro TD
+invece resta in memoria finché l'operatore non viene **ricreato** —
+sovrascrivere il file su disco da solo non fa ripartire `onCreate()`.
+È la STESSA causa già documentata al punto 2 di questa proposta
+("services vuoto" — reinit in-place non ri-triggera onCreate). Quindi
+un `ota_update` per TD deve risolvere insieme:
+1. Download + verifica MD5 del file (stesso protocollo di Pi, path-
+   traversal protection inclusa — riutilizzabile quasi identico).
+2. Un modo affidabile di far ripartire l'operatore/modulo aggiornato
+   SENZA intervento manuale — non ancora chiaro se via toggle
+   Create/Frame Start dell'executeDAT (stessa leva sospettata per la
+   causa 1 del bug "services vuoto") o un meccanismo diverso. Da
+   verificare con Envoy prima di costruire, non da assumere.
+3. Ack su `gaia/devices/{id}/ota/ack` (stesso schema di Pi:
+   `status`/`version`/`error`), così Gaia sa se l'update è andato a
+   buon fine o no senza dover controllare a occhio.
+
+Priorità bassa rispetto ai punti 1/1b/2 (quelli bloccano l'uso quotidiano
+oggi, questo serve quando il `.tox` sarà maturo e distribuito su più
+progetti) — documentato ora perché il gap è reale, non per costruirlo
+subito.
 
 ### Envoy — ruolo, non integrazione runtime
 
@@ -2177,6 +2242,26 @@ tenere aggiornata via Agent (non a mano). Fatto:
   mano sui soli device rilevanti), ma vale la pena tenerlo a mente se
   in futuro si costruisce qualcosa che legge quell'endpoint alla
   cieca senza filtrare.
+
+**2026-08-29 (Core, 4)** — Richiesta esplicita lato Gaia: "cosa manca
+all'Agent per essere molto simile a quelli su Pi?" — confronto punto
+per punto con `pi/agent/agent.py`. Tre risultati, aggiunti sopra:
+- **1c. `sw_version`**: gap reale, Pi lo pubblica nel profile, TD no —
+  serve per sapere quali istanze girano su quale build del `.tox` una
+  volta riusato su piu' progetti.
+- **8. OTA**: gap reale ma non banale — la parte difficile non e' il
+  download (quasi copiabile da Pi) ma applicarlo mentre TD e' vivo,
+  stessa causa del bug "services vuoto" (onCreate non ri-triggerato da
+  un reinit in-place). Documentato come priorita' bassa, da risolvere
+  insieme al punto 2 quando si arriva li'.
+- **"Tabella servizi"**: NON e' un gap — chiarito nella nota alla
+  sezione 5 che `register_service()`/`register_param()` e' gia'
+  l'equivalente dinamico della tabella fissa di Pi, anzi piu' adatto
+  (autodescrittivo invece che statico).
+
+Confermato anche dal vivo che la sezione 1b (`family`) e' corretta e
+gia' in uso reale (`PatchDeck-Mac-Mauro` pubblica `family:"patchdeck"`
+in status+profile, coerente col nome del topic matrice).
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
