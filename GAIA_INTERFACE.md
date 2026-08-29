@@ -527,6 +527,50 @@ cambiare IP Tailscale. **Nota**: è l'IP di Core stesso, non di OPS —
 Core resta l'unico host del broker/Ollama "principale" anche nello
 scenario multi-rete descritto per l'Agent Universale.
 
+**MagicDNS confermato attivo tailnet-wide** (verificato dal vivo
+2026-08-29, `tailscale status --json` + `tailscale dns status` da
+Core): suffisso **`tail62079e.ts.net`**. Ogni device è raggiungibile
+anche per hostname, non solo per IP — più leggibile e stabile nel
+tempo (l'IP Tailscale di un device può cambiare, l'hostname MagicDNS
+no, a meno di rinominare il device stesso nell'admin console
+Tailscale). Per l'Agent, preferire l'hostname MagicDNS quando
+disponibile, IP come fallback se la risoluzione DNS locale del device
+non funziona ancora (es. rete non ancora pronta all'avvio).
+
+**Mappa DNS dei device Gaia rilevanti nel tailnet** (snapshot dal vivo
+2026-08-29 via `tailscale status`, incrociato con i device_id Gaia noti
+— vedi changelog per il dettaglio):
+
+| Ruolo Gaia | Device Tailscale | Hostname MagicDNS | IP Tailscale |
+|---|---|---|---|
+| Core (broker/Ollama/Qdrant) | `core-node-0` | `core-node-0.tail62079e.ts.net` | `100.94.220.65` |
+| OPS (Node-RED, Ollama secondario, DMX V8 oggi) | `silvermini2` | `silvermini2.tail62079e.ts.net` | `100.91.251.83` |
+| Mac Mauro (PatchDeck oggi; storicamente anche DMX) | `macbook-air-di-mauro` | `macbook-air-di-mauro.tail62079e.ts.net` | `100.106.125.128` |
+| Pi attivo (`pi-b2c8db`) | `vsrasp01` | `vsrasp01.tail62079e.ts.net` | `100.117.86.127` |
+
+Altri device nel tailnet (`iphone-13-mini`, `macbook-pro-di-nicola`,
+`raspberrypi`/`raspberrypi-1`/`raspberrypi-2`, `vissub3`,
+`vs-mini-silver`) sono offline da 14 a 125 giorni al momento dello
+snapshot — o dispositivi personali non-Gaia (iPhone) o hardware
+dismesso/sostituito, esclusi dalla mappa perché non rilevanti oggi.
+
+**Aggiornamento "via Agent", non a mano** — la tabella sopra è
+un'istantanea di bootstrap per orientarsi subito, non va tenuta
+allineata a mano ad ogni giro. La fonte viva è già in costruzione lato
+Gaia: `pi/agent/agent.py`, `ops/agent/agent.py` e
+`minipc/local_agent.py` pubblicano già un campo `tailscale_ip` nel
+proprio `profile` (canale 5, via `net_resolve.py` — vedi
+`docs/discovery-protocol.md` nel repo Gaia), leggibile aggregato da
+`GET /gaia/devices/profiles` su Node-RED — **verificato dal vivo oggi**:
+`minipc-core-node-0` e `pi-b2c8db` mostrano già `tailscale_ip`
+popolato e coerente coi valori della tabella sopra. Quando l'Agent
+Universale TD sarà pronto, dovrebbe fare lo stesso (stesso nome di
+campo `tailscale_ip` nel proprio `profile`/`status`, non un formato
+nuovo) — a quel punto la mappa vera diventa quell'endpoint, sempre
+fresca, e questa tabella resta solo un riferimento storico/di
+emergenza (es. se il broker è giù e serve comunque sapere dove
+provare a connettersi).
+
 ### 4. Pubblica SEMPRE entrambi i canali (4 e 5)
 
 Canale 4 (`gaia/device/{id}/status|command`, protocollo Pi-Manager) E
@@ -2107,6 +2151,32 @@ subscribe passando per l'IP Tailscale di Core (non solo "la porta e'
 in ascolto"). Aggiunti i dati concreti (IP, porte) alla sezione 3 sopra
 ("Discovery del broker"), che prima diceva solo "Tailscale come
 fallback se configurato" senza un valore reale da usare.
+
+**2026-08-29 (Core, 3)** — Richiesta esplicita lato Gaia: creare una
+mappa DNS dei device Gaia nel tailnet, da scambiare via questo file e
+tenere aggiornata via Agent (non a mano). Fatto:
+- Confermato dal vivo che MagicDNS e' attivo tailnet-wide (suffisso
+  `tail62079e.ts.net`) — risolveva un punto aperto lasciato sia qui sia
+  nel piano Tailscale lato Gaia ("hostname .ts.net se MagicDNS risulta
+  attivo — da verificare").
+- Aggiunta la mappa (Core/OPS/Mac Mauro/Pi attivo) alla sezione 3, con
+  hostname MagicDNS + IP per ciascuno.
+- Specificato il meccanismo di auto-aggiornamento: stesso campo
+  `tailscale_ip` gia' pubblicato da Pi/OPS/Core nel proprio `profile`
+  (Fase 1 del piano fallback LAN->Tailscale, gia' in produzione,
+  verificato dal vivo oggi su `GET /gaia/devices/profiles`) — quando
+  l'Agent TD lo fara' anche lui, la mappa vera diventa quell'endpoint,
+  la tabella qui resta solo bootstrap/riferimento di emergenza.
+- **Trovato di sfuggita, non ancora affrontato**: `GET
+  /gaia/devices/profiles` su Node-RED tiene ancora decine di device_id
+  fantasma dai test odierni (`td-dmx.1`...`.7`, `TD-DMX-A/B`,
+  `td-PATCHDECK_V8.89/90/91-f6f773`, ecc.) — le pulizie fatte oggi sul
+  broker MQTT (retained vuoti) non toccano questo registro separato
+  lato Node-RED, che a quanto pare non fa mai garbage-collection delle
+  entry vecchie. Non e' un problema per la mappa qui sopra (curata a
+  mano sui soli device rilevanti), ma vale la pena tenerlo a mente se
+  in futuro si costruisce qualcosa che legge quell'endpoint alla
+  cieca senza filtrare.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
