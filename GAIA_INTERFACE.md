@@ -2686,6 +2686,85 @@ per ControllerV7 dovrebbe quindi risolversi da solo col self-heal
 generico appena verificato sopra, non serve più l'intervento manuale
 suggerito in chiusura di "Core, 9".
 
+**2026-08-29 (TD/Mac, 4)** — Il progetto Gaia stesso (questo repo,
+`TD4Gaia`) era il quarto rimasto sull'agent bespoke pre-Universale
+(`Bridge/gaia_agent`, mai toccato dalla migrazione PatchDeck/DMX/
+ControllerV7 di oggi) — migrato ora a `gaia_client` (import diretto da
+`gaia_client_portable.tox` di TD4PatchDeck, quarto consumer dopo
+PatchDeck/DMX/ControllerV7). Stessa procedura di cutover di ControllerV7:
+costruito e verificato su un `Deviceid` di test, poi disattivato
+`mqtt_agent` del vecchio agent e riattivato il nuovo con lo stesso
+`Deviceid` finale (`td-macbook-air-di-mauro`) — zero doppie pubblicazioni,
+retained del device di test ripuliti.
+
+**Correzione a una diagnosi precedente**: il changelog "TD/Mac" del
+2026-08-24 aveva ipotizzato che `td-macbook-air-di-mauro` (minuscolo,
+senza `.local`) fosse "probabile residuo di un altro progetto TD-Gaia non
+in esecuzione ora". **Non lo era** — è sempre stato il device_id di
+QUESTO stesso progetto (`Bridge/gaia_agent.par.Deviceid`, espressione
+derivata dall'hostname), semplicemente mai identificato con certezza
+prima d'ora perché nessuna sessione precedente aveva accesso Envoy a
+*questo* progetto mentre indagava sul broker.
+
+**`Family` = `"gaia"`** (minuscolo), `Identitystatus` ok, self-heal
+generico verificato dal vivo in un modo particolarmente diretto: editare
+`gaia_device_agent.py` per il fix sotto ha fatto ricaricare il modulo a
+caldo, azzerando `_services`/`_registrar` esattamente come da sezione 2 —
+il self-check li ha ripopolati da solo entro 5s (il tempo di ripoll di
+`_ensure_registrar()` in `gaia_services/lifecycle.py`), zero intervento
+manuale, prova dal vivo che il meccanismo generico funziona anche qui.
+
+**Fix applicato allo stesso giro, propagato da qui**: `family` non veniva
+mai normalizzato a minuscolo in `_read_config()` — bug reale, non
+teorico: il broker mostra IN QUESTO MOMENTO
+`td-controllerv7-macbook-air-di-mauro` con `family: "MixerAudio"`
+(PascalCase), violazione della convenzione sezione 1b avvenuta dopo la
+migrazione di stamattina (probabilmente un rename manuale del valore).
+Fix (`"family": par("Family", "").strip().lower()`) applicato al file
+condiviso in TD4PatchDeck (main-dev) e a `gaia_dmx_client` (fork, stessa
+copia esatta) via commit separato, oltre che qui in locale. **Non ancora
+propagato**: DMX V8 e ControllerV7 hanno importato il `.tox` PRIMA di
+questo fix — il loro `family` resta non normalizzato in codice finché non
+ri-importano una build più recente del portabile. Chi ha accesso Envoy a
+quei due progetti dovrebbe ri-esportare/ri-importare quando comodo; non
+urgente (il valore corrente su ControllerV7 andrebbe comunque corretto a
+mano nel frattempo, il fix impedisce solo la *prossima* ricorrenza).
+
+**Cosa NON è stato attivato**: `Canvasingest`/`Mocapingest`/
+`Devicecontrol` del bundle gaia_client sono disattivati (stesso motivo di
+ControllerV7) — questo progetto ha già `Visuals/data_canvas` (canale 2
+OSC), `Visuals/mocap_bridge` e `Bridge/gaia_control` nativi, costruiti
+prima e più specifici del bundle generico. `Bridge/gaia_config` resta il
+punto di configurazione per tutto il resto del Bridge (mqtt_bridge,
+gaia_control, gaia_nursery, web_bridge, ollama_bridge) — `gaia_client` ha
+un `Brokerhost`/`Tailscalehost` **indipendenti**, stesso pattern
+self-contained degli altri 3 progetti (nessuno di loro condivide un
+gaia_config), non bindato per espressione per non entrare in conflitto
+col beacon discovery interno che scrive su `Brokerhost` come costante.
+
+**Verificato dal vivo con publish/subscribe MQTT reali** (non solo
+chiamate dirette): status/profile pubblicati correttamente sotto
+`td-macbook-air-di-mauro` con `family`, 4 servizi (`osc_in`/`render`/
+`dmx_out`/`mocap_bridge`, portati identici dal vecchio
+`project_services.py`, stessa logica/stessi 3 gotcha storici preservati
+nei commenti), comando `enable`/`disable` reale su `osc_in` andato a buon
+fine end-to-end. **Non verificato**: il fallback Tailscale del beacon
+(richiederebbe isolare la LAN per innescarlo) — stesso limite già
+accettato per gli altri 3 progetti, nessuno lo ha mai testato dal vivo.
+
+**Gap ancora aperto, invariato su tutti e 4 i progetti**: nessuno
+pubblica ancora `tailscale_ip`/`internet` in `profile` (schema già usato
+da Pi/OPS/Core, vedi sezione 3) — proposta scritta, niente costruito.
+
+I due riferimenti incrociati al vecchio `Bridge/gaia_agent`
+(`gaia_nursery_control.py._myRoom()`, `MoodNudge/mood_send_relay.py` per
+il device_id nel path OSC del canale 3) aggiornati a `gaia_client`,
+verificati dal vivo dopo l'aggiornamento. Vecchio `Bridge/gaia_agent`
+(COMP + 4 file, incluso un `mqtt_agent_callbacks.py` orfano mai
+disexternalizzato dal registro) rimosso dopo verifica completa —
+`get_op_errors` pulito su tutto `/project1`, performance invariata
+rispetto al baseline pre-migrazione (31fps prima e dopo).
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
