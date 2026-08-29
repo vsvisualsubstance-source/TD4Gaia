@@ -405,6 +405,48 @@ valido e non lo era (stesso meccanismo già noto per `td-dmx.1-b`,
 sezione "TD/DMX, 5"). `Name`/`Stanza` stesso trattamento — se vuoto può
 derivare da `Deviceid` come fallback, mai il contrario.
 
+### 1b. `family` — dichiarare il progetto, non dedurlo
+
+Aggiunto 2026-08-29, richiesto esplicitamente lato Gaia in vista di
+nuovi progetti TD in arrivo (Herbarium, Acqua, altri non ancora
+nominati) oltre ai tre attuali (Gaia/DMX/PatchDeck). Problema concreto,
+non ipotetico: **oggi non esiste nessun campo che dichiari "sono il
+progetto X"** — l'unico indizio è il nome del topic della matrice
+canale 5 (`patchdeck_matrix`, `dmx_matrix`), scelto dallo script del
+progetto ma mai esposto come dato. Lato Gaia questo ha già causato due
+bug reali, entrambi fissati il 2026-08-28/29 con una lista scritta a
+mano (`PD_HIDDEN_IDS` in `admin.html`, un `Set` di device_id esatti da
+nascondere dalla griglia generica) che è marcita al primo cambio di
+Deviceid (PatchDeck migrato al nuovo Agent, la card generica è tornata
+visibile perché l'ID nel Set non combaciava più) — più una regex
+`/^td-dmx/i` scritta a mano per lo stesso motivo, che regge solo perché
+tutti i device DMX iniziano per convenzione con quel prefisso.
+
+**Proposta**: `family` diventa un parametro custom sull'agent, stesso
+trattamento del `Deviceid` — vuoto di default, badge rosso finché non
+compilato, mai dedotto per default (niente valore ereditato da un
+clone che sembra valido e non lo è). Un progetto ha tipicamente UN solo
+valore `family` condiviso da tutte le sue istanze (es. `dmx` per
+`td-dmx-ops-a`/`td-dmx-ops-b`, `patchdeck` per `PatchDeck-Mac-Mauro`) —
+`Deviceid` distingue l'istanza, `family` distingue il progetto.
+
+Conseguenze dirette, tutte a costo ~zero una volta che il campo esiste:
+- **Topic della matrice canale 5 costruito dal campo stesso**:
+  `gaia/devices/{id}/{family}_matrix`, invece che il nome scelto a mano
+  nello script del progetto (oggi coincidono per DMX/PatchDeck solo per
+  disciplina, non per vincolo).
+- **`family` esposto anche in `status`/`profile`** (non solo usato per
+  costruire il nome del topic) — permette a qualunque consumer
+  generico lato Gaia (Admin, watchdog, una futura pagina "Progetti TD
+  attivi") di raggruppare/filtrare leggendo un campo, senza liste di
+  device_id o regex scritte a mano che vanno aggiornate ad ogni
+  migrazione. `role` resta invariato (`"touchdesigner"` per qualunque
+  istanza TD, di qualunque progetto) — `family` è un livello più fine,
+  non lo sostituisce.
+- Un nuovo progetto (es. Acqua) diventa "riconoscibile" lato Gaia
+  compilando un solo campo sull'agent, non scrivendo codice nuovo sul
+  lato Gaia per farlo apparire/nascondere correttamente.
+
 ### 2. Affidabilità di `register_service()`/`register_param()` — il problema numero due
 
 Causa vista due volte stasera (PatchDeck e DMX Rig A prima del fix): un
@@ -2011,6 +2053,35 @@ una checklist diagnostica concreta per isolare la causa esatta (toggle
 executeDAT vs onCreate non ri-scattato) la prossima volta che si
 ripresenta, invece di continuare a ricrearlo alla cieca senza mai
 confermare quale delle due sia la causa reale.
+
+**2026-08-29 (Core)** — Terzo bug reale sullo stesso filone PatchDeck
+(dopo "Core, 9"/"Core, 10" del 27/28): un `PD_DEVICE_ID` ricordato in
+localStorage da PRIMA del fix "adozione dal device sbagliato" restava
+agganciato a Core per sempre — Core pubblica status di continuo, quindi
+ogni status nuovo "sembrava" confermarlo, anche dopo i fix precedenti
+(che chiudevano solo la NUOVA adozione sbagliata, non un ID già
+sbagliato ricordato da prima). Fix strutturale in `web/patchdeck.html`:
+uno status non è mai trattato come vero finché non è confermato da una
+`patchdeck_matrix` reale per lo stesso device_id — vale sia per
+un'adozione nuova sia per un ID già "confirmed" da uno storage
+avvelenato. Riprodotto dal vivo pre-caricando l'ID sbagliato in
+localStorage (stesso scenario esatto riportato dall'utente) e
+verificato: autocorrezione entro pochi secondi, nessuna azione manuale
+richiesta sul browser.
+
+Trovati e fissati nello stesso giro due riferimenti rimasti sul vecchio
+device_id morto (`td-MacBook-Air-di-Mauro.local`): `PD_HIDDEN_IDS` in
+`admin.html` (PatchDeck-Mac-Mauro non veniva nascosto dalla griglia
+generica) e `PATCHDECK_DEVICE` nell'automazione Gaia VJ (i comandi clip
+sarebbero andati a un device che non esiste più, in silenzio).
+
+Aggiunta anche la sezione "1b. `family`" sopra, dentro la proposta
+Agent Universale — richiesta esplicita lato Gaia in vista di nuovi
+progetti TD (Herbarium, Acqua): oggi non esiste nessun campo che
+dichiari a quale progetto appartiene un'istanza, solo il nome scelto a
+mano del topic matrice (`dmx_matrix`/`patchdeck_matrix`) e liste/regex
+scritte a mano lato Gaia (`PD_HIDDEN_IDS`, `/^td-dmx/i`) — la stessa
+causa strutturale dietro il bug `PD_HIDDEN_IDS` di questa entry.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
