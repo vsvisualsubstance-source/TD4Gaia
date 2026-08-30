@@ -488,6 +488,51 @@ per istanza. Proposta: un campo `sw_version` (stringa libera, es.
 `"1.0.0"` o un hash breve) nel `profile`, bump ad ogni release del
 `.tox` — stesso trattamento di `pi/agent/config.py`'s `SW_VERSION`.
 
+### 1d. Convenzione `Deviceid` — ordine e case (2026-08-30, Core)
+
+Richiesta esplicita dell'utente in vista del rename di
+`td-controllerv7-macbook-air-di-mauro` ("cercherei una matrice comune
+tipo servizio-macchina-istanza... creerei una nota per avere la stessa
+sintassi per tutti i device_id"). Non un campo nuovo (a differenza di
+`family`/`sw_version` sopra) — solo una convenzione per un valore che
+già esiste e che oggi è incoerente device per device
+(`PatchDeck-Mac-Mauro`, `DMX-OPS`, `td-macbook-air-di-mauro`,
+`td-controllerv7-macbook-air-di-mauro`: case diverso, ordine diverso,
+lunghezza diversa).
+
+**Forma proposta**: `td-{family}-{macchina}[-{rig}]`, sempre minuscolo,
+solo trattini. Family prima della macchina, non il contrario — **allineato
+all'esempio già presente in questo stesso file** (sezione "Domande
+aperte", risposta ancora pendente su N-device-vs-1 per multi-rig:
+`td-dmx-ops-a`/`td-dmx-ops-b`), per non introdurre un secondo ordine in
+conflitto col primo. `{rig}` (lettera) resta opzionale e si applica solo
+quando quella domanda aperta viene risolta a favore di N device separati
+— la convenzione qui non la decide, resta compatibile con entrambe le
+risposte possibili.
+
+**Perché sempre minuscolo, non è solo estetica**: il case misto sui
+device TD ha già causato bug reali lato Gaia due volte nella stessa
+sessione (lookup case-sensitive contro `brain.rooms`, corretti ma solo
+dopo aver perso tempo a diagnosticarli) — stessa lezione già scritta
+sopra per `family` (sezione 1b, "Convenzione mancante, trovata dal vivo
+2026-08-29"). Estendere la stessa regola a `Deviceid` chiude la stessa
+classe di bug alla radice invece di continuare a riscoprirla device per
+device.
+
+**Esempi concreti** (rename suggeriti, non ancora applicati lato TD):
+- `td-controllerv7-macbook-air-di-mauro` → `td-controllerv7-macmauro`
+- `PatchDeck-Mac-Mauro` → `td-patchdeck-macmauro`
+- `DMX-OPS` → `td-dmx-ops`
+- `td-macbook-air-di-mauro` (family `gaia`) resta un caso limite: per
+  coerenza piena sarebbe `td-gaia-macmauro`, ma non richiesto qui — chi
+  ha accesso Envoy decide se e quando applicarlo, nessuna fretta.
+
+Nessun codice cambia per questo — `device_id` è già trattato come
+stringa opaca ovunque lato Gaia (usato solo per lookup/etichette, mai
+parsato). Machine short-name proposti per uniformità: `macmauro` (Mac di
+Mauro), `ops` (macchina OPS/silvermini2) — stessi short-name già usati
+lato Gaia per `ops-silvermini2`.
+
 ### 2. Affidabilità di `register_service()`/`register_param()` — il problema numero due
 
 Causa vista due volte stasera (PatchDeck e DMX Rig A prima del fix): un
@@ -2764,6 +2809,17 @@ verificati dal vivo dopo l'aggiornamento. Vecchio `Bridge/gaia_agent`
 disexternalizzato dal registro) rimosso dopo verifica completa —
 `get_op_errors` pulito su tutto `/project1`, performance invariata
 rispetto al baseline pre-migrazione (31fps prima e dopo).
+
+**2026-08-30 (Core)** — convenzione `Deviceid`, sezione "1d" sopra:
+richiesta esplicita dell'utente prima di rinominare
+`td-controllerv7-macbook-air-di-mauro`. Proposta: `td-{family}-{macchina}
+[-{rig}]`, sempre minuscolo, allineata all'esempio già presente in
+"Domande aperte" (`td-dmx-ops-a`/`-b`) così da non introdurre un secondo
+ordine in conflitto col primo — non risolve quella domanda aperta
+(N-device-vs-1 per multi-rig), resta compatibile con entrambe le
+risposte. Nessun codice lato Gaia da cambiare (`device_id` è già
+trattato come stringa opaca). Rename concreti suggeriti nella sezione,
+non ancora applicati — in attesa di chi ha accesso Envoy.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
