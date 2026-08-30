@@ -227,6 +227,14 @@ class GaiaRegistryExt:
 		v = self._canvas.get(address, default)
 		return v if isinstance(v, str) else default
 
+	def GetCanvasKeys(self, prefix):
+		"""All /gaia/canvas/* addresses seen so far starting with prefix -
+		lets a consumer scan a dynamically-indexed family (e.g.
+		voiceCommands/{i}/*) the same way canvas CHOP channels already
+		support via chans(pattern), for string-valued entries which have
+		no CHOP channel."""
+		return [k for k in self._canvas.keys() if k.startswith(prefix)]
+
 	def GetCanvasNumeric(self):
 		"""(name, value) pairs for every numeric canvas entry seen so far -
 		feeds canvas_bridge's Script CHOP."""
