@@ -8,7 +8,7 @@ path	type	strategy	rel_file_path	timestamp	dirty	build	touch_build	node_x	node_y
 /project1/container1/Visuals/data/script_detections_callbacks	text	py	project1/container1/Visuals/data/script_detections_callbacks.py	2026-07-25 09:00:09 UTC				1200	1080	0.9000,0.3000,0.4000
 /project1/container1/Visuals/data	base	tox	project1/container1/Visuals/data.tox	2026-08-08 11:58:19 UTC	False	21	2025.33070	70	620	0.3250,0.8000,0.3000
 /project1/container1/Visuals/cam1	cam	tox	project1/container1/Visuals/cam1.tox	2026-07-25 09:00:09 UTC	False	1	2025.32820	400	0	0.3250,0.8000,0.3000
-/project1/container1/Visuals	base	tox	project1/container1/Visuals.tox	2026-08-08 11:58:19 UTC	False	49	2025.33070	1000	200	0.3250,0.8000,0.3000
+/project1/container1/Visuals	base	tox	project1/container1/Visuals.tox	2026-08-30 07:04:40 UTC	False	53	2025.33070	1000	200	0.3250,0.8000,0.3000
 /project1/container1/Embody/window_tagging_menu	window	tox	project1/container1/Embody/window_tagging_menu.tox	2026-07-25 09:00:09 UTC	False	24	2025.32820	900	675	0.3250,0.8000,0.3000
 /project1/container1/Embody/window_manager	window	tox	project1/container1/Embody/window_manager.tox	2026-07-25 09:00:09 UTC	False	13	2025.32820	500	675	0.3250,0.8000,0.3000
 /project1/container1/Embody/windowHeader/title	text	tox	project1/container1/Embody/windowHeader/title.tox	2026-07-25 09:00:09 UTC	False	49	2025.32820	0	0	0.3250,0.8000,0.3000
@@ -111,22 +111,125 @@ path	type	strategy	rel_file_path	timestamp	dirty	build	touch_build	node_x	node_y
 /project1/container1/Embody/Collection/CollectionExt	text	py	project1/container1/Embody/Collection/CollectionExt.py	2026-07-25 09:00:09 UTC				200	0	0.9000,0.3000,0.4000
 /project1/container1/Embody/Collection	base	tox	project1/container1/Embody/Collection.tox	2026-07-25 09:00:09 UTC	False	1	2025.32820	200	-550	0.3250,0.8000,0.3000
 /project1/container1/Embody/CatalogManagerExt	text	py	project1/container1/Embody/CatalogManagerExt.py	2026-07-25 09:00:09 UTC				-300	300	0.9000,0.3000,0.4000
-/project1/container1/Embody	container	tox	project1/container1/Embody.tox	2026-08-29 14:40:35 UTC	False	675	2025.33070	162	434	0.3250,0.8000,0.3000
-/project1/container1	container	tox	project1/container1.tox	2026-08-29 14:54:05 UTC	False	34	2025.33070	250	131	0.3250,0.8000,0.3000
+/project1/container1/Embody	container	tox	project1/container1/Embody.tox	2026-08-29 16:32:18 UTC	False	676	2025.33070	250	600	0.3250,0.8000,0.3000
+/project1/container1	container	tox	project1/container1.tox	2026-08-29 16:30:56 UTC	False	35	2025.33070	250	131	0.3250,0.8000,0.3000
 /project1	container	tox	project1.tox	2026-07-25 09:00:09 UTC	False	1	2025.32820	200	100	0.3250,0.8000,0.3000
 /perform	window	tox	perform.tox	2026-07-25 09:00:09 UTC	False	1	2025.32820	-200	40	0.3250,0.8000,0.3000
-/	base	tdn	NewProject.tdn	2026-07-25 09:00:11 UTC			099.2025.32820			
+/	base	tdn	TD-Gaia.tdn	2026-08-29 16:31:00 UTC			099.2025.33070			
 /project1/container1/Bridge/gaia_control	base	tox	project1/container1/Bridge/gaia_control.tox	2026-08-05 16:46:35 UTC	False	6	2025.33070	0	-1600	0.3250,0.8000,0.3000
 /project1/container1/Bridge/gaia_control/td_service_control	text	py	project1/container1/Bridge/gaia_control/td_service_control.py	2026-08-05 09:30:12 UTC				330	0	0.9000,0.3000,0.4000
 /project1/container1/Bridge/gaia_control/control_lifecycle	execute	py	project1/container1/Bridge/gaia_control/control_lifecycle.py	2026-08-05 09:30:43 UTC				660	0	0.9000,0.3000,0.4000
 /gaia_control_window	window	tox	gaia_control_window.tox	2026-08-05 13:08:02 UTC	False	4	2025.33070	150	-175	0.3250,0.8000,0.3000
-/project1/container1/Bridge/gaia_config	base	tox	project1/container1/Bridge/gaia_config.tox	2026-08-29 14:40:35 UTC	Par	12	2025.33070	0	-2070	0.3250,0.8000,0.3000
+/project1/container1/Bridge/gaia_config	base	tox	project1/container1/Bridge/gaia_config.tox	2026-08-29 16:32:18 UTC	False	14	2025.33070	0	-2070	0.3250,0.8000,0.3000
 /project1/container1/MoodNudge	base	tox	project1/container1/MoodNudge.tox	2026-08-29 14:41:05 UTC	False	2	2025.33070	1000	-75	0.3250,0.8000,0.3000
 /project1/container1/Bridge/gaia_nursery	base	tox	project1/container1/Bridge/gaia_nursery.tox	2026-08-29 14:41:05 UTC	False	2	2025.33070	-125	-2600	0.6700,0.6700,0.6700
 /project1/container1/Visuals/person_sigil	geo	tox	project1/container1/Visuals/person_sigil.tox	2026-08-07 14:49:14 UTC	False	2	2025.33070	-70	3400	0.3250,0.8000,0.3000
 /project1/container1/Visuals/dream_fragment	geo	tox	project1/container1/Visuals/dream_fragment.tox	2026-08-07 14:10:31 UTC	False	1	2025.33070	400	3400	0.3250,0.8000,0.3000
-/project1/container1/Bridge/gaia_client	base	tox	project1/container1/Bridge/gaia_client.tox	2026-08-29 14:40:35 UTC	Par	30	2025.33070	0	-1225	0.6700,0.6700,0.6700
+/project1/container1/Bridge/gaia_client	base	tox	project1/container1/Bridge/gaia_client.tox	2026-08-29 16:32:18 UTC	False	32	2025.33070	0	-1225	0.6700,0.6700,0.6700
 /project1/container1/Bridge/gaia_client/gaia_device_agent	text	py	project1/container1/Bridge/gaia_client/gaia_device_agent.py	2026-08-29 14:39:04 UTC				400	-3200	0.9000,0.3000,0.4000
 /project1/container1/Bridge/gaia_services	base	tox	project1/container1/Bridge/gaia_services.tox	2026-08-29 14:39:34 UTC	False	1	2025.33070	360	-1225	0.3250,0.8000,0.3000
 /project1/container1/Bridge/gaia_services/gaia_project_services	text	py	project1/container1/Bridge/gaia_services/gaia_project_services.py	2026-08-29 14:40:05 UTC				0	0	0.9000,0.3000,0.4000
 /project1/container1/Bridge/gaia_services/lifecycle	execute	py	project1/container1/Bridge/gaia_services/lifecycle.py	2026-08-29 14:40:35 UTC				400	0	0.9000,0.3000,0.4000
+/window1	window	tox	window1.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	450	-175	0.3250,0.8000,0.3000
+/project1/container1/Visuals/timer_dream_callbacks	text	py	project1/container1/Visuals/timer_dream_callbacks.py	2026-08-29 16:30:55 UTC				2000	-1520	0.9000,0.3000,0.4000
+/project1/container1/Visuals/text_ctrl	base	tox	project1/container1/Visuals/text_ctrl.tox	2026-08-30 05:49:18 UTC	False	2	2025.33070	450	-2725	0.3250,0.8000,0.3000
+/project1/container1/Visuals/sediment_reset_relay	parexec	py	project1/container1/Visuals/sediment_reset_relay.py	2026-08-29 16:30:55 UTC				1200	-2400	0.9000,0.3000,0.4000
+/project1/container1/Visuals/sediment_ctrl	base	tox	project1/container1/Visuals/sediment_ctrl.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	0	-2750	0.3250,0.8000,0.3000
+/project1/container1/Visuals/script_zone_colors_callbacks	text	py	project1/container1/Visuals/script_zone_colors_callbacks.py	2026-08-29 16:30:55 UTC				3520	1028	0.9000,0.3000,0.4000
+/project1/container1/Visuals/registry/scriptchop_objects_callbacks	text	py	project1/container1/Visuals/registry/scriptchop_objects_callbacks.py	2026-08-29 16:30:55 UTC				0	280	0.9000,0.3000,0.4000
+/project1/container1/Visuals/registry/scriptchop_lexicon_callbacks	text	py	project1/container1/Visuals/registry/scriptchop_lexicon_callbacks.py	2026-08-29 16:30:55 UTC				0	-120	0.9000,0.3000,0.4000
+/project1/container1/Visuals/registry/scriptchop_affinity_callbacks	text	py	project1/container1/Visuals/registry/scriptchop_affinity_callbacks.py	2026-08-29 16:30:55 UTC				0	680	0.9000,0.3000,0.4000
+/project1/container1/Visuals/registry/GaiaRegistryExt	text	py	project1/container1/Visuals/registry/GaiaRegistryExt.py	2026-08-29 16:30:55 UTC				0	-400	0.9000,0.3000,0.4000
+/project1/container1/Visuals/registry	base	tox	project1/container1/Visuals/registry.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	-700	-2300	0.3250,0.8000,0.3000
+/project1/container1/Visuals/recognition_geo/glsl_recognition_compute	text	glsl	project1/container1/Visuals/recognition_geo/glsl_recognition_compute.glsl	2026-08-29 16:30:55 UTC				390	-120	0.9000,0.3000,0.4000
+/project1/container1/Visuals/recognition_geo	geo	tox	project1/container1/Visuals/recognition_geo.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	800	-400	0.3250,0.8000,0.3000
+/project1/container1/Visuals/plantnotes_geo/glsl_plantnotes_compute	text	glsl	project1/container1/Visuals/plantnotes_geo/glsl_plantnotes_compute.glsl	2026-08-29 16:30:55 UTC				390	-120	0.9000,0.3000,0.4000
+/project1/container1/Visuals/plantnotes_geo	geo	tox	project1/container1/Visuals/plantnotes_geo.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	4133	-1959	0.3250,0.8000,0.3000
+/project1/container1/Visuals/person_sigil/glsl_sigil_compute	text	glsl	project1/container1/Visuals/person_sigil/glsl_sigil_compute.glsl	2026-08-29 16:30:55 UTC				390	-120	0.9000,0.3000,0.4000
+/project1/container1/Visuals/moodwash_ctrl	base	tox	project1/container1/Visuals/moodwash_ctrl.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	325	-2350	0.3250,0.8000,0.3000
+/project1/container1/Visuals/mocap_geo/glsl_mocap_compute	text	glsl	project1/container1/Visuals/mocap_geo/glsl_mocap_compute.glsl	2026-08-29 16:30:55 UTC				0	-120	0.9000,0.3000,0.4000
+/project1/container1/Visuals/mocap_geo	geo	tox	project1/container1/Visuals/mocap_geo.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	1125	825	0.3250,0.8000,0.3000
+/project1/container1/Visuals/mocap_bridge/scriptchop_pose_callbacks	text	py	project1/container1/Visuals/mocap_bridge/scriptchop_pose_callbacks.py	2026-08-29 16:30:55 UTC				400	800	0.9000,0.3000,0.4000
+/project1/container1/Visuals/mocap_bridge/scriptchop_hand_right_callbacks	text	py	project1/container1/Visuals/mocap_bridge/scriptchop_hand_right_callbacks.py	2026-08-29 16:30:55 UTC				400	-120	0.9000,0.3000,0.4000
+/project1/container1/Visuals/mocap_bridge/scriptchop_hand_left_callbacks	text	py	project1/container1/Visuals/mocap_bridge/scriptchop_hand_left_callbacks.py	2026-08-29 16:30:55 UTC				400	280	0.9000,0.3000,0.4000
+/project1/container1/Visuals/mocap_bridge/scriptchop_face_callbacks	text	py	project1/container1/Visuals/mocap_bridge/scriptchop_face_callbacks.py	2026-08-29 16:30:55 UTC				400	1080	0.9000,0.3000,0.4000
+/project1/container1/Visuals/mocap_bridge/MocapBridgeExt	text	py	project1/container1/Visuals/mocap_bridge/MocapBridgeExt.py	2026-08-29 16:30:55 UTC				0	0	0.9000,0.3000,0.4000
+/project1/container1/Visuals/mocap_bridge	base	tox	project1/container1/Visuals/mocap_bridge.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	675	800	0.3250,0.8000,0.3000
+/project1/container1/Visuals/inhabitants_geo/glsl_inhabitants_compute	text	glsl	project1/container1/Visuals/inhabitants_geo/glsl_inhabitants_compute.glsl	2026-08-29 16:30:55 UTC				325	-120	0.9000,0.3000,0.4000
+/project1/container1/Visuals/inhabitants_geo	geo	tox	project1/container1/Visuals/inhabitants_geo.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	400	-600	0.3250,0.8000,0.3000
+/project1/container1/Visuals/glsl_sediment_deposit_pixel	text	glsl	project1/container1/Visuals/glsl_sediment_deposit_pixel.glsl	2026-08-29 16:30:55 UTC				1600	-2320	0.9000,0.3000,0.4000
+/project1/container1/Visuals/glsl_sediment_deposit_compute	text	glsl	project1/container1/Visuals/glsl_sediment_deposit_compute.glsl	2026-08-29 16:30:55 UTC				1450	-2320	0.9000,0.3000,0.4000
+/project1/container1/Visuals/event_watcher_callbacks	text	py	project1/container1/Visuals/event_watcher_callbacks.py	2026-08-29 16:30:55 UTC				4158	-1779	0.9000,0.3000,0.4000
+/project1/container1/Visuals/event_names_in_callbacks	text	py	project1/container1/Visuals/event_names_in_callbacks.py	2026-08-29 16:30:55 UTC				1200	-1320	0.9000,0.3000,0.4000
+/project1/container1/Visuals/event_ctrl	base	tox	project1/container1/Visuals/event_ctrl.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	625	-2325	0.3250,0.8000,0.3000
+/project1/container1/Visuals/dream_visibility_callbacks	text	py	project1/container1/Visuals/dream_visibility_callbacks.py	2026-08-29 16:30:55 UTC				2400	-1520	0.9000,0.3000,0.4000
+/project1/container1/Visuals/dream_segments	table	tsv	project1/container1/Visuals/dream_segments.tsv	2026-08-29 16:30:55 UTC				1600	-1600	0.9000,0.3000,0.4000
+/project1/container1/Visuals/dream_light	light	tox	project1/container1/Visuals/dream_light.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	2400	-1275	0.3250,0.8000,0.3000
+/project1/container1/Visuals/dream_geo/glsl_dream_compute	text	glsl	project1/container1/Visuals/dream_geo/glsl_dream_compute.glsl	2026-08-29 16:30:55 UTC				325	-120	0.9000,0.3000,0.4000
+/project1/container1/Visuals/dream_geo	geo	tox	project1/container1/Visuals/dream_geo.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	4100	-1200	0.3250,0.8000,0.3000
+/project1/container1/Visuals/dream_fragment/glsl_dreamfrag_compute	text	glsl	project1/container1/Visuals/dream_fragment/glsl_dreamfrag_compute.glsl	2026-08-29 16:30:55 UTC				390	-120	0.9000,0.3000,0.4000
+/project1/container1/Visuals/dream_cam	cam	tox	project1/container1/Visuals/dream_cam.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	4100	-1400	0.3250,0.8000,0.3000
+/project1/container1/Visuals/dmx_patch	table	tsv	project1/container1/Visuals/dmx_patch.tsv	2026-08-29 16:30:55 UTC				4920	773	0.9000,0.3000,0.4000
+/project1/container1/Visuals/dmx_out1_routingtable	table	tsv	project1/container1/Visuals/dmx_out1_routingtable.tsv	2026-08-29 16:30:55 UTC				5120	828	0.9000,0.3000,0.4000
+/project1/container1/Visuals/dmx_ctrl	base	tox	project1/container1/Visuals/dmx_ctrl.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	4270	748	0.3250,0.8000,0.3000
+/project1/container1/Visuals/data_canvas	base	tox	project1/container1/Visuals/data_canvas.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	-730	-580	0.3250,0.8000,0.3000
+/project1/container1/Visuals/data/script_room_light_tex_callbacks	text	py	project1/container1/Visuals/data/script_room_light_tex_callbacks.py	2026-08-29 16:30:55 UTC				2000	-120	0.9000,0.3000,0.4000
+/project1/container1/Visuals/data/script_room_legend_callbacks	text	py	project1/container1/Visuals/data/script_room_legend_callbacks.py	2026-08-29 16:30:55 UTC				2800	1080	0.9000,0.3000,0.4000
+/project1/container1/Visuals/data/script_room_env_tex_callbacks	text	py	project1/container1/Visuals/data/script_room_env_tex_callbacks.py	2026-08-29 16:30:55 UTC				2000	280	0.9000,0.3000,0.4000
+/project1/container1/Visuals/data/script_recognition_tex_callbacks	text	py	project1/container1/Visuals/data/script_recognition_tex_callbacks.py	2026-08-29 16:30:55 UTC				2000	680	0.9000,0.3000,0.4000
+/project1/container1/Visuals/data/script_plantnotes_tex_callbacks	text	py	project1/container1/Visuals/data/script_plantnotes_tex_callbacks.py	2026-08-29 16:30:55 UTC				2000	1073	0.9000,0.3000,0.4000
+/project1/container1/Visuals/data/script_mediapipe_agg_callbacks	text	py	project1/container1/Visuals/data/script_mediapipe_agg_callbacks.py	2026-08-29 16:30:55 UTC				1200	1425	0.9000,0.3000,0.4000
+/project1/container1/Visuals/data/script_lexicondream_callbacks	text	py	project1/container1/Visuals/data/script_lexicondream_callbacks.py	2026-08-29 16:30:55 UTC				1600	1080	0.9000,0.3000,0.4000
+/project1/container1/Visuals/canvas_bridge_callbacks	text	py	project1/container1/Visuals/canvas_bridge_callbacks.py	2026-08-29 16:30:55 UTC				1600	-1320	0.9000,0.3000,0.4000
+/project1/container1/Visuals/affinity_ctrl	base	tox	project1/container1/Visuals/affinity_ctrl.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	-25	-2350	0.3250,0.8000,0.3000
+/project1/container1/MoodNudge/mood_send_relay	parexec	py	project1/container1/MoodNudge/mood_send_relay.py	2026-08-29 16:30:55 UTC				400	0	0.9000,0.3000,0.4000
+/project1/container1/Bridge/web_bridge/web_window	window	tox	project1/container1/Bridge/web_bridge/web_window.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	1130	0	0.3250,0.8000,0.3000
+/project1/container1/Bridge/web_bridge/web_panel	container	tox	project1/container1/Bridge/web_bridge/web_panel.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	800	0	0.3250,0.8000,0.3000
+/project1/container1/Bridge/web_bridge/web_interact	panelexec	py	project1/container1/Bridge/web_bridge/web_interact.py	2026-08-29 16:30:55 UTC				800	-120	0.9000,0.3000,0.4000
+/project1/container1/Bridge/web_bridge/reload_relay	parexec	py	project1/container1/Bridge/web_bridge/reload_relay.py	2026-08-29 16:30:55 UTC				0	-120	0.9000,0.3000,0.4000
+/project1/container1/Bridge/web_bridge	base	tox	project1/container1/Bridge/web_bridge.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	0	-400	0.3250,0.8000,0.3000
+/project1/container1/Bridge/ollama_bridge/webclient_ollama_callbacks	text	py	project1/container1/Bridge/ollama_bridge/webclient_ollama_callbacks.py	2026-08-29 16:30:55 UTC				-225	55	0.9000,0.3000,0.4000
+/project1/container1/Bridge/ollama_bridge/raw_ollama	text	py	project1/container1/Bridge/ollama_bridge/raw_ollama.py	2026-08-29 16:30:55 UTC				125	200	0.9000,0.3000,0.4000
+/project1/container1/Bridge/ollama_bridge/ask_relay	parexec	py	project1/container1/Bridge/ollama_bridge/ask_relay.py	2026-08-29 16:30:55 UTC				-75	25	0.9000,0.3000,0.4000
+/project1/container1/Bridge/ollama_bridge	base	tox	project1/container1/Bridge/ollama_bridge.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	0	-800	0.3250,0.8000,0.3000
+/project1/container1/Bridge/mqtt_bridge/mqtt_log	table	tsv	project1/container1/Bridge/mqtt_bridge/mqtt_log.tsv	2026-08-29 16:30:55 UTC				75	-561	0.9000,0.3000,0.4000
+/project1/container1/Bridge/mqtt_bridge/mqtt_gaia_callbacks	text	py	project1/container1/Bridge/mqtt_bridge/mqtt_gaia_callbacks.py	2026-08-29 16:30:55 UTC				0	-250	0.9000,0.3000,0.4000
+/project1/container1/Bridge/mqtt_bridge	base	tox	project1/container1/Bridge/mqtt_bridge.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	0	0	0.3250,0.8000,0.3000
+/project1/container1/Bridge/gaia_nursery/nursery_lifecycle	execute	py	project1/container1/Bridge/gaia_nursery/nursery_lifecycle.py	2026-08-29 16:30:55 UTC				475	-50	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_nursery/mqtt_nursery_callbacks	text	py	project1/container1/Bridge/gaia_nursery/mqtt_nursery_callbacks.py	2026-08-29 16:30:55 UTC				0	-120	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_nursery/gaia_nursery_control	text	py	project1/container1/Bridge/gaia_nursery/gaia_nursery_control.py	2026-08-29 16:30:55 UTC				250	0	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_control/ui_panel/devices_list_callbacks	text	py	project1/container1/Bridge/gaia_control/ui_panel/devices_list_callbacks.py	2026-08-29 16:30:55 UTC				0	-160	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_control/ui_panel/devices_list	list	tox	project1/container1/Bridge/gaia_control/ui_panel/devices_list.tox	2026-08-29 16:30:55 UTC	False	1	2025.33070	0	0	0.3250,0.8000,0.3000
+/project1/container1/Bridge/gaia_config/config_lifecycle	execute	py	project1/container1/Bridge/gaia_config/config_lifecycle.py	2026-08-29 16:30:56 UTC				400	0	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_config/camera_resolver	text	py	project1/container1/Bridge/gaia_config/camera_resolver.py	2026-08-29 16:30:56 UTC				0	0	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_config/beacon_probe_callbacks	text	py	project1/container1/Bridge/gaia_config/beacon_probe_callbacks.py	2026-08-29 16:30:56 UTC				1200	-120	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_config/beacon_discovery	text	py	project1/container1/Bridge/gaia_config/beacon_discovery.py	2026-08-29 16:30:56 UTC				800	0	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/topic_dream	text	py	project1/container1/Bridge/gaia_client/topic_dream.py	2026-08-29 16:30:56 UTC				400	-100	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/topic_canvas	text	py	project1/container1/Bridge/gaia_client/topic_canvas.py	2026-08-29 16:30:56 UTC				400	700	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/topic_brainstate	text	py	project1/container1/Bridge/gaia_client/topic_brainstate.py	2026-08-29 16:30:56 UTC				400	300	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/script_soul_callbacks	text	py	project1/container1/Bridge/gaia_client/script_soul_callbacks.py	2026-08-29 16:30:56 UTC				800	580	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/reregister_watch	parexec	py	project1/container1/Bridge/gaia_client/reregister_watch.py	2026-08-29 16:30:56 UTC				1200	-3200	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/mqtt_ingest_callbacks	text	py	project1/container1/Bridge/gaia_client/mqtt_ingest_callbacks.py	2026-08-29 16:30:56 UTC				0	580	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/mqtt_device_callbacks	text	py	project1/container1/Bridge/gaia_client/mqtt_device_callbacks.py	2026-08-29 16:30:56 UTC				0	-3320	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/mqtt_control_callbacks	text	py	project1/container1/Bridge/gaia_client/mqtt_control_callbacks.py	2026-08-29 16:30:56 UTC				0	-4320	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/mocap_lifecycle	execute	py	project1/container1/Bridge/gaia_client/mocap_lifecycle.py	2026-08-29 16:30:56 UTC				0	-1400	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/gaia_fleet_control	text	py	project1/container1/Bridge/gaia_client/gaia_fleet_control.py	2026-08-29 16:30:56 UTC				400	-4200	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/fleet_lifecycle	execute	py	project1/container1/Bridge/gaia_client/fleet_lifecycle.py	2026-08-29 16:30:56 UTC				800	-4700	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/devices_table	table	tsv	project1/container1/Bridge/gaia_client/devices_table.tsv	2026-08-29 16:30:56 UTC				800	-4200	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/dat_words_callbacks	text	py	project1/container1/Bridge/gaia_client/dat_words_callbacks.py	2026-08-29 16:30:56 UTC				800	180	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/dat_word_current_callbacks	text	py	project1/container1/Bridge/gaia_client/dat_word_current_callbacks.py	2026-08-29 16:30:56 UTC				1200	180	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/dat_thought_callbacks	text	py	project1/container1/Bridge/gaia_client/dat_thought_callbacks.py	2026-08-29 16:30:56 UTC				800	-220	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/chop_pose_callbacks	text	py	project1/container1/Bridge/gaia_client/chop_pose_callbacks.py	2026-08-29 16:30:56 UTC				800	-1920	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/chop_meta_callbacks	text	py	project1/container1/Bridge/gaia_client/chop_meta_callbacks.py	2026-08-29 16:30:56 UTC				800	-2320	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/chop_hand_callbacks	text	py	project1/container1/Bridge/gaia_client/chop_hand_callbacks.py	2026-08-29 16:30:56 UTC				800	-1520	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/chop_face_callbacks	text	py	project1/container1/Bridge/gaia_client/chop_face_callbacks.py	2026-08-29 16:30:56 UTC				800	-1120	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/beacon_probe_callbacks	text	py	project1/container1/Bridge/gaia_client/beacon_probe_callbacks.py	2026-08-29 16:30:56 UTC				0	-4820	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/beacon_discovery	text	py	project1/container1/Bridge/gaia_client/beacon_discovery.py	2026-08-29 16:30:56 UTC				400	-4700	0.9000,0.3000,0.4000
+/project1/container1/Bridge/gaia_client/agent_lifecycle	execute	py	project1/container1/Bridge/gaia_client/agent_lifecycle.py	2026-08-29 16:30:56 UTC				800	-3200	0.9000,0.3000,0.4000
+/project1/container1/Bridge	base	tox	project1/container1/Bridge.tox	2026-08-29 16:30:56 UTC	False	1	2025.33070	1400	200	0.3250,0.8000,0.3000
+/project1/container1/Visuals/asemic	base	tox	project1/container1/Visuals/asemic.tox	2026-08-30 05:49:14 UTC	False	1	2025.33070	1200	-1750	0.3250,0.8000,0.3000
+/project1/container1/Visuals/asemic/asemic_engine	text	py	project1/container1/Visuals/asemic/asemic_engine.py	2026-08-30 05:49:15 UTC				150	0	0.9000,0.3000,0.4000
+/project1/container1/Visuals/asemic/AsemicExt	text	py	project1/container1/Visuals/asemic/AsemicExt.py	2026-08-30 05:49:15 UTC				0	0	0.9000,0.3000,0.4000
+/project1/container1/Visuals/geo_asemic	geo	tox	project1/container1/Visuals/geo_asemic.tox	2026-08-30 05:49:16 UTC	False	1	2025.33070	1900	-2300	0.3250,0.8000,0.3000
+/project1/container1/Visuals/geo_asemic/asemic_sop_callbacks	text	py	project1/container1/Visuals/geo_asemic/asemic_sop_callbacks.py	2026-08-30 05:49:16 UTC				150	-120	0.9000,0.3000,0.4000
+/project1/container1/Visuals/cam_asemic	cam	tox	project1/container1/Visuals/cam_asemic.tox	2026-08-30 05:49:17 UTC	False	1	2025.33070	2325	-2150	0.3250,0.8000,0.3000

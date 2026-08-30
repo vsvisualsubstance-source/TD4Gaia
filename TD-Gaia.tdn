@@ -2,8 +2,8 @@ format: tdn
 version: '2.0'
 generator: Embody/6.0.66
 td_build: 099.2025.33070
-source_file: TD-Gaia.4.toe
-exported_at: '2026-08-26T10:15:28Z'
+source_file: TD-Gaia.1.toe
+exported_at: '2026-08-29T16:30:59Z'
 network_path: /
 options:
   include_dat_content: false
@@ -29,30 +29,11 @@ type_defaults:
       layerzone: =0 if hasattr(me, 'EncloseOPs') and me.EncloseOPs else 1
     flags:
     - display
-  mqttclientDAT:
-    parameters:
-      usercid: =me.id
-      fromop: =parent()
-    size: [130, 90]
-    color: [0.67, 0.67, 0.67]
-  executeDAT:
-    parameters:
-      fromop: =parent()
-      syncfile: true
-    size: [130, 90]
-    color: [0.9, 0.3, 0.4]
-    tags:
-    - py
-  textDAT:
-    parameters:
-      syncfile: true
-    color: [0.9, 0.3, 0.4]
   nullTOP:
     color: [0.67, 0.67, 0.67]
   webrenderTOP:
     parameters:
       active: true
-    size: [130, 90]
     color: [0.67, 0.67, 0.67]
   parameterexecuteDAT:
     parameters:
@@ -61,12 +42,59 @@ type_defaults:
     parameters:
       fromop: =parent()
       valuechange: true
+  lagCHOP:
+    parameters:
+      autoexportroot: =parent()
+    size: [130, 90]
+    color: [0.67, 0.67, 0.67]
+  nullCHOP:
+    parameters:
+      autoexportroot: =parent()
+    size: [130, 90]
+  scriptCHOP:
+    parameters:
+      autoexportroot: =parent()
+    size: [130, 90]
+    color: [0.67, 0.67, 0.67]
+  scriptDAT:
+    size: [130, 90]
+    color: [0.67, 0.67, 0.67]
+  mqttclientDAT:
+    parameters:
+      usercid: =me.id
+      fromop: =parent()
+    size: [130, 90]
+    color: [0.67, 0.67, 0.67]
+  oscinCHOP:
+    parameters:
+      autoexportroot: =parent()
+    color: [0.67, 0.67, 0.67]
+  textDAT:
+    parameters:
+      syncfile: true
+    color: [0.9, 0.3, 0.4]
+  udpoutDAT:
+    parameters:
+      port: 8899
+      format: perbyte
+      callbacks: beacon_probe_callbacks
+      fromop: =parent()
+    size: [130, 90]
+    color: [0.67, 0.67, 0.67]
   tableDAT:
     parameters:
       syncfile: true
     color: [0.9, 0.3, 0.4]
     tags:
     - tsv
+  executeDAT:
+    parameters:
+      fromop: =parent()
+      syncfile: true
+    size: [130, 90]
+    color: [0.9, 0.3, 0.4]
+    tags:
+    - py
   listCOMP:
     parameters:
       lockfirstrow: true
@@ -88,20 +116,16 @@ type_defaults:
     flags:
     - viewer
     size: [130, 90]
-  scriptDAT:
-    size: [130, 90]
-    color: [0.67, 0.67, 0.67]
-  nullCHOP:
+  textCOMP:
     parameters:
-      autoexportroot: =parent()
-    size: [130, 90]
+      resizecomp: =me
+      repocomp: =me
   buttonCOMP:
     parameters:
       buttontype: momentary
       scaletofit: onlyshrink
       fontsize: 12
       h: 28
-      hmode: fill
       resizecomp: =me
       repocomp: =me
       clone: =op.TDTox.op('defaultCOMPs/button')
@@ -124,11 +148,6 @@ type_defaults:
     flags:
     - viewer
     size: [130, 90]
-  textCOMP:
-    parameters:
-      vmode: fill
-      resizecomp: =me
-      repocomp: =me
   timerCHOP:
     parameters:
       exttcop: =tdu.Timecode()
@@ -152,11 +171,6 @@ type_defaults:
     - viewer
     size: [130, 90]
     color: [0.67, 0.67, 0.67]
-  lagCHOP:
-    parameters:
-      autoexportroot: =parent()
-    size: [130, 90]
-    color: [0.67, 0.67, 0.67]
   lfoCHOP:
     parameters:
       rate: =me.time.rate
@@ -169,11 +183,6 @@ type_defaults:
     size: [130, 90]
     color: [0.67, 0.67, 0.67]
   choptoTOP:
-    size: [130, 90]
-    color: [0.67, 0.67, 0.67]
-  scriptCHOP:
-    parameters:
-      autoexportroot: =parent()
     size: [130, 90]
     color: [0.67, 0.67, 0.67]
   lightCOMP:
@@ -660,8 +669,8 @@ operators:
         custom_pars:
           Text:
             $t: text
-            Titletext: GAIA Device Agent
-            Bodytext: Text DAT + Execute DAT + un mqttclientDAT nativo (mqtt_agent), tutto dentro il progetto TD (nessun processo esterno, nessuna dipendenza pip). Si annuncia in Admin/Pi Manager via MQTT (gaia/device/{id}/status, comandi enable/disable/restart) e pubblica il proprio ip. Le callback del Callbacks DAT girano gia' sul thread principale di TD — nessun thread Python/queue necessario.
+            Titletext: GAIA Device Agent (gaia_client)
+            Bodytext: 'Text DAT + Execute DAT + un mqttclientDAT nativo (mqtt_device), tutto dentro il progetto TD (nessun processo esterno, nessuna dipendenza pip). Si annuncia in Admin/Pi Manager via MQTT (gaia/device/{id}/status, comandi enable/disable/restart) e pubblica il proprio ip. Migrato 2026-08-29 dal vecchio gaia_agent bespoke al gaia_client Universale condiviso con PatchDeck/DMX/ControllerV7 (GAIA_INTERFACE.md, "Gaia Agent Universale") -- aggiunge Family (="gaia"), Identitystatus (self-check Deviceid/Family), self-heal generico della registrazione servizi, e fallback Tailscale sul beacon discovery (Brokerhost/Tailscalehost indipendenti da gaia_config, stesso pattern self-contained degli altri 3 progetti). Canvas/Mocap/Fleet-control ingest del bundle sono disattivati (Canvasingest/Mocapingest/Devicecontrol=0): questo progetto ha gia'' le proprie pipeline native (Visuals/data_canvas via OSC, Visuals/mocap_bridge, gaia_control). gaia_services (a destra) registra i 4 servizi reali di questo progetto (osc_in/render/dmx_out/mocap_bridge) via register_project_registrar().'
           Settings:
             $t: settings_2
             Mode: annotate
@@ -675,7 +684,7 @@ operators:
           About:
             $t: about
         position: [-70, -1270]
-        size: [300, 370]
+        size: [660, 370]
         color: [0.45, 0.45, 0.45]
         palette_clone: true
       - name: annotate5
@@ -715,7 +724,7 @@ operators:
           Text:
             $t: text
             Titletext: Deployment Config
-            Bodytext: 'Punto unico di configurazione per il deploy su un''altra macchina/rete: Brokerhost/Brokerport (MQTT), Corehost (OSC/Web/Ollama), Opsdevice (device_id del nodo OPS per il mocap diretto, letto da Visuals/mocap_bridge/MocapBridgeExt invece di essere cablato). mqtt_bridge, gaia_agent, gaia_control, web_bridge, ollama_bridge e MoodNudge leggono Brokerhost/Corehost via espressione invece di IP hardcoded. camera_resolver risolve inoltre l''IP di ogni videostreaminTOP (Visuals/cam_*) a runtime dal registro device MQTT (stanza + capabilities.camera), cosi'' anche le camere non dipendono da un IP fisso.'
+            Bodytext: 'Punto unico di configurazione per il deploy su un''altra macchina/rete: Brokerhost/Brokerport (MQTT), Corehost (OSC/Web/Ollama), Opsdevice (device_id del nodo OPS per il mocap diretto, letto da Visuals/mocap_bridge/MocapBridgeExt invece di essere cablato). mqtt_bridge, gaia_control, web_bridge, ollama_bridge e MoodNudge leggono Brokerhost/Corehost via espressione invece di IP hardcoded. Eccezione dal 2026-08-29: gaia_client (GAIA Device Agent) ha il proprio Brokerhost/Tailscalehost indipendenti -- stesso pattern self-contained di PatchDeck/DMX/ControllerV7, non bindato qui, per non entrare in conflitto con il suo beacon_discovery interno (che scrive su Brokerhost come valore costante). camera_resolver risolve inoltre l''IP di ogni videostreaminTOP (Visuals/cam_*) a runtime dal registro device MQTT (stanza + capabilities.camera), cosi'' anche le camere non dipendono da un IP fisso.'
           Settings:
             $t: settings_2
             Mode: annotate
@@ -729,88 +738,6 @@ operators:
         size: [300, 370]
         color: [0.45, 0.45, 0.45]
         palette_clone: true
-      - name: gaia_agent
-        type: baseCOMP
-        custom_pars:
-          Settings:
-          - name: Deviceid
-            style: Str
-            label: Device Id
-            startSection: true
-            help: Identificativo univoco di questa istanza TD nel protocollo device-agent di Gaia (topic gaia/device/{id}/...). Derivato di default dall'hostname della macchina (espressione), cosi' due istanze TD su macchine diverse non collidono mai sullo stesso client_id/topic MQTT. Sovrascrivi con un valore costante solo se serve un id stabile indipendente dall'hostname.
-            value: ='td-' + __import__('socket').gethostname().split('.')[0].lower().replace('_', '-')
-          - name: Stanza
-            style: Str
-            help: Nome della stanza/location associata a questa istanza TD (es. 'salotto'). Se vuoto, riportato come 'unknown'.
-            value: studio
-          - name: Name
-            style: Str
-            help: Nome leggibile mostrato in Admin/Pi Manager per questo device. Se vuoto, usa il nome del progetto TD.
-            value: TD Agent (Mac)
-          - name: Mqtthost
-            style: Str
-            label: MQTT Host
-            startSection: true
-            default: 192.168.1.142
-            help: Indirizzo IP o hostname del broker MQTT di Gaia (Core/minipc).
-            value: =me.parent().op('gaia_config').par.Brokerhost.eval()
-          - name: Mqttport
-            style: Int
-            label: MQTT Port
-            default: 1883
-            min: 1.0
-            max: 65535.0
-            clampMin: true
-            clampMax: true
-            help: Porta TCP del broker MQTT di Gaia.
-            value: =me.parent().op('gaia_config').par.Brokerport.eval()
-        position: [0, -1225]
-        size: [160, 130]
-        color: [0.325, 0.8, 0.3]
-        children:
-        - name: mqtt_agent
-          type: mqttclientDAT
-          parameters:
-            netaddress: ='tcp://%s:%d' % (me.parent().par.Mqtthost.eval(), int(me.parent().par.Mqttport.eval()))
-            callbacks: mqtt_agent_callbacks
-          position: [800, 0]
-        - name: agent_lifecycle
-          type: executeDAT
-          parameters:
-            framestart: true
-            file: project1/container1/Bridge/gaia_agent/agent_lifecycle.py
-          position: [400, 0]
-        - name: project_services
-          type: textDAT
-          parameters:
-            file: project1/container1/Bridge/gaia_agent/project_services.py
-            language: python
-          position: [1200, 0]
-          size: [130, 90]
-          tags:
-          - py
-        - name: gaia_device_agent
-          type: textDAT
-          parameters:
-            file: project1/container1/Bridge/gaia_agent/gaia_device_agent.py
-            language: python
-          flags:
-          - viewer
-          size: [130, 90]
-          tags:
-          - py
-        - name: mqtt_agent_callbacks
-          type: textDAT
-          parameters:
-            file: project1/container1/Bridge/gaia_agent/mqtt_agent_callbacks.py
-            language: python
-          flags:
-          - viewer
-          position: [800, -120]
-          size: [130, 90]
-          tags:
-          - py
-          dock: mqtt_agent
       - name: web_bridge
         type: baseCOMP
         custom_pars:
@@ -892,6 +819,7 @@ operators:
           type: webrenderTOP
           parameters:
             url: ='http://%s:1880/portal.html' % me.parent().parent().op('gaia_config').par.Corehost.eval()
+          size: [130, 90]
         - name: reload_relay
           type: parameterexecuteDAT
           parameters:
@@ -929,6 +857,600 @@ operators:
             Only left-click + move + scroll are wired. Keyboard forwarding (webrenderTOP.sendKey()/sendString(), documented but unbuilt) would need a Keyboard In DAT gated on web_panel's rollover/inside so it doesn't steal TD's own shortcuts - not built this pass, no text-input need surfaced yet. The Palette webBrowser component (which wires all of this out of the box, including keyboard) was considered and rejected - Derivative's own docs say it is Windows-only, and this project runs on macOS.
           position: [-70, -190]
           size: [1100, 490]
+          color: [0.45, 0.45, 0.45]
+      - name: gaia_client
+        type: baseCOMP
+        parameters:
+          parentshortcut: GaiaClient
+        custom_pars:
+          Config:
+          - name: Brokerhost
+            style: Str
+            label: Broker Host
+            startSection: true
+            default: 192.168.1.142
+            help: MQTT broker IP address for Gaia's LAN broker (mosquitto). Not localhost -- point this at the actual Gaia broker host for the deployment.
+          - name: Brokerport
+            style: Int
+            label: Broker Port
+            default: 1883
+            help: MQTT broker TCP port. Standard unencrypted MQTT port is 1883.
+          - name: Tailscalehost
+            style: Str
+            label: Tailscale Host
+            default: core-node-0.tail62079e.ts.net
+            help: 'Optional fallback broker host (Tailscale hostname or IP) used ONLY when the LAN is unreachable: neither mqtt_ingest nor mqtt_device is connected AND no beacon reply has been heard for ~90s. Beacon Discovery''s LAN self-correction always stays primary -- this never overrides a reachable LAN broker, and does nothing (stays disconnected, never blocks) if left blank. GAIA_INTERFACE.md section 3 (Gaia Agent Universale, 2026-08-29).'
+          - name: Deviceid
+            style: Str
+            label: Device ID
+            startSection: true
+            help: 'Gaia device registry identity, published as gaia/device/{id}/status. Leave blank to auto-generate ''td-{project name}-{6-char hash of the project''s absolute folder}'' (gaia_device_agent.py _read_config/_project_key) -- stable across restarts, and distinct even when two different projects share a .toe filename. Was previously hostname-based (td-{hostname}), which collided when multiple TD instances ran on the same machine -- fixed 2026-08-28. Set this explicitly (and uniquely) only for the one case auto-generation can''t disambiguate: two live TD processes launched off the EXACT SAME project folder at once.'
+            value: TD-Gaia
+          - name: Stanza
+            style: Str
+            label: Room
+            help: Room/zone this TD instance claims in Gaia's roomGraph (room_claim on announce). Leave blank if not tied to a specific physical room.
+            value: studio
+          - name: Name
+            style: Str
+            label: Display Name
+            default: GaiaClient
+            help: Human-readable display name shown in Gaia's Pi Manager/device list.
+            value: Gaia Agent
+          - name: Family
+            style: Str
+            help: Gaia project family -- declares WHICH TD PROJECT this instance belongs to (e.g. 'dmx', 'patchdeck', 'gaia'), shared by every instance of that project. Distinct from Deviceid, which identifies the individual instance -- Deviceid distinguishes the instance, Family distinguishes the project. Feeds the channel-5 matrix topic name (gaia/devices/{id}/{family}_matrix, built in the project-specific services script, not gaia_client itself) and is included in the status/profile MQTT payloads so Gaia-side consumers (Admin, watchdog) can group/filter by project without hand-maintained device_id lists or regexes. Leave blank only if this instance intentionally has no channel-5 matrix to publish.
+            value: gaia
+          Services:
+          - name: Canvasingest
+            style: Toggle
+            label: Canvas Ingest
+            startSection: true
+            default: true
+            help: Enable ingest of gaia/td/canvas, gaia/brain/state, gaia/brain/dream MQTT topics into topic_canvas/topic_brainstate/topic_dream and their derived soul/lexicon/thought outputs. The MQTT connection itself always stays up when the component is active; this only gates whether incoming messages are stored/processed -- never toggle mqttclientDAT.par.active directly, that has crashed TD before.
+            value: false
+          - name: Devicestatus
+            style: Toggle
+            label: Device Status
+            help: 'Enable Gaia device registry: periodic gaia/device/{id}/status heartbeat, gaia/devices/{id}/announce+profile, and remote enable/disable/restart/set commands. Disabling this stops publishing/command handling but keeps the MQTT connection alive (same crash-avoidance reasoning as Canvas Ingest).'
+            value: true
+          - name: Reregister
+            style: Pulse
+            label: Re-register Services
+            help: Manually retries the project's service/param registration (whatever was passed to gaia_device_agent.register_project_registrar() -- e.g. PatchDeck's register_all()) without restarting TD. Same recovery this component already does automatically when the registry is found empty (self-check in tick()); use this to force it immediately instead of waiting. No-op (logged) if the project never called register_project_registrar(). GAIA_INTERFACE.md section 2.
+          - name: Mocapingest
+            style: Toggle
+            label: Direct Mocap Ingest (OSC)
+            help: 'Enable direct OSC mocap ingest from a Gaia OPS node running mediapipe_node.py (face/hand/pose landmarks on UDP port 7000). Requires Devicestatus enabled too -- the OPS node discovers this TD instance''s IP via the device status heartbeat. Safe to toggle live: gates an OSC In CHOP, not a mqttclientDAT.'
+          - name: Devicecontrol
+            style: Toggle
+            label: Device Fleet Control
+            help: 'Enable Gaia fleet control: subscribe to gaia/device/+/status for ALL Gaia devices (not just this one), maintain a live devices_table (device_id/name/stanza/role/service/state/offline), and expose gaia_client_control.send_command(device_id, service, action) for enable/disable/restart. Independent of Device Status above -- that makes THIS instance a controllable device; this makes it a controller of the whole fleet. Ported from TD-Gaia''s td_service_control.py. No bundled UI panel -- bind a List COMP to devices_table in your own project to build one.'
+          - name: Beacondiscovery
+            style: Toggle
+            label: Broker Auto-Discovery (Beacon)
+            help: 'Enable UDP broker self-correction: every 30s, probes whatever Brokerhost is currently set to on port 8899 with ''GAIA_DISCOVER''; if it answers as service==''gaia-core'', Brokerhost is corrected to the reported mqtt_host. Does nothing if that host doesn''t answer (no blind network-wide discovery -- verify a gaia_beacon responder exists on this deployment''s Gaia Core before enabling). Off by default so a deliberately-set Brokerhost is never silently overwritten.'
+            value: true
+          Mocap:
+          - name: Opsdevice
+            style: Str
+            label: OPS Device ID
+            startSection: true
+            default: ops-silvermini2
+            help: Device id of the Gaia OPS node whose mediapipe_node.py sends direct mocap OSC (/gaia/mocap/{Opsdevice}/pose|hand|face/{person}). Change to point this project at a different OPS node.
+          - name: Mocapport
+            style: Int
+            label: Mocap OSC Port
+            default: 7000
+            help: UDP port oscin_mocap listens on for direct mocap OSC. Change this if running MULTIPLE gaia_client instances in the same project (e.g. one per rig) with Direct Mocap Ingest enabled on more than one -- two instances cannot both bind the same port. Leave at 7000 for a single instance.
+          Status:
+          - name: Identitystatus
+            style: Str
+            label: Identity Status
+            default: ok
+            readOnly: true
+            help: 'Live check of Deviceid/Family -- ''ok'' when both are set, otherwise lists which are MISSING and the component tile turns red in the network editor. Never silently inherited from a clone: check this after copying/instancing gaia_client and set both explicitly before the copy goes live. GAIA_INTERFACE.md section 1/1b.'
+          - name: Connectionstatus
+            style: Str
+            label: Connection Status
+            startSection: true
+            default: not connected
+            readOnly: true
+            help: Live MQTT connection state of the ingest client (mqtt_ingest), updated by mqtt_ingest_callbacks.
+            value: connected
+          - name: Lastmessage
+            style: Str
+            label: Last Message
+            readOnly: true
+            help: Topic and local time of the most recently received Gaia MQTT message.
+            value: gaia/brain/state @ 16:31:23
+          - name: Deviceagentstatus
+            style: Str
+            label: Device Agent Status
+            default: not connected
+            readOnly: true
+            help: Live MQTT connection state of the device-agent client (mqtt_device), updated by mqtt_device_callbacks. Separate from Connectionstatus above.
+            value: connected
+          - name: Beaconstatus
+            style: Str
+            label: Beacon Status
+            default: not probed
+            readOnly: true
+            help: Outcome of the last broker auto-discovery probe (only active when Beacon Discovery is enabled).
+            value: 'auto: 192.168.1.142 (beacon @ core-node-0, 18:30:56)'
+        position: [0, -1225]
+        size: [160, 130]
+        color: [0.67, 0.67, 0.67]
+        children:
+        - name: lag_soul
+          type: lagCHOP
+          parameters:
+            lag1: 1.5
+            lag2: 1.5
+          position: [1200, 700]
+          inputs:
+          - script_soul
+        - name: out_soul
+          type: nullCHOP
+          position: [1600, 700]
+          color: [0.67, 0.67, 0.67]
+          inputs:
+          - lag_soul
+        - name: annotate1
+          type: annotateCOMP
+          sequences:
+            ext:
+            - object: op.TDAnnotate.mod.AnnotateExt.AnnotateExt(me)
+              promote: true
+          custom_pars:
+            Text:
+              $t: text
+              Titletext: Gaia MQTT Ingest -- Canvas / Brain State / Dream
+              Bodytext: 'Subscribes gaia/td/canvas, gaia/brain/state, gaia/brain/dream and caches the raw JSON per topic. Derived Script CHOP/DAT outputs: soul mood (out_soul), top-20 lexicon words + rotating current word, latest LLM thought. Gated by Services > Canvas Ingest (logic-level gate -- the mqttclientDAT connection itself always stays up).'
+            Settings:
+              $t: settings_2
+              Mode: annotate
+              Backcolorr: [0.325, 0.5, 0.3]
+            OP Viewer:
+              $t: op_viewer
+              Opvieweroversize: natural
+            About:
+              $t: about
+          position: [-70, -290]
+          size: [1870, 1250]
+          color: [0.45, 0.45, 0.45]
+          palette_clone: true
+        - name: annotate2
+          type: annotateCOMP
+          sequences:
+            ext:
+            - object: op.TDAnnotate.mod.AnnotateExt.AnnotateExt(me)
+              promote: true
+          custom_pars:
+            Text:
+              $t: text
+              Titletext: Direct Mocap Ingest (OSC)
+              Bodytext: Receives face/hand/pose/meta landmarks via OSC (port = Mocapport, default 7000) from a Gaia OPS node's mediapipe_node.py, scoped to /gaia/mocap/{Opsdevice}/*. Bounded, deterministic-slice extraction per channel family (unstable/unbounded raw addressing, no automatic expiry). Gated by Services > Direct Mocap Ingest, which binds oscin_mocap's own Active parameter directly (safe -- this is a CHOP, not a mqttclientDAT). Running 2+ gaia_client instances in one project (e.g. one per rig)? Give each a distinct Mocapport if more than one has mocap ingest enabled.
+            Settings:
+              $t: settings_2
+              Mode: annotate
+              Backcolorr: [0.3, 0.45, 0.55]
+            OP Viewer:
+              $t: op_viewer
+              Opvieweroversize: natural
+            About:
+              $t: about
+          position: [-70, -2390]
+          size: [1070, 1650]
+          color: [0.45, 0.45, 0.45]
+          palette_clone: true
+        - name: annotate3
+          type: annotateCOMP
+          sequences:
+            ext:
+            - object: op.TDAnnotate.mod.AnnotateExt.AnnotateExt(me)
+              promote: true
+          custom_pars:
+            Text:
+              $t: text
+              Titletext: Device Registration (this instance as a controllable device)
+              Bodytext: 'Publishes gaia/device/{id}/status heartbeat + gaia/devices/{id}/announce+profile, and accepts remote enable/disable/restart/set commands. Register real controls per-project via gaia_device_agent.module.register_service()/register_param() -- see its docstring. Gated by Services > Device Status (logic-level -- connection always stays up). WARNING: device_id defaults to td-{hostname}; do not run two Gaia device agents with the same device_id in the same project/network at once (they will fight over the same MQTT topic). reregister_watch fires the Services > Re-register pulse into gaia_device_agent.reregister() (GAIA_INTERFACE.md section 2) -- retries whatever project registrar was set via register_project_registrar() without restarting TD.'
+            Settings:
+              $t: settings_2
+              Mode: annotate
+              Backcolorr: [0.55, 0.45, 0.3]
+            OP Viewer:
+              $t: op_viewer
+              Opvieweroversize: natural
+            About:
+              $t: about
+          position: [-70, -3390]
+          size: [1470, 450]
+          color: [0.45, 0.45, 0.45]
+          palette_clone: true
+        - name: annotate4
+          type: annotateCOMP
+          sequences:
+            ext:
+            - object: op.TDAnnotate.mod.AnnotateExt.AnnotateExt(me)
+              promote: true
+          custom_pars:
+            Text:
+              $t: text
+              Titletext: Device Fleet Control + Broker Auto-Discovery
+              Bodytext: 'Fleet control: subscribes gaia/device/+/status for ALL Gaia devices, maintains devices_table, exposes gaia_fleet_control.send_command(device_id, service, action). Gated by Services > Device Fleet Control. Beacon discovery: probes UDP 8899 every 30s to self-correct Brokerhost if it drifts; gated by Services > Broker Auto-Discovery (off by default). No bundled UI -- bind a List COMP to devices_table per-project.'
+            Settings:
+              $t: settings_2
+              Mode: annotate
+              Backcolorr: [0.5, 0.35, 0.5]
+            OP Viewer:
+              $t: op_viewer
+              Opvieweroversize: natural
+            About:
+              $t: about
+          position: [-70, -4890]
+          size: [1070, 950]
+          color: [0.45, 0.45, 0.45]
+          palette_clone: true
+        - name: annotate5
+          type: annotateCOMP
+          sequences:
+            ext:
+            - object: op.TDAnnotate.mod.AnnotateExt.AnnotateExt(me)
+              promote: true
+          custom_pars:
+            Text:
+              $t: text
+              Titletext: Portable Export
+              Bodytext: 'pre_release hook (Embody ExportPortableTox): blanks instance/project identity pars (Deviceid, Family, Stanza, opshortcut, Name) on the staged export copy only -- never touches the live component.'
+            Settings:
+              $t: settings_2
+              Mode: annotate
+              Backcolorr:
+              - '=me.color[0] # node color [r]'
+              - =me.color[1]
+              - '=me.color[2] '
+            OP Viewer:
+              $t: op_viewer
+              Opvieweroversize: natural
+            About:
+              $t: about
+          position: [-70, -5620]
+          size: [270, 330]
+          color: [0.45, 0.45, 0.45]
+          palette_clone: true
+        - name: chop_face
+          type: scriptCHOP
+          parameters:
+            callbacks: chop_face_callbacks
+          position: [800, -1000]
+        - name: chop_hand
+          type: scriptCHOP
+          parameters:
+            callbacks: chop_hand_callbacks
+          position: [800, -1400]
+        - name: chop_meta
+          type: scriptCHOP
+          parameters:
+            callbacks: chop_meta_callbacks
+          position: [800, -2200]
+        - name: chop_pose
+          type: scriptCHOP
+          parameters:
+            callbacks: chop_pose_callbacks
+          position: [800, -1800]
+        - name: dat_words
+          type: scriptDAT
+          parameters:
+            callbacks: dat_words_callbacks
+          position: [800, 300]
+        - name: null_mocap
+          type: nullCHOP
+          position: [400, -1000]
+          color: [0.67, 0.67, 0.67]
+          inputs:
+          - oscin_mocap
+        - name: dat_thought
+          type: scriptDAT
+          parameters:
+            callbacks: dat_thought_callbacks
+          position: [800, -100]
+        - name: mqtt_device
+          type: mqttclientDAT
+          parameters:
+            netaddress: ="tcp://" + parent.GaiaClient.par.Brokerhost.eval() + ":" + str(int(parent.GaiaClient.par.Brokerport.eval()))
+            callbacks: mqtt_device_callbacks
+          position: [0, -3200]
+        - name: mqtt_ingest
+          type: mqttclientDAT
+          parameters:
+            active: false
+            netaddress: ="tcp://" + parent.GaiaClient.par.Brokerhost.eval() + ":" + str(int(parent.GaiaClient.par.Brokerport.eval()))
+            callbacks: mqtt_ingest_callbacks
+          position: [0, 700]
+        - name: oscin_mocap
+          type: oscinCHOP
+          parameters:
+            active: false
+            port: =parent.GaiaClient.par.Mocapport.eval()
+            oscaddressscope: ='/gaia/mocap/' + parent.GaiaClient.par.Opsdevice.eval() + '/*'
+          position: [0, -1000]
+          size: [130, 90]
+        - name: script_soul
+          type: scriptCHOP
+          parameters:
+            callbacks: script_soul_callbacks
+          position: [800, 700]
+        - name: topic_dream
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/topic_dream.py
+            language: python
+          position: [400, -100]
+          size: [130, 90]
+          tags:
+          - py
+        - name: beacon_probe
+          type: udpoutDAT
+          parameters:
+            address: =parent.GaiaClient.par.Brokerhost.eval()
+          position: [0, -4700]
+        - name: mqtt_control
+          type: mqttclientDAT
+          parameters:
+            active: false
+            netaddress: ="tcp://" + parent.GaiaClient.par.Brokerhost.eval() + ":" + str(int(parent.GaiaClient.par.Brokerport.eval()))
+            callbacks: mqtt_control_callbacks
+          position: [0, -4200]
+        - name: topic_canvas
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/topic_canvas.py
+            language: python
+          position: [400, 700]
+          size: [130, 90]
+          tags:
+          - py
+        - name: devices_table
+          type: tableDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/devices_table.tsv
+          position: [800, -4200]
+          size: [130, 90]
+        - name: agent_lifecycle
+          type: executeDAT
+          parameters:
+            framestart: true
+            file: project1/container1/Bridge/gaia_client/agent_lifecycle.py
+          position: [800, -3200]
+        - name: fleet_lifecycle
+          type: executeDAT
+          parameters:
+            framestart: true
+            file: project1/container1/Bridge/gaia_client/fleet_lifecycle.py
+          position: [800, -4700]
+        - name: mocap_lifecycle
+          type: executeDAT
+          parameters:
+            framestart: true
+            file: project1/container1/Bridge/gaia_client/mocap_lifecycle.py
+          position: [0, -1400]
+        - name: beacon_discovery
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/beacon_discovery.py
+            language: python
+          position: [400, -4700]
+          size: [130, 90]
+          tags:
+          - py
+        - name: dat_word_current
+          type: scriptDAT
+          parameters:
+            callbacks: dat_word_current_callbacks
+          position: [1200, 300]
+        - name: reregister_watch
+          type: parameterexecuteDAT
+          parameters:
+            op: ..
+            pars: Reregister
+            file: project1/container1/Bridge/gaia_client/reregister_watch.py
+            syncfile: true
+          flags:
+          - viewer
+          position: [1200, -3200]
+          size: [130, 90]
+          color: [0.9, 0.3, 0.4]
+          tags:
+          - py
+        - name: topic_brainstate
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/topic_brainstate.py
+            language: python
+          position: [400, 300]
+          size: [130, 90]
+          tags:
+          - py
+        - name: gaia_device_agent
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/gaia_device_agent.py
+            language: python
+          position: [400, -3200]
+          size: [130, 90]
+          tags:
+          - py
+        - name: gaia_fleet_control
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/gaia_fleet_control.py
+            language: python
+          position: [400, -4200]
+          size: [130, 90]
+          tags:
+          - py
+        - name: chop_face_callbacks
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/chop_face_callbacks.py
+            language: python
+          flags:
+          - viewer
+          position: [800, -1120]
+          size: [130, 90]
+          tags:
+          - py
+          dock: chop_face
+        - name: chop_hand_callbacks
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/chop_hand_callbacks.py
+            language: python
+          flags:
+          - viewer
+          position: [800, -1520]
+          size: [130, 90]
+          tags:
+          - py
+          dock: chop_hand
+        - name: chop_meta_callbacks
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/chop_meta_callbacks.py
+            language: python
+          flags:
+          - viewer
+          position: [800, -2320]
+          size: [130, 90]
+          tags:
+          - py
+          dock: chop_meta
+        - name: chop_pose_callbacks
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/chop_pose_callbacks.py
+            language: python
+          flags:
+          - viewer
+          position: [800, -1920]
+          size: [130, 90]
+          tags:
+          - py
+          dock: chop_pose
+        - name: dat_words_callbacks
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/dat_words_callbacks.py
+            language: python
+          position: [800, 180]
+          size: [130, 90]
+          tags:
+          - py
+        - name: dat_thought_callbacks
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/dat_thought_callbacks.py
+            language: python
+          position: [800, -220]
+          size: [130, 90]
+          tags:
+          - py
+        - name: mqtt_device_callbacks
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/mqtt_device_callbacks.py
+            language: python
+          flags:
+          - viewer
+          position: [0, -3320]
+          size: [130, 90]
+          tags:
+          - py
+          dock: mqtt_device
+        - name: mqtt_ingest_callbacks
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/mqtt_ingest_callbacks.py
+            language: python
+          position: [0, 580]
+          size: [130, 90]
+          tags:
+          - py
+        - name: script_soul_callbacks
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/script_soul_callbacks.py
+            language: python
+          position: [800, 580]
+          size: [130, 90]
+          tags:
+          - py
+        - name: beacon_probe_callbacks
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/beacon_probe_callbacks.py
+            language: python
+          position: [0, -4820]
+          size: [130, 90]
+          tags:
+          - py
+        - name: mqtt_control_callbacks
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/mqtt_control_callbacks.py
+            language: python
+          flags:
+          - viewer
+          position: [0, -4320]
+          size: [130, 90]
+          tags:
+          - py
+          dock: mqtt_control
+        - name: dat_word_current_callbacks
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_client/dat_word_current_callbacks.py
+            language: python
+          position: [1200, 180]
+          size: [130, 90]
+          tags:
+          - py
+        annotations:
+        - name: annotate1
+          mode: annotate
+          title: Gaia MQTT Ingest -- Canvas / Brain State / Dream
+          text: 'Subscribes gaia/td/canvas, gaia/brain/state, gaia/brain/dream and caches the raw JSON per topic. Derived Script CHOP/DAT outputs: soul mood (out_soul), top-20 lexicon words + rotating current word, latest LLM thought. Gated by Services > Canvas Ingest (logic-level gate -- the mqttclientDAT connection itself always stays up).'
+          position: [-70, -290]
+          size: [1870, 1250]
+          color: [0.325, 0.5, 0.3]
+        - name: annotate2
+          mode: annotate
+          title: Direct Mocap Ingest (OSC)
+          text: Receives face/hand/pose/meta landmarks via OSC (port = Mocapport, default 7000) from a Gaia OPS node's mediapipe_node.py, scoped to /gaia/mocap/{Opsdevice}/*. Bounded, deterministic-slice extraction per channel family (unstable/unbounded raw addressing, no automatic expiry). Gated by Services > Direct Mocap Ingest, which binds oscin_mocap's own Active parameter directly (safe -- this is a CHOP, not a mqttclientDAT). Running 2+ gaia_client instances in one project (e.g. one per rig)? Give each a distinct Mocapport if more than one has mocap ingest enabled.
+          position: [-70, -2390]
+          size: [1070, 1650]
+          color: [0.3, 0.45, 0.55]
+        - name: annotate3
+          mode: annotate
+          title: Device Registration (this instance as a controllable device)
+          text: 'Publishes gaia/device/{id}/status heartbeat + gaia/devices/{id}/announce+profile, and accepts remote enable/disable/restart/set commands. Register real controls per-project via gaia_device_agent.module.register_service()/register_param() -- see its docstring. Gated by Services > Device Status (logic-level -- connection always stays up). WARNING: device_id defaults to td-{hostname}; do not run two Gaia device agents with the same device_id in the same project/network at once (they will fight over the same MQTT topic). reregister_watch fires the Services > Re-register pulse into gaia_device_agent.reregister() (GAIA_INTERFACE.md section 2) -- retries whatever project registrar was set via register_project_registrar() without restarting TD.'
+          position: [-70, -3390]
+          size: [1470, 450]
+          color: [0.55, 0.45, 0.3]
+        - name: annotate4
+          mode: annotate
+          title: Device Fleet Control + Broker Auto-Discovery
+          text: 'Fleet control: subscribes gaia/device/+/status for ALL Gaia devices, maintains devices_table, exposes gaia_fleet_control.send_command(device_id, service, action). Gated by Services > Device Fleet Control. Beacon discovery: probes UDP 8899 every 30s to self-correct Brokerhost if it drifts; gated by Services > Broker Auto-Discovery (off by default). No bundled UI -- bind a List COMP to devices_table per-project.'
+          position: [-70, -4890]
+          size: [1070, 950]
+          color: [0.5, 0.35, 0.5]
+        - name: annotate5
+          mode: annotate
+          title: Portable Export
+          text: 'pre_release hook (Embody ExportPortableTox): blanks instance/project identity pars (Deviceid, Family, Stanza, opshortcut, Name) on the staged export copy only -- never touches the live component.'
+          position: [-70, -5620]
+          size: [270, 330]
           color: [0.45, 0.45, 0.45]
       - name: gaia_config
         type: baseCOMP
@@ -968,7 +1490,7 @@ operators:
             default: fisso (nessuna risposta dal beacon ancora)
             readOnly: true
             help: 'Ultimo esito della discovery automatica via gaia_beacon (UDP 8899 su Brokerhost, ogni ~30s): ''auto: <ip> (beacon @ ...)'' se ha risposto e Brokerhost/Corehost sono stati aggiornati di conseguenza, altrimenti restano i valori fissi impostati sopra -- nessuna sovrascrittura senza una risposta valida.'
-            value: 'auto: 192.168.1.142 (beacon @ core-node-0, 12:15:27)'
+            value: 'auto: 192.168.1.142 (beacon @ core-node-0, 18:30:56)'
         position: [0, -2070]
         size: [160, 130]
         color: [0.325, 0.8, 0.3]
@@ -1001,13 +1523,7 @@ operators:
           type: udpoutDAT
           parameters:
             address: =parent().par.Brokerhost.eval()
-            port: 8899
-            format: perbyte
-            callbacks: beacon_probe_callbacks
-            fromop: =parent()
           position: [1200, 0]
-          size: [130, 90]
-          color: [0.67, 0.67, 0.67]
         - name: camera_resolver
           type: textDAT
           parameters:
@@ -1279,6 +1795,28 @@ operators:
           tags:
           - py
           dock: mqtt_nursery
+      - name: gaia_services
+        type: baseCOMP
+        position: [360, -1225]
+        size: [160, 130]
+        color: [0.325, 0.8, 0.3]
+        children:
+        - name: lifecycle
+          type: executeDAT
+          parameters:
+            start: true
+            create: true
+            framestart: true
+            file: project1/container1/Bridge/gaia_services/lifecycle.py
+          position: [400, 0]
+        - name: gaia_project_services
+          type: textDAT
+          parameters:
+            file: project1/container1/Bridge/gaia_services/gaia_project_services.py
+            language: python
+          size: [130, 90]
+          tags:
+          - py
       - name: ollama_bridge
         type: baseCOMP
         custom_pars:
@@ -1426,10 +1964,10 @@ operators:
         color: [0.45, 0.45, 0.45]
       - name: annotate4
         mode: annotate
-        title: GAIA Device Agent
-        text: Text DAT + Execute DAT + un mqttclientDAT nativo (mqtt_agent), tutto dentro il progetto TD (nessun processo esterno, nessuna dipendenza pip). Si annuncia in Admin/Pi Manager via MQTT (gaia/device/{id}/status, comandi enable/disable/restart) e pubblica il proprio ip. Le callback del Callbacks DAT girano gia' sul thread principale di TD — nessun thread Python/queue necessario.
+        title: GAIA Device Agent (gaia_client)
+        text: 'Text DAT + Execute DAT + un mqttclientDAT nativo (mqtt_device), tutto dentro il progetto TD (nessun processo esterno, nessuna dipendenza pip). Si annuncia in Admin/Pi Manager via MQTT (gaia/device/{id}/status, comandi enable/disable/restart) e pubblica il proprio ip. Migrato 2026-08-29 dal vecchio gaia_agent bespoke al gaia_client Universale condiviso con PatchDeck/DMX/ControllerV7 (GAIA_INTERFACE.md, "Gaia Agent Universale") -- aggiunge Family (="gaia"), Identitystatus (self-check Deviceid/Family), self-heal generico della registrazione servizi, e fallback Tailscale sul beacon discovery (Brokerhost/Tailscalehost indipendenti da gaia_config, stesso pattern self-contained degli altri 3 progetti). Canvas/Mocap/Fleet-control ingest del bundle sono disattivati (Canvasingest/Mocapingest/Devicecontrol=0): questo progetto ha gia'' le proprie pipeline native (Visuals/data_canvas via OSC, Visuals/mocap_bridge, gaia_control). gaia_services (a destra) registra i 4 servizi reali di questo progetto (osc_in/render/dmx_out/mocap_bridge) via register_project_registrar().'
         position: [-70, -1270]
-        size: [300, 370]
+        size: [660, 370]
         color: [0.45, 0.45, 0.45]
       - name: annotate5
         mode: annotate
@@ -1441,7 +1979,7 @@ operators:
       - name: annotate6
         mode: annotate
         title: Deployment Config
-        text: 'Punto unico di configurazione per il deploy su un''altra macchina/rete: Brokerhost/Brokerport (MQTT), Corehost (OSC/Web/Ollama), Opsdevice (device_id del nodo OPS per il mocap diretto, letto da Visuals/mocap_bridge/MocapBridgeExt invece di essere cablato). mqtt_bridge, gaia_agent, gaia_control, web_bridge, ollama_bridge e MoodNudge leggono Brokerhost/Corehost via espressione invece di IP hardcoded. camera_resolver risolve inoltre l''IP di ogni videostreaminTOP (Visuals/cam_*) a runtime dal registro device MQTT (stanza + capabilities.camera), cosi'' anche le camere non dipendono da un IP fisso.'
+        text: 'Punto unico di configurazione per il deploy su un''altra macchina/rete: Brokerhost/Brokerport (MQTT), Corehost (OSC/Web/Ollama), Opsdevice (device_id del nodo OPS per il mocap diretto, letto da Visuals/mocap_bridge/MocapBridgeExt invece di essere cablato). mqtt_bridge, gaia_control, web_bridge, ollama_bridge e MoodNudge leggono Brokerhost/Corehost via espressione invece di IP hardcoded. Eccezione dal 2026-08-29: gaia_client (GAIA Device Agent) ha il proprio Brokerhost/Tailscalehost indipendenti -- stesso pattern self-contained di PatchDeck/DMX/ControllerV7, non bindato qui, per non entrare in conflitto con il suo beacon_discovery interno (che scrive su Brokerhost come valore costante). camera_resolver risolve inoltre l''IP di ogni videostreaminTOP (Visuals/cam_*) a runtime dal registro device MQTT (stanza + capabilities.camera), cosi'' anche le camere non dipendono da un IP fisso.'
         position: [-70, -2140]
         size: [300, 370]
         color: [0.45, 0.45, 0.45]
@@ -1879,7 +2417,7 @@ operators:
           startSection: true
           readOnly: true
           help: Current status of the Envoy MCP server (read-only). Shows Running, Stopped, or error information.
-          value: Running on port 1980
+          value: Restarting after reinit...
         Logs:
         - name: Verbose
           style: Toggle
@@ -2033,7 +2571,7 @@ operators:
           label: Build Number
           readOnly: true
           help: Embody build number (read-only). Incremented with each release.
-          value: 671
+          value: 675
         - name: Github
           style: Pulse
           label: GitHub
@@ -2044,14 +2582,14 @@ operators:
           label: Build Date
           readOnly: true
           help: Date of this Embody build (read-only).
-          value: 2026-08-05 11:46:17 UTC
+          value: 2026-08-29 14:40:35 UTC
         - name: Help
           style: Pulse
           help: Opens the Embody help documentation.
       flags:
       - display
       - viewer
-      position: [162, 434]
+      position: [250, 600]
       size: [160, 98]
       storage:
         claudius_running: false
@@ -2059,8 +2597,10 @@ operators:
         - /embody/base1
         expand_order: []
         _start_in_progress: true
-        git_status: {}
-        _watchdog_gen: 502
+        git_status:
+          /project1/container1/externalizations: ' M'
+          /project1/container1: ' M'
+        _watchdog_gen: 510
         _suite_proof_progress:
           todo:
           - test_ancestor_rename
@@ -2202,7 +2742,7 @@ operators:
               tot: 33
               fail: 1
           pending_after: absent
-        _clip_watch_gen: 266
+        _clip_watch_gen: 274
         _init_complete: true
       children:
       - name: help
@@ -2368,7 +2908,127 @@ operators:
           - viewer
           position: [0, 275]
           size: [160, 76]
-          palette_clone: true
+          children:
+          - name: text1
+            type: textCOMP
+            parameters:
+              text: Actions
+              callbacks: text1_callbacks
+              legacyfontselection: true
+              fontsize: 12
+              fontcolorr: =parent.Embody.par.Textcolorr
+              fontcolorg: =parent.Embody.par.Textcolorg
+              fontcolorb: =parent.Embody.par.Textcolorb
+              fontalpha: =parent.Embody.par.Textcolora
+              h: 30
+              hmode: fill
+              bgcolorr: =parent.Embody.par.Backgroundcolorr
+              bgcolorg: =parent.Embody.par.Backgroundcolorg
+              bgcolorb: =parent.Embody.par.Backgroundcolorb
+              bgalpha: =parent.Embody.par.Backgroundcolora
+              borderover: false
+              reloadbuiltin: false
+            flags:
+            - viewer
+            position: [-200, 0]
+            size: [160, 129]
+            color: [0.325, 0.8, 0.3]
+            tags:
+            - tox
+          - name: button_close
+            type: buttonCOMP
+            parameters:
+              label: ×
+              colorr: =parent.Embody.par.Textcolorr
+              colorg: =parent.Embody.par.Textcolorg
+              colorb: =parent.Embody.par.Textcolorb
+              w: 28
+              layer: 1
+              leftanchor: 1
+              horigin: 1
+              bgcolorr: =parent.Embody.par.Backgroundcolorr
+              bgcolorg: =parent.Embody.par.Backgroundcolorg
+              bgcolorb: =parent.Embody.par.Backgroundcolorb
+              bgalpha: =parent.Embody.par.Backgroundcolora
+              topsmoothness: mipmap
+              reloadbuiltin: false
+              relpath: inherit
+            position: [50, 0]
+            size: [160, 134]
+            children:
+            - name: out1
+              type: outCHOP
+              position: [275, 175]
+              inputs:
+              - par1
+            - name: par1
+              type: parameterCHOP
+              position: [65, 175]
+            - name: text
+              type: textCOMP
+              parameters:
+                text: =parent().par.label
+                type: multiline
+                legacyfontselection: true
+                scaletofit: onlyshrink
+                fontsize: 12
+                fontcolorr: =[c/.5 for c in [.1, .3]][parent().panel.state] * parent().par.colorr + .5
+                fontcolorg: =[c/.5 for c in [.1, .3]][parent().panel.state] * parent().par.colorg + .5
+                fontcolorb: =[c/.5 for c in [.1, .3]][parent().panel.state] * parent().par.colorb + .5
+                textpaddingl: 3
+                textpaddingr: 3
+                textpaddingb: 3
+                textpaddingt: 3
+                hmode: fill
+                vmode: fill
+                clickthrough: true
+                bgcolorr: =parent.Embody.par.Listheadercolorr
+                bgcolorg: =parent.Embody.par.Listheadercolorg
+                bgcolorb: =parent.Embody.par.Listheadercolorb
+                bgalpha: 1
+                borderar: =[c/.5 for c in [.23, .4, .3, .6]][parent().panel.state + 2*parent().panel.rollover] * parent().par.colorr + .2
+                borderag: =[c/.5 for c in [.23, .4, .3, .6]][parent().panel.state + 2*parent().panel.rollover] * parent().par.colorg + .2
+                borderab: =[c/.5 for c in [.23, .4, .3, .6]][parent().panel.state + 2*parent().panel.rollover] * parent().par.colorb + .2
+                borderaalpha: 0
+                reloadbuiltin: false
+              flags:
+              - viewer
+              position: [74, 26]
+              size: [113, 108]
+            - name: parexec1
+              type: parameterexecuteDAT
+              parameters:
+                op: ..
+                pars: value0
+                onpulse: false
+                defaultreadencoding: cp1252
+              flags:
+              - viewer
+              position: [66, -83]
+              size: [128, 66]
+            - name: panelexec1
+              type: panelexecuteDAT
+              parameters:
+                panels: =parent()
+                panelvalue: state
+                offtoon: false
+                defaultreadencoding: cp1252
+              flags:
+              - viewer
+              position: [247, -81]
+              size: [126, 62]
+          - name: text1_callbacks
+            type: textDAT
+            parameters:
+              file: project1/container1/Embody/tagger/header/text1_callbacks.py
+              language: python
+            flags:
+            - viewer
+            position: [-200, -160]
+            size: [160, 130]
+            tags:
+            - py
+            dock: text1
         - name: button0
           type: buttonCOMP
           parameters:
@@ -2376,6 +3036,7 @@ operators:
             colorr: =parent.Embody.par.Taggingmenucolorr
             colorg: =parent.Embody.par.Taggingmenucolorg
             colorb: =parent.Embody.par.Taggingmenucolorb
+            hmode: fill
             alignorder: 1
             display: false
             topsmoothness: mipmap
@@ -2412,6 +3073,7 @@ operators:
               textpaddingt: 3
               alignx: left
               hmode: fill
+              vmode: fill
               clickthrough: true
               bgcolorr: =parent.Embody.par.Listrowselectcolorr if parent().panel.rollover else parent.Embody.par.Listrowcolorr
               bgcolorg: =parent.Embody.par.Listrowselectcolorg if parent().panel.rollover else parent.Embody.par.Listrowcolorg
@@ -2455,6 +3117,7 @@ operators:
             colorr: 0.2
             colorg: =parent.Embody.par.Taggingmenucolorg if me.digits % 2 else parent.Embody.par.Taggingmenucolorg - 0.05
             colorb: 0.2
+            hmode: fill
             alignorder: 1
             topsmoothness: mipmap
             reloadbuiltin: false
@@ -2490,6 +3153,7 @@ operators:
               textpaddingt: 3
               alignx: left
               hmode: fill
+              vmode: fill
               clickthrough: true
               bgcolorr: =parent.Embody.par.Listrowselectcolorr if parent().panel.rollover else parent.Embody.par.Listrowcolorr
               bgcolorg: =parent.Embody.par.Listrowselectcolorg if parent().panel.rollover else parent.Embody.par.Listrowcolorg
@@ -2533,6 +3197,7 @@ operators:
             colorr: 0.2
             colorg: =parent.Embody.par.Taggingmenucolorg if me.digits % 2 else parent.Embody.par.Taggingmenucolorg - 0.05
             colorb: 0.2
+            hmode: fill
             alignorder: 1
             topsmoothness: mipmap
             reloadbuiltin: false
@@ -2568,6 +3233,7 @@ operators:
               textpaddingt: 3
               alignx: left
               hmode: fill
+              vmode: fill
               clickthrough: true
               bgcolorr: =parent.Embody.par.Listrowselectcolorr if parent().panel.rollover else parent.Embody.par.Listrowcolorr
               bgcolorg: =parent.Embody.par.Listrowselectcolorg if parent().panel.rollover else parent.Embody.par.Listrowcolorg
@@ -2611,6 +3277,7 @@ operators:
             colorr: 0.2
             colorg: 0.2
             colorb: 0.2
+            hmode: fill
             alignorder: 0.5
           position: [25, 100]
           size: [160, 134]
@@ -2643,6 +3310,7 @@ operators:
               textpaddingt: =parent().par[me.curPar.name] or me.curPar.val
               alignx: left
               hmode: fill
+              vmode: fill
               clickthrough: true
               bgcolorr: =parent.Embody.par.Listrowselectcolorr if parent().panel.rollover else parent.Embody.par.Listrowcolorr
               bgcolorg: =parent.Embody.par.Listrowselectcolorg if parent().panel.rollover else parent.Embody.par.Listrowcolorg
@@ -2687,6 +3355,7 @@ operators:
             colorr: 0.2
             colorg: 0.2
             colorb: 0.2
+            hmode: fill
             alignorder: 0.65
           position: [260, 275]
           size: [160, 134]
@@ -2719,6 +3388,7 @@ operators:
               textpaddingt: =parent().par[me.curPar.name] or me.curPar.val
               alignx: left
               hmode: fill
+              vmode: fill
               clickthrough: true
               bgcolorr: =parent.Embody.par.Listrowselectcolorr if parent().panel.rollover else parent.Embody.par.Listrowcolorr
               bgcolorg: =parent.Embody.par.Listrowselectcolorg if parent().panel.rollover else parent.Embody.par.Listrowcolorg
@@ -2763,6 +3433,7 @@ operators:
             colorr: 0.2
             colorg: 0.2
             colorb: 0.2
+            hmode: fill
             alignorder: 0.6
           position: [-280, 275]
           size: [160, 134]
@@ -2793,6 +3464,7 @@ operators:
               textpaddingt: =parent().par[me.curPar.name] or me.curPar.val
               alignx: left
               hmode: fill
+              vmode: fill
               clickthrough: true
               bgcolorr: =parent.Embody.par.Listrowselectcolorr if parent().panel.rollover else parent.Embody.par.Listrowcolorr
               bgcolorg: =parent.Embody.par.Listrowselectcolorg if parent().panel.rollover else parent.Embody.par.Listrowcolorg
@@ -2837,6 +3509,7 @@ operators:
             colorr: 0.2
             colorg: 0.2
             colorb: 0.2
+            hmode: fill
             alignorder: 11
             display: false
           position: [-1000, 275]
@@ -2868,6 +3541,7 @@ operators:
               textpaddingt: =parent().par[me.curPar.name] or me.curPar.val
               alignx: left
               hmode: fill
+              vmode: fill
               clickthrough: true
               bgcolorr: =parent.Embody.par.Listrowselectcolorr if parent().panel.rollover else parent.Embody.par.Listrowcolorr
               bgcolorg: =parent.Embody.par.Listrowselectcolorg if parent().panel.rollover else parent.Embody.par.Listrowcolorg
@@ -2922,6 +3596,7 @@ operators:
             colorr: 0.2
             colorg: 0.2
             colorb: 0.2
+            hmode: fill
             alignorder: 0.5
             display: false
           position: [-640, 275]
@@ -2955,6 +3630,7 @@ operators:
               textpaddingt: =parent().par[me.curPar.name] or me.curPar.val
               alignx: left
               hmode: fill
+              vmode: fill
               clickthrough: true
               bgcolorr: =parent.Embody.par.Listrowselectcolorr if parent().panel.rollover else parent.Embody.par.Listrowcolorr
               bgcolorg: =parent.Embody.par.Listrowselectcolorg if parent().panel.rollover else parent.Embody.par.Listrowcolorg
@@ -3026,6 +3702,7 @@ operators:
             colorr: 0.2
             colorg: 0.2
             colorb: 0.2
+            hmode: fill
             alignorder: 2
             display: =op('btn_portable').par.display.eval()
           position: [620, 275]
@@ -3057,6 +3734,7 @@ operators:
               textpaddingt: =parent().par[me.curPar.name] or me.curPar.val
               alignx: left
               hmode: fill
+              vmode: fill
               clickthrough: true
               bgcolorr: =parent.Embody.par.Listrowselectcolorr if parent().panel.rollover else parent.Embody.par.Listrowcolorr
               bgcolorg: =parent.Embody.par.Listrowselectcolorg if parent().panel.rollover else parent.Embody.par.Listrowcolorg
@@ -3101,6 +3779,7 @@ operators:
             colorr: 0.2
             colorg: 0.2
             colorb: 0.2
+            hmode: fill
             alignorder: 10
           position: [-820, 275]
           size: [160, 134]
@@ -3131,6 +3810,7 @@ operators:
               textpaddingt: =parent().par[me.curPar.name] or me.curPar.val
               alignx: left
               hmode: fill
+              vmode: fill
               clickthrough: true
               bgcolorr: =parent.Embody.par.Listrowselectcolorr if parent().panel.rollover else parent.Embody.par.Listrowcolorr
               bgcolorg: =parent.Embody.par.Listrowselectcolorg if parent().panel.rollover else parent.Embody.par.Listrowcolorg
@@ -3175,6 +3855,7 @@ operators:
             colorr: 0.2
             colorg: 0.2
             colorb: 0.2
+            hmode: fill
             alignorder: 1
           position: [-460, 275]
           size: [160, 134]
@@ -3205,6 +3886,7 @@ operators:
               textpaddingt: =parent().par[me.curPar.name] or me.curPar.val
               alignx: left
               hmode: fill
+              vmode: fill
               clickthrough: true
               bgcolorr: =parent.Embody.par.Listrowselectcolorr if parent().panel.rollover else parent.Embody.par.Listrowcolorr
               bgcolorg: =parent.Embody.par.Listrowselectcolorg if parent().panel.rollover else parent.Embody.par.Listrowcolorg
@@ -3258,6 +3940,7 @@ operators:
             colorr: 0.2
             colorg: 0.2
             colorb: 0.2
+            hmode: fill
             alignorder: 2.1
             display: =op('btn_portable').par.display.eval()
           position: [800, 275]
@@ -3289,6 +3972,7 @@ operators:
               textpaddingt: =parent().par[me.curPar.name] or me.curPar.val
               alignx: left
               hmode: fill
+              vmode: fill
               clickthrough: true
               bgcolorr: =parent.Embody.par.Listrowselectcolorr if parent().panel.rollover else parent.Embody.par.Listrowcolorr
               bgcolorg: =parent.Embody.par.Listrowselectcolorg if parent().panel.rollover else parent.Embody.par.Listrowcolorg
@@ -3345,6 +4029,7 @@ operators:
             colorr: 0.2
             colorg: 0.2
             colorb: 0.2
+            hmode: fill
             alignorder: 0.66
           position: [440, 275]
           size: [160, 134]
@@ -3375,6 +4060,7 @@ operators:
               textpaddingt: =parent().par[me.curPar.name] or me.curPar.val
               alignx: left
               hmode: fill
+              vmode: fill
               clickthrough: true
               bgcolorr: =parent.Embody.par.Listrowselectcolorr if parent().panel.rollover else parent.Embody.par.Listrowcolorr
               bgcolorg: =parent.Embody.par.Listrowselectcolorg if parent().panel.rollover else parent.Embody.par.Listrowcolorg
@@ -3571,6 +4257,7 @@ operators:
               fontcolorg: 0.8
               fontcolorb: 0.8
               hmode: fill
+              vmode: fill
             size: [160, 130]
             color: [0.325, 0.8, 0.3]
             tags:
@@ -3628,6 +4315,7 @@ operators:
               fontcolorg: =parent.Embody.par.Textcolorg
               fontcolorb: =parent.Embody.par.Textcolorb
               w: 80
+              vmode: fill
               alignorder: -100
               display: false
               bgcolorr: =parent.Embody.par.Buttonbackgroundcolorr
@@ -3651,6 +4339,7 @@ operators:
               fontcolorg: =parent.Embody.par.Textcolorg
               fontcolorb: =parent.Embody.par.Textcolorb
               w: 36
+              vmode: fill
               clickthrough: true
               bgcolorr: =(0.13 if parent.Embody.par.Status.eval() == 'Enabled' else parent.Embody.par.Buttonbackgroundcolorr.eval()) + (0.08 if me.fetch('hover', False) else 0)
               bgcolorg: =(0.22 if parent.Embody.par.Status.eval() == 'Enabled' else parent.Embody.par.Buttonbackgroundcolorg.eval()) + (0.08 if me.fetch('hover', False) else 0)
@@ -3672,6 +4361,7 @@ operators:
               fontcolorg: =parent.Embody.par.Textcolorg
               fontcolorb: =parent.Embody.par.Textcolorb
               w: 36
+              vmode: fill
               alignorder: -50
               clickthrough: true
               bgcolorr: =(0.50 if parent.Embody.par.Performmode.eval() else parent.Embody.par.Buttonbackgroundcolorr.eval()) + (0.08 if me.fetch('hover', False) else 0)
@@ -3694,6 +4384,7 @@ operators:
               fontcolorg: =parent.Embody.par.Textcolorg
               fontcolorb: =parent.Embody.par.Textcolorb
               w: 36
+              vmode: fill
               alignorder: 400
               display: =1 if parent.Embody.par.Status == 'Enabled' else 0
               clickthrough: true
@@ -3720,6 +4411,7 @@ operators:
               fontcolorg: =parent.Embody.par.Textcolorg
               fontcolorb: =parent.Embody.par.Textcolorb
               w: 36
+              vmode: fill
               alignorder: 650
               clickthrough: true
               bgcolorr: =parent.Embody.par.Buttonbackgroundcolorr.eval() + (0.06 if me.fetch('hover', False) else 0)
@@ -3745,6 +4437,7 @@ operators:
               fontcolorg: =parent.Embody.par.Textcolorg
               fontcolorb: =parent.Embody.par.Textcolorb
               w: 36
+              vmode: fill
               alignorder: 1000
               clickthrough: true
               bgcolorr: =parent.Embody.par.Buttonbackgroundcolorr.eval() + (0.06 if me.fetch('hover', False) else 0)
@@ -3768,6 +4461,7 @@ operators:
               fontcolorg: =parent.Embody.par.Textcolorg
               fontcolorb: =parent.Embody.par.Textcolorb
               w: 36
+              vmode: fill
               alignorder: 925
               clickthrough: true
               bgcolorr: =parent.Embody.par.Buttonbackgroundcolorr.eval() + (0.06 if me.fetch('hover', False) else 0)
@@ -3793,6 +4487,7 @@ operators:
               fontcolorg: =parent.Embody.par.Textcolorg
               fontcolorb: =parent.Embody.par.Textcolorb
               w: 36
+              vmode: fill
               alignorder: 600
               clickthrough: true
               bgcolorr: =parent.Embody.par.Buttonbackgroundcolorr.eval() + (0.06 if me.fetch('hover', False) else 0)
@@ -3827,6 +4522,7 @@ operators:
               fontcolorg: =parent.Embody.par.Textcolorg
               fontcolorb: =parent.Embody.par.Textcolorb
               w: 100
+              vmode: fill
               alignorder: 700
               display: =1 if parent.Embody.par.Status == 'Enabled' else 0
               clickthrough: true
@@ -3851,6 +4547,7 @@ operators:
               fontcolorg: =parent.Embody.par.Textcolorg
               fontcolorb: =parent.Embody.par.Textcolorb
               w: 65
+              vmode: fill
               alignorder: 1050
               clickthrough: true
               bgcolorr: =(0.13 if parent.Embody.par.Envoyenable.eval() else parent.Embody.par.Buttonbackgroundcolorr.eval()) + (0.08 if me.fetch('hover', False) else 0)
@@ -3885,6 +4582,7 @@ operators:
               fontcolorg: =parent.Embody.par.Textcolorg
               fontcolorb: =parent.Embody.par.Textcolorb
               w: 36
+              vmode: fill
               alignorder: 950
               clickthrough: true
               bgcolorr: =parent.Embody.par.Buttonbackgroundcolorr.eval() + (0.06 if me.fetch('hover', False) else 0)
@@ -4087,6 +4785,7 @@ operators:
               fontcolorg: =parent.Embody.par.Textcolorg
               fontcolorb: =parent.Embody.par.Textcolorb
               w: 51
+              vmode: fill
               alignorder: 350
               clickthrough: true
               bgcolorr: =parent.Embody.par.Buttonbackgroundcolorr.eval() + (0.06 if me.fetch('hover', False) else 0)
@@ -4112,6 +4811,7 @@ operators:
               fontcolorg: =parent.Embody.par.Textcolorg
               fontcolorb: =parent.Embody.par.Textcolorb
               w: 26
+              vmode: fill
               alignorder: -200
               clickthrough: true
               bgcolorr: =parent.Embody.par.Buttonbackgroundcolorr.eval() + (0.06 if me.fetch('hover', False) else 0)
@@ -4140,6 +4840,7 @@ operators:
               textoffsetx: 8
               alignx: left
               w: 170
+              vmode: fill
               alignorder: 25
               bgcolorr: 0.08
               bgcolorg: 0.08
@@ -4616,7 +5317,129 @@ operators:
         size: [160, 130]
         comp_inputs:
         - manager
-        palette_clone: true
+        children:
+        - name: title
+          type: textCOMP
+          parameters:
+            text: =str(parent().par.Headerlabel) + '  ·  Envoy ' + str(parent.Embody.par.Envoystatus)
+            callbacks: title_callbacks
+            font: Open Sans
+            fontsize: 9
+            fontsizeunits: points
+            fontcolorr: =parent.Embody.par.Textcolorr
+            fontcolorg: =parent.Embody.par.Textcolorg
+            fontcolorb: =parent.Embody.par.Textcolorb
+            alignx: left
+            hmode: fill
+            vmode: fill
+            reposition: window
+            offsetx: 10
+          size: [160, 130]
+          color: [0.325, 0.8, 0.3]
+          tags:
+          - tox
+        - name: button_max
+          type: textCOMP
+          parameters:
+            text: "\U000F05AF"
+            callbacks: button_max_callbacks
+            font: Material Design Icons
+            fontsize: 10
+            fontsizeunits: points
+            fontcolorr: =parent.Embody.par.Textcolorr
+            fontcolorg: =parent.Embody.par.Textcolorg
+            fontcolorb: =parent.Embody.par.Textcolorb
+            w: 32
+            vmode: fill
+            alignorder: 2
+            clickthrough: true
+            bgcolorr: =1.0
+            bgcolorg: =1.0
+            bgcolorb: =1.0
+            bgalpha: =0.1 if me.fetch('hover', False) else 0
+          position: [600, 0]
+          size: [160, 130]
+          color: [0.325, 0.8, 0.3]
+          tags:
+          - tox
+          storage:
+            pressed: false
+        - name: button_min
+          type: textCOMP
+          parameters:
+            text: "\U000F05B0"
+            callbacks: button_min_callbacks
+            font: Material Design Icons
+            fontsize: 10
+            fontsizeunits: points
+            fontcolorr: =parent.Embody.par.Textcolorr
+            fontcolorg: =parent.Embody.par.Textcolorg
+            fontcolorb: =parent.Embody.par.Textcolorb
+            w: 32
+            vmode: fill
+            alignorder: 1
+            clickthrough: true
+            bgcolorr: =1.0
+            bgcolorg: =1.0
+            bgcolorb: =1.0
+            bgalpha: =0.1 if me.fetch('hover', False) else 0
+          position: [300, 0]
+          size: [160, 130]
+          color: [0.325, 0.8, 0.3]
+          tags:
+          - tox
+          storage:
+            pressed: false
+        - name: panelexec1
+          type: panelexecuteDAT
+          parameters:
+            panels: ..
+            panelvalue: '*'
+            ontooff: true
+            file: project1/container1/Embody/windowHeader/panelexec1.py
+            syncfile: true
+            loadonstart: true
+          position: [300, -200]
+          size: [130, 90]
+          color: [0.9, 0.3, 0.4]
+          tags:
+          - py
+        - name: button_close
+          type: textCOMP
+          parameters:
+            text: "\U000F05AD"
+            callbacks: button_close_callbacks
+            font: Material Design Icons
+            fontsize: 10
+            fontsizeunits: points
+            fontcolorr: =parent.Embody.par.Textcolorr
+            fontcolorg: =parent.Embody.par.Textcolorg
+            fontcolorb: =parent.Embody.par.Textcolorb
+            w: 32
+            vmode: fill
+            alignorder: 3
+            clickthrough: true
+            bgcolorr: =1.0
+            bgcolorg: =1.0
+            bgcolorb: =1.0
+            bgalpha: =0.1 if me.fetch('hover', False) else 0
+          position: [900, 0]
+          size: [160, 130]
+          color: [0.325, 0.8, 0.3]
+          tags:
+          - tox
+          storage:
+            pressed: false
+        - name: WindowHeaderExt
+          type: textDAT
+          parameters:
+            file: project1/container1/Embody/windowHeader/WindowHeaderExt.py
+            loadonstart: true
+            language: python
+          position: [0, -200]
+          size: [130, 90]
+          tags:
+          - py
       - name: annotation_ui
         type: annotateCOMP
         sequences:
@@ -4694,7 +5517,7 @@ operators:
               Opvieweroversize: natural
             About:
               $t: about
-          position: [4626, -469]
+          position: [2101, 131]
           size: [30, 34]
           color: [0.45, 0.45, 0.45]
           palette_clone: true
@@ -4718,7 +5541,7 @@ operators:
               Opvieweroversize: natural
             About:
               $t: about
-          position: [4626, -469]
+          position: [2101, 131]
           size: [34, 26]
           color: [0.45, 0.45, 0.45]
           palette_clone: true
@@ -4742,7 +5565,7 @@ operators:
               Opvieweroversize: natural
             About:
               $t: about
-          position: [4626, -469]
+          position: [2101, 131]
           size: [10, 26]
           color: [0.45, 0.45, 0.45]
           palette_clone: true
@@ -4766,7 +5589,7 @@ operators:
               Opvieweroversize: natural
             About:
               $t: about
-          position: [4626, -469]
+          position: [2101, 131]
           size: [10, 26]
           color: [0.45, 0.45, 0.45]
           palette_clone: true
@@ -4790,7 +5613,7 @@ operators:
               Opvieweroversize: natural
             About:
               $t: about
-          position: [4626, -469]
+          position: [2101, 131]
           size: [10, 10]
           color: [0.45, 0.45, 0.45]
           palette_clone: true
@@ -4814,7 +5637,7 @@ operators:
               Opvieweroversize: natural
             About:
               $t: about
-          position: [4626, -469]
+          position: [2101, 131]
           size: [10, 10]
           color: [0.45, 0.45, 0.45]
           palette_clone: true
@@ -4838,7 +5661,7 @@ operators:
               Opvieweroversize: natural
             About:
               $t: about
-          position: [4626, -469]
+          position: [2101, 131]
           size: [11, 24]
           color: [0.45, 0.45, 0.45]
           palette_clone: true
@@ -4862,7 +5685,7 @@ operators:
               Opvieweroversize: natural
             About:
               $t: about
-          position: [4626, -469]
+          position: [2101, 131]
           size: [11, 24]
           color: [0.45, 0.45, 0.45]
           palette_clone: true
@@ -4887,55 +5710,55 @@ operators:
               Opvieweroversize: natural
             About:
               $t: about
-          position: [4626, -469]
+          position: [2101, 131]
           size: [185, 74]
           color: [0.45, 0.45, 0.45]
           palette_clone: true
         annotations:
         - name: envoy_bot_arm_l
           mode: networkbox
-          position: [4626, -469]
+          position: [2101, 131]
           size: [10, 26]
           color: [0.05, 0.544, 1.0]
         - name: envoy_bot_arm_r
           mode: networkbox
-          position: [4626, -469]
+          position: [2101, 131]
           size: [10, 26]
           color: [0.05, 0.544, 1.0]
         - name: envoy_bot_body
           mode: networkbox
-          position: [4626, -469]
+          position: [2101, 131]
           size: [30, 34]
           color: [0.05, 0.544, 1.0]
         - name: envoy_bot_eye_l
           mode: networkbox
-          position: [4626, -469]
+          position: [2101, 131]
           size: [10, 10]
           color: [0.0, 0.0, 0.0]
         - name: envoy_bot_eye_r
           mode: networkbox
-          position: [4626, -469]
+          position: [2101, 131]
           size: [10, 10]
           color: [0.0, 0.0, 0.0]
         - name: envoy_bot_head
           mode: networkbox
-          position: [4626, -469]
+          position: [2101, 131]
           size: [34, 26]
           color: [0.05, 0.544, 1.0]
         - name: envoy_bot_leg_l
           mode: networkbox
-          position: [4626, -469]
+          position: [2101, 131]
           size: [11, 24]
           color: [0.05, 0.544, 1.0]
         - name: envoy_bot_leg_r
           mode: networkbox
-          position: [4626, -469]
+          position: [2101, 131]
           size: [11, 24]
           color: [0.05, 0.544, 1.0]
         - name: envoy_bot_speech
           mode: annotate
           title: Embot
-          position: [4626, -469]
+          position: [2101, 131]
           size: [185, 74]
           color: [0.12, 0.12, 0.17]
           backAlpha: 0.95
@@ -5163,11 +5986,9 @@ operators:
       type: oscinCHOP
       parameters:
         port: 7000
-        autoexportroot: =parent()
         exporttable: table1
       position: [-75, 100]
       size: [390, 258]
-      color: [0.67, 0.67, 0.67]
     - name: Visuals
       type: baseCOMP
       position: [1000, 200]
@@ -5186,7 +6007,7 @@ operators:
           type: fileinPOP
       - name: data
         type: baseCOMP
-        position: [70, 620]
+        position: [-730, -1180]
         size: [160, 130]
         color: [0.325, 0.8, 0.3]
         children:
@@ -6078,6 +6899,7 @@ operators:
       - name: out_null
         type: nullTOP
         flags:
+        - display
         - render
         - viewer
         position: [5125, -1275]
@@ -6091,7 +6913,7 @@ operators:
           - object: op('./GaiaRegistryExt').module.GaiaRegistryExt(me)
             name: GaiaRegistryExt
             promote: true
-        position: [-780, 95]
+        position: [-700, -2300]
         size: [160, 130]
         color: [0.325, 0.8, 0.3]
         children:
@@ -6901,7 +7723,7 @@ operators:
             Opvieweroversize: natural
           About:
             $t: about
-        position: [0, 575]
+        position: [-800, -1225]
         size: [438, 370]
         color: [0.45, 0.45, 0.45]
         palette_clone: true
@@ -7001,7 +7823,7 @@ operators:
             Opvieweroversize: natural
           About:
             $t: about
-        position: [-850, 25]
+        position: [-900, -2425]
         size: [580, 370]
         color: [0.45, 0.45, 0.45]
         palette_clone: true
@@ -7135,6 +7957,7 @@ operators:
         type: tableDAT
         parameters:
           file: project1/container1/Visuals/dmx_patch.tsv
+          rows: 1
         position: [4920, 773]
         size: [130, 90]
       - name: dream_cam
@@ -7254,7 +8077,7 @@ operators:
         flags:
         - display
         - render
-        position: [1145, 1095]
+        position: [1125, 825]
         size: [160, 130]
         children:
         - name: points1
@@ -7351,6 +8174,7 @@ operators:
             startSection: true
             default: true
             help: Show Gaia's recurring lexicon words (gaia/canvas/lexicon/*).
+            value: false
           - name: Showdream
             style: Toggle
             label: Dream
@@ -7361,6 +8185,7 @@ operators:
             label: Thought
             default: true
             help: Show her latest spontaneous thought (gaia/canvas/thought).
+            value: false
           - name: Showtts
             style: Toggle
             label: Spoken (TTS)
@@ -7376,8 +8201,8 @@ operators:
             label: Room Sensors
             default: true
             help: Shows the per-room environmental legend (temperature/darkness/presence) that now drives the soul sphere's room-sector colors.
-        position: [525, -1650]
-        size: [269, 222]
+        position: [450, -2725]
+        size: [357, 298]
         color: [0.325, 0.8, 0.3]
       - name: zones_geo
         type: geometryCOMP
@@ -7506,7 +8331,7 @@ operators:
             clampMin: true
             normMax: 10.0
             help: Duration in seconds of the crossfade transition into and out of the dream scene.
-            value: 3.25
+            value: 0.7799999714
           - name: Dreamholdseconds
             style: Float
             label: Dream Hold Seconds
@@ -7516,7 +8341,7 @@ operators:
             clampMin: true
             normMax: 60.0
             help: Duration in seconds the dream scene stays fully visible before crossfading back to the normal scene.
-            value: 21
+            value: 5.8000001907
           - name: Recognizeenable
             style: Toggle
             label: Recognize Enable
@@ -7531,11 +8356,12 @@ operators:
             clampMin: true
             normMax: 1.5
             help: Opacity multiplier for the recognition wash on top of presence*confidence. Calibrated to match the affinity wash's weight (0.2) - higher blows out the composite (additive stacking).
-            value: 0.46
+            value: 1.3200000525
           - name: Simrecognized
             style: Toggle
             label: Simulate Recognized
             help: While ON, feeds a fake person_recognized burst (TestPerson in salotto) into the registry every frame, exactly like a real repeated live recognition - lets you test the wash without a camera. Turn OFF to let it decay naturally.
+            value: true
           - name: Plantenable
             style: Toggle
             label: Plant Note Enable
@@ -7550,7 +8376,7 @@ operators:
             clampMin: true
             help: Opacity multiplier for the per-note pluck flash. Kept lower than Recognizeamount since plant_note can fire several times/sec (arpeggiated presets) and compounds visually.
             value: 0.713
-        position: [900, -1700]
+        position: [625, -2325]
         size: [186, 310]
         color: [0.325, 0.8, 0.3]
       - name: transform1
@@ -7583,7 +8409,8 @@ operators:
           url: http://192.168.1.240:1880/gaia-art/index.html
         flags:
         - viewer
-        position: [2425, -1025]
+        position: [2375, -1075]
+        size: [233, 130]
       - name: webrender2
         type: webrenderTOP
         parameters:
@@ -7591,11 +8418,13 @@ operators:
         flags:
         - viewer
         position: [2425, -900]
+        size: [223, 124]
       - name: cam_salotto
         type: videostreaminTOP
         parameters:
           url: http://192.168.1.142:8766/video
         flags:
+        - bypass
         - viewer
         position: [3000, -1300]
       - name: data_canvas
@@ -7724,7 +8553,7 @@ operators:
           color: [0.45, 0.45, 0.45]
       - name: dream_light
         type: lightCOMP
-        position: [2400, -1200]
+        position: [2400, -1275]
         children:
         - name: copy1
           type: copyPOP
@@ -7979,6 +8808,8 @@ operators:
         type: videostreaminTOP
         parameters:
           url: http://192.168.1.53:8766/video
+        flags:
+        - bypass
         position: [3000, -1400]
       - name: lag_affinity
         type: lagCHOP
@@ -7995,7 +8826,7 @@ operators:
           - object: op('./MocapBridgeExt').module.MocapBridgeExt(me)
             name: MocapBridge
             promote: true
-        position: [645, 1095]
+        position: [675, 800]
         size: [160, 130]
         color: [0.325, 0.8, 0.3]
         children:
@@ -8144,7 +8975,7 @@ operators:
             clampMin: true
             clampMax: true
             help: Motion intensity/speed (0=still, 1=lively), chosen by the Nursery activation.
-        position: [1945, 670]
+        position: [2050, 1000]
         size: [160, 130]
         children:
         - name: points1
@@ -8223,6 +9054,7 @@ operators:
             clampMin: true
             normMax: 0.5
             help: Maximum strength of the affinity wash, scaled down further by the weighted-average affinity of whoever is currently present (a stranger barely tints the scene even at full amount).
+            value: 0.0410000011
           - name: Affinitylagtime
             style: Float
             default: 1.2
@@ -8230,14 +9062,16 @@ operators:
             clampMin: true
             normMax: 5.0
             help: Seconds of easing applied to the affinity wash's color and intensity, so recognizing or losing a person fades the glow in/out instead of snapping.
-        position: [525, -1375]
-        size: [202, 211]
+            value: 0.8899999857
+        position: [-25, -2350]
+        size: [290, 322]
         color: [0.325, 0.8, 0.3]
       - name: cam_soggiorno
         type: videostreaminTOP
         parameters:
           url: http://192.168.1.240:8766/video
         flags:
+        - bypass
         - viewer
         position: [3000, -1200]
       - name: canvas_bridge
@@ -8250,14 +9084,14 @@ operators:
       - name: composite_out
         type: compositeTOP
         parameters:
-          operand: add
+          operand: screen
         flags:
         - viewer
         position: [3875, -950]
         inputs:
-        - moodwash_out
         - blur_bloom
         - webrender1
+        - moodwash_out
         - webrender2
         - transform3
         - transform2
@@ -8313,7 +9147,7 @@ operators:
             clampMin: true
             clampMax: true
             help: Blend strength of the ambient soul-mood color wash applied over the whole render before bloom. 0 = no wash, 1 = full strength.
-            value: 0.041
+            value: 0.1159999967
           - name: Washmode
             style: Menu
             label: Wash Mode
@@ -8330,10 +9164,10 @@ operators:
             clampMin: true
             normMax: 5.0
             help: Seconds of smoothing applied to the mood color before it reaches the wash, so the scene's base color eases rather than snaps when Gaia's mood changes. Drives data_canvas/lag_mood_rgb's Lag parameters.
-            value: 0.41
+            value: 1.4700000286
         flags:
         - viewer
-        position: [825, -1325]
+        position: [325, -2350]
         size: [216, 312]
         color: [0.325, 0.8, 0.3]
       - name: over_sediment
@@ -8378,8 +9212,8 @@ operators:
             clampMin: true
             normMax: 2.0
             help: Overall visibility multiplier for the ink layer in the final composite - a faint, slow-building background texture representing Gaia's recurring words/personality, not a foreground element.
-            value: 0.45
-        position: [525, -2025]
+            value: 0.8500000238
+        position: [0, -2750]
         size: [339, 298]
         color: [0.325, 0.8, 0.3]
       - name: dream_fragment
@@ -8417,7 +9251,7 @@ operators:
             clampMax: true
             help: Overall size multiplier, chosen by the Nursery activation.
             value: 0.5
-        position: [2415, 670]
+        position: [2475, 975]
         size: [160, 130]
         children:
         - name: points1
@@ -9047,6 +9881,7 @@ operators:
         type: tableDAT
         parameters:
           file: project1/container1/Visuals/dmx_out1_routingtable.tsv
+          rows: 1
         flags:
         - viewer
         position: [5120, 828]
@@ -9234,7 +10069,7 @@ operators:
           MediaPipe (select_mediapipe/lag_mediapipe/null_mediapipe): flat per-room channels gaia/rooms/{salotto,ingresso}/mediapipe/{smile_score,mouth_open,eyes_open} - only these two rooms report today. soul_geo/glsl_soulfx's uSmile/uEyesOpen and noise1's amp0 read directly off these per-room channels (max for smile/mouth, min for eyes_open, computed inline in the expression) rather than through a dedicated aggregation script. This does not rescan dynamically if Gaia adds more mediapipe-covered rooms or moves to the newer people/{n}/ breakdown - a proper per-person, dynamic Script CHOP aggregator is the improvement path if that becomes necessary.
 
           NOTE: this data lives only on the legacy gaia/rooms/* path, not yet under gaia/canvas/* - if Gaia migrates it there this will need porting to data_canvas.
-        position: [0, 575]
+        position: [-800, -1225]
         size: [438, 370]
         color: [0.45, 0.45, 0.45]
       - name: annotate2
@@ -9274,7 +10109,7 @@ operators:
         mode: annotate
         title: Gaia Registry
         text: Dynamic per-key state (object classes, lexicon words) with seed + fade-in/out alpha. See internal annotation for details.
-        position: [-850, 25]
+        position: [-900, -2425]
         size: [580, 370]
         color: [0.45, 0.45, 0.45]
       - name: annotate5
@@ -9419,198 +10254,6 @@ operators:
           fromop: =parent()
         size: [130, 90]
         color: [0.67, 0.67, 0.67]
-      - name: envoy_bot_body
-        type: annotateCOMP
-        sequences:
-          ext:
-          - object: op.TDAnnotate.mod.AnnotateExt.AnnotateExt(me)
-            promote: true
-        custom_pars:
-          Text:
-            $t: text
-            Titletext: ''
-            Titleheight: 0
-          Settings:
-            $t: settings_2
-            Mode: networkbox
-            Backcolorr: [1, 0.05, 0.05]
-          OP Viewer:
-            $t: op_viewer
-            Opvieweroversize: natural
-          About:
-            $t: about
-        position: [450, 114]
-        size: [30, 34]
-        color: [0.45, 0.45, 0.45]
-        palette_clone: true
-      - name: envoy_bot_head
-        type: annotateCOMP
-        sequences:
-          ext:
-          - object: op.TDAnnotate.mod.AnnotateExt.AnnotateExt(me)
-            promote: true
-        custom_pars:
-          Text:
-            $t: text
-            Titletext: ''
-            Titleheight: 0
-          Settings:
-            $t: settings_2
-            Mode: networkbox
-            Backcolorr: [1, 0.05, 0.05]
-          OP Viewer:
-            $t: op_viewer
-            Opvieweroversize: natural
-          About:
-            $t: about
-        position: [448, 149]
-        size: [34, 26]
-        color: [0.45, 0.45, 0.45]
-        palette_clone: true
-      - name: envoy_bot_arm_l
-        type: annotateCOMP
-        sequences:
-          ext:
-          - object: op.TDAnnotate.mod.AnnotateExt.AnnotateExt(me)
-            promote: true
-        custom_pars:
-          Text:
-            $t: text
-            Titletext: ''
-            Titleheight: 0
-          Settings:
-            $t: settings_2
-            Mode: networkbox
-            Backcolorr: [1, 0.05, 0.05]
-          OP Viewer:
-            $t: op_viewer
-            Opvieweroversize: natural
-          About:
-            $t: about
-        position: [438, 121]
-        size: [10, 26]
-        color: [0.45, 0.45, 0.45]
-        palette_clone: true
-      - name: envoy_bot_arm_r
-        type: annotateCOMP
-        sequences:
-          ext:
-          - object: op.TDAnnotate.mod.AnnotateExt.AnnotateExt(me)
-            promote: true
-        custom_pars:
-          Text:
-            $t: text
-            Titletext: ''
-            Titleheight: 0
-          Settings:
-            $t: settings_2
-            Mode: networkbox
-            Backcolorr: [1, 0.05, 0.05]
-          OP Viewer:
-            $t: op_viewer
-            Opvieweroversize: natural
-          About:
-            $t: about
-        position: [482, 121]
-        size: [10, 26]
-        color: [0.45, 0.45, 0.45]
-        palette_clone: true
-      - name: envoy_bot_eye_l
-        type: annotateCOMP
-        sequences:
-          ext:
-          - object: op.TDAnnotate.mod.AnnotateExt.AnnotateExt(me)
-            promote: true
-        custom_pars:
-          Text:
-            $t: text
-            Titletext: ''
-            Titleheight: 0
-          Settings:
-            $t: settings_2
-            Mode: networkbox
-            Backcolorr: [1, 0.05, 0.05]
-          OP Viewer:
-            $t: op_viewer
-            Opvieweroversize: natural
-          About:
-            $t: about
-        position: [451, 159]
-        size: [12, 13]
-        color: [0.45, 0.45, 0.45]
-        palette_clone: true
-      - name: envoy_bot_eye_r
-        type: annotateCOMP
-        sequences:
-          ext:
-          - object: op.TDAnnotate.mod.AnnotateExt.AnnotateExt(me)
-            promote: true
-        custom_pars:
-          Text:
-            $t: text
-            Titletext: ''
-            Titleheight: 0
-          Settings:
-            $t: settings_2
-            Mode: networkbox
-            Backcolorr: [1, 0.05, 0.05]
-          OP Viewer:
-            $t: op_viewer
-            Opvieweroversize: natural
-          About:
-            $t: about
-        position: [467, 159]
-        size: [12, 13]
-        color: [0.45, 0.45, 0.45]
-        palette_clone: true
-      - name: envoy_bot_leg_l
-        type: annotateCOMP
-        sequences:
-          ext:
-          - object: op.TDAnnotate.mod.AnnotateExt.AnnotateExt(me)
-            promote: true
-        custom_pars:
-          Text:
-            $t: text
-            Titletext: ''
-            Titleheight: 0
-          Settings:
-            $t: settings_2
-            Mode: networkbox
-            Backcolorr: [1, 0.05, 0.05]
-          OP Viewer:
-            $t: op_viewer
-            Opvieweroversize: natural
-          About:
-            $t: about
-        position: [451, 90]
-        size: [11, 24]
-        color: [0.45, 0.45, 0.45]
-        palette_clone: true
-      - name: envoy_bot_leg_r
-        type: annotateCOMP
-        sequences:
-          ext:
-          - object: op.TDAnnotate.mod.AnnotateExt.AnnotateExt(me)
-            promote: true
-        custom_pars:
-          Text:
-            $t: text
-            Titletext: ''
-            Titleheight: 0
-          Settings:
-            $t: settings_2
-            Mode: networkbox
-            Backcolorr: [1, 0.05, 0.05]
-          OP Viewer:
-            $t: op_viewer
-            Opvieweroversize: natural
-          About:
-            $t: about
-        position: [467, 90]
-        size: [11, 24]
-        color: [0.45, 0.45, 0.45]
-        palette_clone: true
       - name: mood_send_relay
         type: parameterexecuteDAT
         parameters:
@@ -9624,87 +10267,11 @@ operators:
         color: [0.9, 0.3, 0.4]
         tags:
         - py
-      - name: envoy_bot_speech
-        type: annotateCOMP
-        sequences:
-          ext:
-          - object: op.TDAnnotate.mod.AnnotateExt.AnnotateExt(me)
-            promote: true
-        custom_pars:
-          Text:
-            $t: text
-            Titletext: Embot
-            Bodytext: worked on mood_send_relay
-            Bodyfontsize: 11
-          Settings:
-            $t: settings_2
-            Mode: annotate
-            Backcolorr: [0.12, 0.12, 0.17]
-            Backcoloralpha: 0.95
-          OP Viewer:
-            $t: op_viewer
-            Opvieweroversize: natural
-          About:
-            $t: about
-        position: [372, 189]
-        size: [185, 74]
-        color: [0.45, 0.45, 0.45]
-        palette_clone: true
-      annotations:
-      - name: envoy_bot_arm_l
-        mode: networkbox
-        position: [438, 121]
-        size: [10, 26]
-        color: [1.0, 0.05, 0.05]
-      - name: envoy_bot_arm_r
-        mode: networkbox
-        position: [482, 121]
-        size: [10, 26]
-        color: [1.0, 0.05, 0.05]
-      - name: envoy_bot_body
-        mode: networkbox
-        position: [450, 114]
-        size: [30, 34]
-        color: [1.0, 0.05, 0.05]
-      - name: envoy_bot_eye_l
-        mode: networkbox
-        position: [451, 159]
-        size: [12, 13]
-        color: [1.0, 0.05, 0.05]
-      - name: envoy_bot_eye_r
-        mode: networkbox
-        position: [467, 159]
-        size: [12, 13]
-        color: [1.0, 0.05, 0.05]
-      - name: envoy_bot_head
-        mode: networkbox
-        position: [448, 149]
-        size: [34, 26]
-        color: [1.0, 0.05, 0.05]
-      - name: envoy_bot_leg_l
-        mode: networkbox
-        position: [451, 90]
-        size: [11, 24]
-        color: [1.0, 0.05, 0.05]
-      - name: envoy_bot_leg_r
-        mode: networkbox
-        position: [467, 90]
-        size: [11, 24]
-        color: [1.0, 0.05, 0.05]
-      - name: envoy_bot_speech
-        mode: annotate
-        title: Embot
-        text: worked on mood_send_relay
-        position: [372, 189]
-        size: [185, 74]
-        color: [0.12, 0.12, 0.17]
-        backAlpha: 0.95
-        bodyFontSize: 11
     - name: externalizations
       type: tableDAT
       parameters:
         file: project1/container1/externalizations.tsv
-        rows: 210
+        rows: 232
         cols: 11
       position: [-38, 434]
       size: [130, 90]

@@ -1,29 +1,25 @@
-﻿"""
-MQTT Client DAT Callbacks — delega tutta la logica a td_service_control.py
-(sorgente di verita' condivisa). Le funzioni qui girano gia' sul thread
-principale (dispatch nativo del Callbacks DAT), quindi e' sicuro toccare
-op()/par direttamente.
+"""
+MQTT Client DAT Callbacks
 
 me - this DAT
 """
 
 def onConnect(dat: mqttclientDAT):
-	op('td_service_control').module.on_connect(dat)
+	op('gaia_device_agent').module.on_connect(dat)
 	return
 
 def onConnectFailure(dat: mqttclientDAT, msg: str):
-	op('td_service_control').module.on_connect_failure(msg)
+	op('gaia_device_agent').module.on_connect_failure(msg)
 	return
 
 def onConnectionLost(dat: mqttclientDAT, msg: str):
-	op('td_service_control').module.on_connection_lost(msg)
+	op('gaia_device_agent').module.on_connection_lost(msg)
 	return
 
 def onSubscribe(dat: mqttclientDAT):
 	return
 
 def onSubscribeFailure(dat: mqttclientDAT, msg: str):
-	print(f"[GAIA Service Control] Subscribe fallita: {msg}")
 	return
 
 def onUnsubscribe(dat: mqttclientDAT):
@@ -37,5 +33,5 @@ def onPublish(dat: mqttclientDAT, topic: str):
 
 def onMessage(dat: mqttclientDAT, topic: str, payload: str, qos: int,
 			  retained: bool, dup: bool):
-	op('td_service_control').module.on_message(topic, payload)
+	op('gaia_device_agent').module.on_message(topic, payload)
 	return
