@@ -25,7 +25,7 @@ Repo Gaia (pubblico, dettaglio completo): `github.com/vsvisualsubstance-source/g
 | # | Direzione | Trasporto | Porta/topic | Contenuto |
 |---|---|---|---|---|
 | 1 | Gaia → TD | OSC/UDP | `7000` | Flatten grezzo di tutto lo stato WS (`/gaia/...`, ~1900 indirizzi) |
-| 2 | Gaia → TD | OSC/UDP | `7001` | Feed curato "TD Canvas" (`/gaia/canvas/...`): mood+palette, oggetti YOLO con seed FNV-1a, luci pulite, lessico, sogno, eventi one-shot |
+| 2 | Gaia → TD | OSC/UDP | `7001` | Feed curato "TD Canvas" (`/gaia/canvas/...`): mood+palette, oggetti YOLO con seed FNV-1a, luci pulite, lessico, sogno, eventi one-shot, dati incrociati tra rig TD per stanza (2026-08-30, vedi sezione dedicata) |
 | 3 | TD → Gaia | OSC/UDP | `9008` (`OSC_IN_PORT`) | `MoodNudge`: deltas mood/lighting da TD verso Gaia → ripubblicati su MQTT `gaia/touchdesigner/<path>`. **Non attribuito a un device specifico — vedi "Aperto" sotto** |
 | 4 | Gaia ↔ TD | MQTT | `gaia/device/{id}/status` \| `.../command` \| `.../audio_levels` (solo ControllerV7) | Protocollo Pi-Manager: heartbeat leggero + start/stop/restart servizi, più `action:"set"` per valori continui per-parametro (`register_param`) e `audio_levels` (telemetria live 1Hz, NON retained) — entrambi solo ControllerV7 oggi, vedi changelog 2026-08-24 (resto invariato, stesso schema di Pi/OPS/Core) |
 | 5 | Gaia ↔ TD | MQTT | `gaia/devices/{id}/announce` \| `.../config` \| `.../profile` \| `.../patchdeck_matrix` (PatchDeck) \| `.../dmx_matrix` (DMX V7) | Device Registry autoritativo di Node-RED (room graph, capabilities). **Un device TD deve pubblicare SIA il canale 4 SIA questo — vedi sotto**. `patchdeck_matrix`/`dmx_matrix` sono matrici meccaniche specifiche del device (stesso schema: `kind`/`type`/`range`\|`options`/`default` per param, `kind`/`type` per service) — vedi changelog 2026-08-24 e 2026-08-25 |
@@ -224,6 +224,46 @@ gaia/nursery/status   (TD → Gaia, retained, per Admin/Dashboard)
   changelog) — stesso pattern di `_publish_status()` già in
   `gaia_agent`/`gaia_control`, costo marginale basso e utile da subito
   per il debug della pipeline end-to-end.
+
+## Canale 2 — dati incrociati tra rig TD per stanza (2026-08-30, COSTRUITO)
+
+**Why:** questa sessione lato Gaia ha costruito parecchio sopra i dati
+device TD (canale 4/5) — tinta della stanza per palette DMX attiva,
+pulsazione su kick audio, presenza di ciascun rig, tutto reso visibile in
+`index.html`/`game.html` (dashboard Gaia). L'utente ha chiesto
+esplicitamente di specchiare le stesse novità verso TD, "così inviamo lo
+stesso schema dati di app a TD" — questi campi però erano SOLO lato Gaia
+(brain.rooms), MAI passati sul canale 2. Aggiunto oggi in `Build TD
+Canvas` (Node-RED), **nessuna modifica a `osc_bridge.py`** (il JSON passa
+già intero, si appiattisce da solo lato bridge).
+
+**Campi nuovi su `/gaia/canvas/rooms/{stanza}/...`** (oltre a quelli già
+esistenti: `presence_count`, `activity`, `temperature`, `darkness`,
+`emotion`, `pose`, `gesture`, `objects/*`):
+
+| Campo | Contenuto | Note |
+|---|---|---|
+| `humidity` | umidità Hue per stanza | nuovo, mancava anche questo (non solo i campi TD sotto) |
+| `ambient_light` | lux Hue per stanza | idem — `temperature`/`darkness` c'erano già, `ambient_light` no |
+| `touchdesignerActive` | un rig TD è presente e vivo in questa stanza | stessa soglia 2min di `ThreeViewEngineGAME`/`isActiveTd` lato dashboard |
+| `dmxPalette.a`, `.b` | palette DMX attiva nella stanza (se un rig DMX è lì) | `null` se `touchdesignerActive` è false o nessun DMX in quella stanza |
+| `audioKick` | ultimo valore kick rilevato nella stanza | gate di freschezza 3s (stessa soglia lato dashboard), 0 se scaduto |
+
+**Perché è utile A UN RIG DIVERSO, non solo a chi genera il dato**: un
+progetto TD in un'altra stanza (o un futuro progetto — Herbarium, Acqua)
+può ora leggere "cosa sta facendo l'altro rig" (palette, kick, presenza)
+senza bisogno di un canale MQTT dedicato punto-a-punto tra istanze TD —
+passa già tutto per Gaia, che aggrega per stanza. Esempio concreto reale
+verificato oggi: `soggiorno` (PatchDeck+un secondo rig DMX di Mauro) mostra
+`dmxPalette:{a:"Ocean",b:"Fire"}`; `salotto` (ControllerV7/mixeraudio)
+mostra `audioKick:1` in tempo reale durante un test con musica.
+
+**Verificato dal vivo** (non solo lette le modifiche): sottoscritto
+`gaia/td/canvas` reale con tutti e 4 i rig oggi online (PatchDeck, DMX
+OPS, DMX Mac Mauro, ControllerV7/mixeraudio) — ogni stanza mostra i
+campi giusti, `dmxPalette`/`touchdesignerActive` correttamente `null`/
+`false` per le stanze senza rig, `audioKick` decade a 0 dopo 3s come
+atteso.
 
 ## Vocabolario Asemico — component proposto per TD (proposta lato Gaia, niente costruito)
 
@@ -2820,6 +2860,14 @@ ordine in conflitto col primo — non risolve quella domanda aperta
 risposte. Nessun codice lato Gaia da cambiare (`device_id` è già
 trattato come stringa opaca). Rename concreti suggeriti nella sezione,
 non ancora applicati — in attesa di chi ha accesso Envoy.
+
+**2026-08-30 (Core), seguito** — canale 2 esteso con dati incrociati tra
+rig TD per stanza (`touchdesignerActive`, `dmxPalette.a/b`, `audioKick`)
+più `humidity`/`ambient_light` che mancavano anche prima di oggi — vedi
+sezione dedicata "Canale 2 — dati incrociati tra rig TD per stanza"
+sopra per dettaglio completo, esempi reali e verifica dal vivo. Nessuna
+modifica a `osc_bridge.py` o al trasporto, solo al payload JSON di
+`Build TD Canvas` lato Node-RED.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
