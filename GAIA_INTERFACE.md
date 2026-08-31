@@ -33,7 +33,7 @@ Repo Gaia (pubblico, dettaglio completo): `github.com/vsvisualsubstance-source/g
 | 7 | Pi/OPS → Admin | MQTT | `gaia/mocap-bridge/{sender_device_id}/status` (retained) \| `.../command` | Mocap grezzo (viso/mani/pose) opt-in per istanza TD — `sender_device_id` è il device mediapipe che manda, non TD |
 | 8 | Watchdog → Telegram | MQTT | `gaia/notify/telegram` | Alert quando una TD nota è silente >90s (e recovery al ritorno) |
 | 9 | Gaia → TD | MQTT | `gaia/nursery/activate` \| `.../deactivate` \| `.../status` | **PROPOSTA, non ancora costruita** — vedi "Canale 9" sotto |
-| — | Gaia → TD | (usa canale 2 esistente, nessun nuovo trasporto) | `/gaia/canvas/{thought,tts,lastMemory,voiceCommands,dream,lexicon}` | **Vocabolario Asemico — proposta di NUOVO CONSUMATORE lato TD, non ancora costruito** — vedi sezione dedicata sotto |
+| — | Gaia → TD | (usa canale 2 esistente, nessun nuovo trasporto) | `/gaia/canvas/{thought,tts,lastMemory,voiceCommands,dream,lexicon}` | **Vocabolario Asemico — COSTRUITO 2026-08-30** (toggle `Showasemic` in `text_ctrl`) — vedi sezione dedicata sotto |
 
 ## Perché un device TD deve pubblicare SIA canale 4 SIA canale 5
 
@@ -265,7 +265,7 @@ campi giusti, `dmxPalette`/`touchdesignerActive` correttamente `null`/
 `false` per le stanze senza rig, `audioKick` decade a 0 dopo 3s come
 atteso.
 
-## Vocabolario Asemico — component proposto per TD (proposta lato Gaia, niente costruito)
+## Vocabolario Asemico — component per TD (**COSTRUITO 2026-08-30**, vedi changelog in fondo)
 
 Richiesta utente: portare in TD la stessa "lingua visiva" che Gaia già
 scrive su `welcome.html` e sul display del Pi (`docs/vocabolario-asemico.md`,
@@ -2952,6 +2952,34 @@ domande aperte per chi ha accesso Envoy a PatchDeck (nome/range del
 param reale su ogni fx{N}, se `Directndimode` è un prerequisito). Nessun
 codice scritto né lato TD né lato Gaia — lato Gaia pronto a rendersi
 generico dalla matrice non appena esiste.
+
+**2026-08-31 (Core), punto zero** — riletto tutto il file da cima a fondo
+per allinearmi con quanto costruito nel frattempo (richiesto
+esplicitamente dall'utente). Trovato un disallineamento nella
+documentazione, corretto qui: il **Vocabolario Asemico era già stato
+costruito il 2026-08-30** (commit `985e4f50` in questo repo — modulo
+`asemic`, algoritmo portato verbatim, integrato in `over_asemic` nella
+catena `over_lexicondream`→`over_roomlegend`, toggle `Showasemic`,
+chiuso anche il gap `voiceCommands` via `GetCanvasKeys()`, più un fix
+bonus per note concorrenti dello stesso ink che si sovrapponevano
+invece di alternarsi su corsie), ma la tabella "Canali attivi" e
+l'intestazione della sezione dedicata dicevano ancora "non ancora
+costruito" — aggiornate entrambe. Nessuna azione lato Gaia necessaria:
+TD è un consumatore in più degli stessi dati già pubblicati sul canale
+2, nulla da cambiare qui.
+
+Confermato anche: PatchDeck FX (sezione sopra, proposta di ieri)
+implementati **prima** che io finissi di scrivere la proposta —
+probabilmente richiesti anche direttamente a questa sessione in
+parallelo, non solo in risposta al documento. Schema verificato dal
+vivo lato Gaia coincide con quanto descritto nel commit
+`365c06af` (TD4PatchDeck).
+
+Nessun'altra novità trovata rispetto a quanto già in changelog qui.
+La domanda aperta su `nursery_components.json` (3 nuovi trigger
+proposti, sezione "Domande aperte" sotto) resta senza risposta da parte
+mia — non prioritaria per l'utente in questo momento, non affrontata in
+questo giro.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
