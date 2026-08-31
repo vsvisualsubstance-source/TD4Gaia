@@ -839,6 +839,78 @@ documentato da nessuna parte in questo progetto — se è un tool/sistema
 reale rilevante per il `.tox`, va chiarito da chi lo costruisce prima
 di includerlo qui.
 
+## PatchDeck — esporre i 5 FX come param continui (proposta lato Gaia, 2026-08-31, niente costruito)
+
+**Why:** l'utente ha chiesto di pilotare da Gaia anche gli FX di PatchDeck
+("oltre ai 2 Deck possiamo pilotare anche 5 FX"), non solo `deck_a/b` e
+`load_x{N}_{deck}` (i soli 78 servizi oggi registrati). Verificato leggendo
+il repo **TD4PatchDeck** (separato da questo, canale corretto per
+PatchDeck): `PATCHDECK/PATCHES/POST_FX/` ha in realtà **8 operatori**
+(`fx1`…`fx8`, `fx_lables.tsv`: EDGE/FEEDBACK/FB SCALE/FB BLUR/MIRROR/
+BRIGHTNESS/BLACK LVL/Strobo), ma l'utente vuole partire dai primi 5
+(EDGE, FEEDBACK, FB SCALE, FB BLUR, MIRROR) — gli altri 3 restano per un
+giro successivo, stesso schema riusabile.
+
+**Confermato con l'utente**: sono **knobs continui, non toggle on/off**
+(a differenza di `deck_a`/`deck_b`) — vanno esposti con
+`agent.register_param()` (protocollo già in produzione per ControllerV7,
+sezione "Estensione al motore condiviso `gaia_device_agent.py`" sopra),
+non `register_service()`.
+
+**Verificato leggendo `patchdeck_services.py`** (TD4PatchDeck,
+`PATCHDECK/gaia_services/`): oggi registra SOLO `deck_a`/`deck_b` + i 76
+`load_x{N}_{deck}` — zero FX, né sul device live né nel sorgente. Nessun
+riferimento a `POST_FX` in quel file: chi implementa parte da zero per
+questa parte, non sta completando qualcosa di già iniziato.
+
+### Proposta concreta
+
+Param names (minuscoli, prefisso `fx_`, stesso principio di `family`
+sempre minuscolo):
+
+| Param MQTT | Operatore TD (da `master_toggle_exec.py`/`fx_lables.tsv`) |
+|---|---|
+| `fx_edge` | `/PATCHDECK/PATCHES/POST_FX/fx1` |
+| `fx_feedback` | `/PATCHDECK/PATCHES/POST_FX/fx2` |
+| `fx_fb_scale` | `/PATCHDECK/PATCHES/POST_FX/fx3` |
+| `fx_fb_blur` | `/PATCHDECK/PATCHES/POST_FX/fx4` |
+| `fx_mirror` | `/PATCHDECK/PATCHES/POST_FX/fx5` |
+
+**Domande aperte per chi ha accesso Envoy a PatchDeck** (non deducibili
+dal filesystem, gli operatori sono `.tox` binari):
+1. Qual è il nome del parametro reale su ciascun `fx{N}` che ne controlla
+   l'intensità/quantità (`par.Amount`? `par.Value`? un nome diverso per
+   ognuno)? La tabella sopra assume un solo param continuo per FX — se
+   qualcuno ne ha più di uno (es. `FB SCALE` potrebbe avere sia uno
+   scale X che Y), va chiarito qui prima di implementare.
+2. Range reale di ciascun param (0-1? 0-100? diverso per FX?) — serve
+   per popolare `range` nella matrice meccanica (`fx_matrix`, stesso
+   schema di `dmx_matrix`/`patchdeck_matrix`: `kind:'fx_param'`,
+   `type:'float'`, `range:[min,max]`, `default`).
+3. `master_toggle_exec.py` mostra che il pulsante MIDI "Master" fa
+   toggle su `Directndimode` di `POST_FX` stesso (non un fx specifico) —
+   è un prerequisito per che gli FX abbiano effetto (serve essere in
+   Direct NDI Mode), o sono indipendenti? Se prerequisito, va esposto
+   anche quello (magari come sesto param/servizio) o va gestito in
+   automatico dentro `register_param.set()` di ogni fx.
+
+**Nessun impatto su quanto già esiste**: stesso principio già rispettato
+per `register_param` su ControllerV7 — additivo, `deck_a/b`/`load_x*`
+restano invariati, PatchDeck continua a funzionare identico se questa
+proposta non viene implementata.
+
+### Lato Gaia (preparato, in attesa della matrice reale)
+
+`patchdeck.html` verrà esteso per renderizzare genericamente qualunque
+voce `kind:'fx_param'` trovata nella matrice (slider + numero, stesso
+pattern già in produzione per i param di `mixeraudio.html`/`dmx.html`) —
+nessun nome hardcoded, si costruisce da sola dalla matrice reale non
+appena esiste. Stesso discorso per l'automazione "Gaia VJ": una volta
+che i param esistono davvero, valutare se/come farli reagire a
+mood/energia (stesso meccanismo già in produzione per palette DMX/clip
+PatchDeck) — non implementato ora per non scrivere logica contro dati
+che non esistono ancora.
+
 ## Changelog / interscambio
 
 **2026-08-06 (Core)** — sessione lunga sul multi-istanza:
@@ -2868,6 +2940,18 @@ sezione dedicata "Canale 2 — dati incrociati tra rig TD per stanza"
 sopra per dettaglio completo, esempi reali e verifica dal vivo. Nessuna
 modifica a `osc_bridge.py` o al trasporto, solo al payload JSON di
 `Build TD Canvas` lato Node-RED.
+
+**2026-08-31 (Core)** — proposta esporre 5 FX di PatchDeck come param
+continui (`fx_edge/feedback/fb_scale/fb_blur/mirror`) — vedi sezione
+dedicata "PatchDeck — esporre i 5 FX come param continui" sopra. Letto
+TD4PatchDeck (repo separato) per trovare gli operatori reali
+(`PATCHDECK/PATCHES/POST_FX/fx1..fx8`, `fx_lables.tsv`) — sono 8 in
+totale, l'utente vuole partire dai primi 5. Confermato con l'utente:
+sono knobs continui (`register_param`, non `register_service`). 3
+domande aperte per chi ha accesso Envoy a PatchDeck (nome/range del
+param reale su ogni fx{N}, se `Directndimode` è un prerequisito). Nessun
+codice scritto né lato TD né lato Gaia — lato Gaia pronto a rendersi
+generico dalla matrice non appena esiste.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
