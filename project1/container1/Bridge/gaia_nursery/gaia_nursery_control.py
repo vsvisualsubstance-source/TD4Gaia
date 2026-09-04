@@ -25,6 +25,14 @@ nullo = reagisce comunque, es. un evento non legato a una stanza).
 CICLO DI VITA: TTL di sicurezza (default 5 minuti, da ttl_ms nel
 messaggio) sweepato da tick() -- mai un componente attivo per sempre.
 deactivate esplicito (stesso instance_id) lo chiude prima se arriva.
+
+REFERENCE COUNTING: piu' instance_id possono puntare allo STESSO
+componente (es. person_recognized ripetuto per la stessa persona, un
+instance_id nuovo ogni volta) -- _deactivate() nasconde l'operatore
+solo quando NESSUN altro instance_id attivo lo reclama ancora, altrimenti
+il TTL/deactivate del piu' vecchio farebbe sparire un componente che
+un'istanza piu' recente considera ancora valido (trovato dal vivo
+2026-09-04, 9 instance_id impilati su un solo person_sigil).
 """
 import json
 import time
@@ -147,11 +155,20 @@ def _deactivate(instance_id):
     entry = _active.pop(instance_id, None)
     if entry is None:
         return
-    target = _targetOp(entry['component'])
-    if target is not None:
-        target.display = False
-        target.render = False
-    print(f"[GAIA Nursery] Disattivato {entry['component']} (instance_id={instance_id})")
+    component_id = entry['component']
+    # Reference-count the shared target op: multiple instance_ids (e.g.
+    # repeated person_recognized for the same person) can point at the
+    # SAME Visuals/{component_id} operator. Only hide it once no other
+    # active instance still claims it -- otherwise the oldest instance's
+    # TTL/deactivate would blink the component off under a still-active one.
+    still_claimed = any(e['component'] == component_id for e in _active.values())
+    if not still_claimed:
+        target = _targetOp(component_id)
+        if target is not None:
+            target.display = False
+            target.render = False
+    print(f"[GAIA Nursery] Disattivato {component_id} (instance_id={instance_id})" +
+          (" -- componente resta visibile, altre istanze attive" if still_claimed else ""))
     _publishStatus()
 
 
