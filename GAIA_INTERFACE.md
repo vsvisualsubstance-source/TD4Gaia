@@ -3065,17 +3065,58 @@ sulla 9008 è vivo? Il subscriber Node-RED "TD Mood In" (fix
 così? C'è traccia del pacchetto in arrivo (log grezzo del listener,
 non solo dopo il parsing)?
 
+**2026-09-04 (Core, 2)** — Risposta a "TD/Mac, 2": il listener OSC sulla
+9008 è vivo e riceve, il subscriber "TD Mood In" è deployato col fix del
+2026-08-06 ed è stato eseguito davvero. Prova diretta, non dedotta:
+
+- Log grezzo del listener (`journalctl -u gaia-touchdesigner.service`),
+  PRIMA di qualunque parsing Node-RED — pacchetti UDP arrivati e
+  ripubblicati su MQTT:
+  ```
+  15:02:06 TouchDesigner → MQTT gaia/touchdesigner/td-gaia-macmauro/mood/stress = 1.0
+  15:02:20 TouchDesigner → MQTT gaia/touchdesigner/td-gaia-macmauro/mood/calm = 0.12
+  15:02:21 TouchDesigner → MQTT gaia/touchdesigner/td-gaia-macmauro/mood/social = 0.45
+  15:02:22 TouchDesigner → MQTT gaia/touchdesigner/td-gaia-macmauro/mood/curiosity = 1.0
+  15:02:23 TouchDesigner → MQTT gaia/touchdesigner/td-gaia-macmauro/mood/energy = 19.7
+  ```
+- `GET /gaia/debug/perf` (contatori interni Node-RED, incrementati SOLO
+  se la function viene davvero invocata): `gaia_td_mood_fn_01` → 7
+  esecuzioni, `since` coerente con l'orario sopra.
+- Effetto reale su `brain.mood` confermato subito dopo via
+  `gaia/td/canvas`: `stress:0.90, calm:0.83, curiosity:0.90` — coerenti
+  coi delta mandati, leggermente smorzati dal decadimento naturale del
+  mood nel frattempo (normale, non un problema).
+
+Catena TD→Gaia confermata sana end-to-end su questo test: OSC ricevuto
+→ MQTT → Node-RED → `brain.mood` aggiornato. **Ipotesi per il "non
+arriva niente" segnalato**: possibile timing (il primo tentativo
+dell'utente potrebbe essere stato guardato nel posto sbagliato lato
+Gaia — io stesso ho letto male `/gaia/debug/perf` al primo giro, la
+struttura reale è `{"nodes": {...}, "ts": ...}` non un dict piatto,
+facile sbagliare la lettura) oppure un pulse isolato perso in una
+finestra di verifica troppo stretta. Nessun bug trovato lato Core in
+questo giro — se il sintomo "non arriva niente" si ripresenta in modo
+riproducibile, utile sapere: con quale pulse, e se `/gaia/debug/perf`
+(letto correttamente, sotto `.nodes`) mostra `gaia_td_mood_fn_01`
+invariato in quel momento.
+
+`gaia_td_lighting_fn_01` (le luci, non il mood) risulta invece ancora
+**mai eseguita** — non testato oggi (solo i pulse mood sono stati
+provati), non un bug noto.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
-- **[NUOVO 2026-09-04, TD/Mac — vedi changelog "2026-09-04 (TD/Mac, 2)"
+- **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
   sopra]** utente segnala che i pulsanti `Send*` di `MoodNudge` non
   sembrano arrivare a Gaia. Lato TD verificato pulito end-to-end fino
-  all'invio UDP (vedi changelog). Serve verifica lato Core: il
-  listener OSC sulla 9008 è attivo e riceve? Il subscriber Node-RED
-  "TD Mood In" è ancora deployato col fix del 2026-08-06?
+  all'invio UDP (vedi changelog). **Risposta**: sì, il listener riceve
+  davvero — log grezzo pre-parsing, contatori Node-RED e brain.mood
+  aggiornato, tutti confermati per lo stesso test (mood/stress/calm/
+  social/curiosity/energy, 15:02). Nessun bug trovato lato Core; vedi
+  changelog per l'ipotesi sul sintomo isolato segnalato.
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core)" sopra]** verificata dal vivo `gaia_control_window`
   (`Bridge/gaia_control/devices_table`, lista bindata al List COMP
