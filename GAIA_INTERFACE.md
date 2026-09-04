@@ -25,7 +25,7 @@ Repo Gaia (pubblico, dettaglio completo): `github.com/vsvisualsubstance-source/g
 | # | Direzione | Trasporto | Porta/topic | Contenuto |
 |---|---|---|---|---|
 | 1 | Gaia → TD | OSC/UDP | `7000` | Flatten grezzo di tutto lo stato WS (`/gaia/...`, ~1900 indirizzi) |
-| 2 | Gaia → TD | OSC/UDP | `7001` | Feed curato "TD Canvas" (`/gaia/canvas/...`): mood+palette, oggetti YOLO con seed FNV-1a, luci pulite, lessico, sogno, eventi one-shot |
+| 2 | Gaia → TD | OSC/UDP | `7001` | Feed curato "TD Canvas" (`/gaia/canvas/...`): mood+palette, oggetti YOLO con seed FNV-1a, luci pulite, lessico, sogno, eventi one-shot, dati incrociati tra rig TD per stanza (2026-08-30, vedi sezione dedicata) |
 | 3 | TD → Gaia | OSC/UDP | `9008` (`OSC_IN_PORT`) | `MoodNudge`: deltas mood/lighting da TD verso Gaia → ripubblicati su MQTT `gaia/touchdesigner/<path>`. **Non attribuito a un device specifico — vedi "Aperto" sotto** |
 | 4 | Gaia ↔ TD | MQTT | `gaia/device/{id}/status` \| `.../command` \| `.../audio_levels` (solo ControllerV7) | Protocollo Pi-Manager: heartbeat leggero + start/stop/restart servizi, più `action:"set"` per valori continui per-parametro (`register_param`) e `audio_levels` (telemetria live 1Hz, NON retained) — entrambi solo ControllerV7 oggi, vedi changelog 2026-08-24 (resto invariato, stesso schema di Pi/OPS/Core) |
 | 5 | Gaia ↔ TD | MQTT | `gaia/devices/{id}/announce` \| `.../config` \| `.../profile` \| `.../patchdeck_matrix` (PatchDeck) \| `.../dmx_matrix` (DMX V7) | Device Registry autoritativo di Node-RED (room graph, capabilities). **Un device TD deve pubblicare SIA il canale 4 SIA questo — vedi sotto**. `patchdeck_matrix`/`dmx_matrix` sono matrici meccaniche specifiche del device (stesso schema: `kind`/`type`/`range`\|`options`/`default` per param, `kind`/`type` per service) — vedi changelog 2026-08-24 e 2026-08-25 |
@@ -33,7 +33,7 @@ Repo Gaia (pubblico, dettaglio completo): `github.com/vsvisualsubstance-source/g
 | 7 | Pi/OPS → Admin | MQTT | `gaia/mocap-bridge/{sender_device_id}/status` (retained) \| `.../command` | Mocap grezzo (viso/mani/pose) opt-in per istanza TD — `sender_device_id` è il device mediapipe che manda, non TD |
 | 8 | Watchdog → Telegram | MQTT | `gaia/notify/telegram` | Alert quando una TD nota è silente >90s (e recovery al ritorno) |
 | 9 | Gaia → TD | MQTT | `gaia/nursery/activate` \| `.../deactivate` \| `.../status` | **PROPOSTA, non ancora costruita** — vedi "Canale 9" sotto |
-| — | Gaia → TD | (usa canale 2 esistente, nessun nuovo trasporto) | `/gaia/canvas/{thought,tts,lastMemory,voiceCommands,dream,lexicon}` | **Vocabolario Asemico — proposta di NUOVO CONSUMATORE lato TD, non ancora costruito** — vedi sezione dedicata sotto |
+| — | Gaia → TD | (usa canale 2 esistente, nessun nuovo trasporto) | `/gaia/canvas/{thought,tts,lastMemory,voiceCommands,dream,lexicon}` | **Vocabolario Asemico — COSTRUITO 2026-08-30** (toggle `Showasemic` in `text_ctrl`) — vedi sezione dedicata sotto |
 
 ## Perché un device TD deve pubblicare SIA canale 4 SIA canale 5
 
@@ -225,7 +225,47 @@ gaia/nursery/status   (TD → Gaia, retained, per Admin/Dashboard)
   `gaia_agent`/`gaia_control`, costo marginale basso e utile da subito
   per il debug della pipeline end-to-end.
 
-## Vocabolario Asemico — component proposto per TD (proposta lato Gaia, niente costruito)
+## Canale 2 — dati incrociati tra rig TD per stanza (2026-08-30, COSTRUITO)
+
+**Why:** questa sessione lato Gaia ha costruito parecchio sopra i dati
+device TD (canale 4/5) — tinta della stanza per palette DMX attiva,
+pulsazione su kick audio, presenza di ciascun rig, tutto reso visibile in
+`index.html`/`game.html` (dashboard Gaia). L'utente ha chiesto
+esplicitamente di specchiare le stesse novità verso TD, "così inviamo lo
+stesso schema dati di app a TD" — questi campi però erano SOLO lato Gaia
+(brain.rooms), MAI passati sul canale 2. Aggiunto oggi in `Build TD
+Canvas` (Node-RED), **nessuna modifica a `osc_bridge.py`** (il JSON passa
+già intero, si appiattisce da solo lato bridge).
+
+**Campi nuovi su `/gaia/canvas/rooms/{stanza}/...`** (oltre a quelli già
+esistenti: `presence_count`, `activity`, `temperature`, `darkness`,
+`emotion`, `pose`, `gesture`, `objects/*`):
+
+| Campo | Contenuto | Note |
+|---|---|---|
+| `humidity` | umidità Hue per stanza | nuovo, mancava anche questo (non solo i campi TD sotto) |
+| `ambient_light` | lux Hue per stanza | idem — `temperature`/`darkness` c'erano già, `ambient_light` no |
+| `touchdesignerActive` | un rig TD è presente e vivo in questa stanza | stessa soglia 2min di `ThreeViewEngineGAME`/`isActiveTd` lato dashboard |
+| `dmxPalette.a`, `.b` | palette DMX attiva nella stanza (se un rig DMX è lì) | `null` se `touchdesignerActive` è false o nessun DMX in quella stanza |
+| `audioKick` | ultimo valore kick rilevato nella stanza | gate di freschezza 3s (stessa soglia lato dashboard), 0 se scaduto |
+
+**Perché è utile A UN RIG DIVERSO, non solo a chi genera il dato**: un
+progetto TD in un'altra stanza (o un futuro progetto — Herbarium, Acqua)
+può ora leggere "cosa sta facendo l'altro rig" (palette, kick, presenza)
+senza bisogno di un canale MQTT dedicato punto-a-punto tra istanze TD —
+passa già tutto per Gaia, che aggrega per stanza. Esempio concreto reale
+verificato oggi: `soggiorno` (PatchDeck+un secondo rig DMX di Mauro) mostra
+`dmxPalette:{a:"Ocean",b:"Fire"}`; `salotto` (ControllerV7/mixeraudio)
+mostra `audioKick:1` in tempo reale durante un test con musica.
+
+**Verificato dal vivo** (non solo lette le modifiche): sottoscritto
+`gaia/td/canvas` reale con tutti e 4 i rig oggi online (PatchDeck, DMX
+OPS, DMX Mac Mauro, ControllerV7/mixeraudio) — ogni stanza mostra i
+campi giusti, `dmxPalette`/`touchdesignerActive` correttamente `null`/
+`false` per le stanze senza rig, `audioKick` decade a 0 dopo 3s come
+atteso.
+
+## Vocabolario Asemico — component per TD (**COSTRUITO 2026-08-30**, vedi changelog in fondo)
 
 Richiesta utente: portare in TD la stessa "lingua visiva" che Gaia già
 scrive su `welcome.html` e sul display del Pi (`docs/vocabolario-asemico.md`,
@@ -487,6 +527,51 @@ quando ne esce una nuova — bisognerebbe chiedere manualmente istanza
 per istanza. Proposta: un campo `sw_version` (stringa libera, es.
 `"1.0.0"` o un hash breve) nel `profile`, bump ad ogni release del
 `.tox` — stesso trattamento di `pi/agent/config.py`'s `SW_VERSION`.
+
+### 1d. Convenzione `Deviceid` — ordine e case (2026-08-30, Core)
+
+Richiesta esplicita dell'utente in vista del rename di
+`td-controllerv7-macbook-air-di-mauro` ("cercherei una matrice comune
+tipo servizio-macchina-istanza... creerei una nota per avere la stessa
+sintassi per tutti i device_id"). Non un campo nuovo (a differenza di
+`family`/`sw_version` sopra) — solo una convenzione per un valore che
+già esiste e che oggi è incoerente device per device
+(`PatchDeck-Mac-Mauro`, `DMX-OPS`, `td-macbook-air-di-mauro`,
+`td-controllerv7-macbook-air-di-mauro`: case diverso, ordine diverso,
+lunghezza diversa).
+
+**Forma proposta**: `td-{family}-{macchina}[-{rig}]`, sempre minuscolo,
+solo trattini. Family prima della macchina, non il contrario — **allineato
+all'esempio già presente in questo stesso file** (sezione "Domande
+aperte", risposta ancora pendente su N-device-vs-1 per multi-rig:
+`td-dmx-ops-a`/`td-dmx-ops-b`), per non introdurre un secondo ordine in
+conflitto col primo. `{rig}` (lettera) resta opzionale e si applica solo
+quando quella domanda aperta viene risolta a favore di N device separati
+— la convenzione qui non la decide, resta compatibile con entrambe le
+risposte possibili.
+
+**Perché sempre minuscolo, non è solo estetica**: il case misto sui
+device TD ha già causato bug reali lato Gaia due volte nella stessa
+sessione (lookup case-sensitive contro `brain.rooms`, corretti ma solo
+dopo aver perso tempo a diagnosticarli) — stessa lezione già scritta
+sopra per `family` (sezione 1b, "Convenzione mancante, trovata dal vivo
+2026-08-29"). Estendere la stessa regola a `Deviceid` chiude la stessa
+classe di bug alla radice invece di continuare a riscoprirla device per
+device.
+
+**Esempi concreti** (rename suggeriti, non ancora applicati lato TD):
+- `td-controllerv7-macbook-air-di-mauro` → `td-controllerv7-macmauro`
+- `PatchDeck-Mac-Mauro` → `td-patchdeck-macmauro`
+- `DMX-OPS` → `td-dmx-ops`
+- `td-macbook-air-di-mauro` (family `gaia`) resta un caso limite: per
+  coerenza piena sarebbe `td-gaia-macmauro`, ma non richiesto qui — chi
+  ha accesso Envoy decide se e quando applicarlo, nessuna fretta.
+
+Nessun codice cambia per questo — `device_id` è già trattato come
+stringa opaca ovunque lato Gaia (usato solo per lookup/etichette, mai
+parsato). Machine short-name proposti per uniformità: `macmauro` (Mac di
+Mauro), `ops` (macchina OPS/silvermini2) — stessi short-name già usati
+lato Gaia per `ops-silvermini2`.
 
 ### 2. Affidabilità di `register_service()`/`register_param()` — il problema numero due
 
@@ -753,6 +838,78 @@ successo più volte stasera.
 documentato da nessuna parte in questo progetto — se è un tool/sistema
 reale rilevante per il `.tox`, va chiarito da chi lo costruisce prima
 di includerlo qui.
+
+## PatchDeck — esporre i 5 FX come param continui (proposta lato Gaia, 2026-08-31, niente costruito)
+
+**Why:** l'utente ha chiesto di pilotare da Gaia anche gli FX di PatchDeck
+("oltre ai 2 Deck possiamo pilotare anche 5 FX"), non solo `deck_a/b` e
+`load_x{N}_{deck}` (i soli 78 servizi oggi registrati). Verificato leggendo
+il repo **TD4PatchDeck** (separato da questo, canale corretto per
+PatchDeck): `PATCHDECK/PATCHES/POST_FX/` ha in realtà **8 operatori**
+(`fx1`…`fx8`, `fx_lables.tsv`: EDGE/FEEDBACK/FB SCALE/FB BLUR/MIRROR/
+BRIGHTNESS/BLACK LVL/Strobo), ma l'utente vuole partire dai primi 5
+(EDGE, FEEDBACK, FB SCALE, FB BLUR, MIRROR) — gli altri 3 restano per un
+giro successivo, stesso schema riusabile.
+
+**Confermato con l'utente**: sono **knobs continui, non toggle on/off**
+(a differenza di `deck_a`/`deck_b`) — vanno esposti con
+`agent.register_param()` (protocollo già in produzione per ControllerV7,
+sezione "Estensione al motore condiviso `gaia_device_agent.py`" sopra),
+non `register_service()`.
+
+**Verificato leggendo `patchdeck_services.py`** (TD4PatchDeck,
+`PATCHDECK/gaia_services/`): oggi registra SOLO `deck_a`/`deck_b` + i 76
+`load_x{N}_{deck}` — zero FX, né sul device live né nel sorgente. Nessun
+riferimento a `POST_FX` in quel file: chi implementa parte da zero per
+questa parte, non sta completando qualcosa di già iniziato.
+
+### Proposta concreta
+
+Param names (minuscoli, prefisso `fx_`, stesso principio di `family`
+sempre minuscolo):
+
+| Param MQTT | Operatore TD (da `master_toggle_exec.py`/`fx_lables.tsv`) |
+|---|---|
+| `fx_edge` | `/PATCHDECK/PATCHES/POST_FX/fx1` |
+| `fx_feedback` | `/PATCHDECK/PATCHES/POST_FX/fx2` |
+| `fx_fb_scale` | `/PATCHDECK/PATCHES/POST_FX/fx3` |
+| `fx_fb_blur` | `/PATCHDECK/PATCHES/POST_FX/fx4` |
+| `fx_mirror` | `/PATCHDECK/PATCHES/POST_FX/fx5` |
+
+**Domande aperte per chi ha accesso Envoy a PatchDeck** (non deducibili
+dal filesystem, gli operatori sono `.tox` binari):
+1. Qual è il nome del parametro reale su ciascun `fx{N}` che ne controlla
+   l'intensità/quantità (`par.Amount`? `par.Value`? un nome diverso per
+   ognuno)? La tabella sopra assume un solo param continuo per FX — se
+   qualcuno ne ha più di uno (es. `FB SCALE` potrebbe avere sia uno
+   scale X che Y), va chiarito qui prima di implementare.
+2. Range reale di ciascun param (0-1? 0-100? diverso per FX?) — serve
+   per popolare `range` nella matrice meccanica (`fx_matrix`, stesso
+   schema di `dmx_matrix`/`patchdeck_matrix`: `kind:'fx_param'`,
+   `type:'float'`, `range:[min,max]`, `default`).
+3. `master_toggle_exec.py` mostra che il pulsante MIDI "Master" fa
+   toggle su `Directndimode` di `POST_FX` stesso (non un fx specifico) —
+   è un prerequisito per che gli FX abbiano effetto (serve essere in
+   Direct NDI Mode), o sono indipendenti? Se prerequisito, va esposto
+   anche quello (magari come sesto param/servizio) o va gestito in
+   automatico dentro `register_param.set()` di ogni fx.
+
+**Nessun impatto su quanto già esiste**: stesso principio già rispettato
+per `register_param` su ControllerV7 — additivo, `deck_a/b`/`load_x*`
+restano invariati, PatchDeck continua a funzionare identico se questa
+proposta non viene implementata.
+
+### Lato Gaia (preparato, in attesa della matrice reale)
+
+`patchdeck.html` verrà esteso per renderizzare genericamente qualunque
+voce `kind:'fx_param'` trovata nella matrice (slider + numero, stesso
+pattern già in produzione per i param di `mixeraudio.html`/`dmx.html`) —
+nessun nome hardcoded, si costruisce da sola dalla matrice reale non
+appena esiste. Stesso discorso per l'automazione "Gaia VJ": una volta
+che i param esistono davvero, valutare se/come farli reagire a
+mood/energia (stesso meccanismo già in produzione per palette DMX/clip
+PatchDeck) — non implementato ora per non scrivere logica contro dati
+che non esistono ancora.
 
 ## Changelog / interscambio
 
@@ -2764,6 +2921,65 @@ verificati dal vivo dopo l'aggiornamento. Vecchio `Bridge/gaia_agent`
 disexternalizzato dal registro) rimosso dopo verifica completa —
 `get_op_errors` pulito su tutto `/project1`, performance invariata
 rispetto al baseline pre-migrazione (31fps prima e dopo).
+
+**2026-08-30 (Core)** — convenzione `Deviceid`, sezione "1d" sopra:
+richiesta esplicita dell'utente prima di rinominare
+`td-controllerv7-macbook-air-di-mauro`. Proposta: `td-{family}-{macchina}
+[-{rig}]`, sempre minuscolo, allineata all'esempio già presente in
+"Domande aperte" (`td-dmx-ops-a`/`-b`) così da non introdurre un secondo
+ordine in conflitto col primo — non risolve quella domanda aperta
+(N-device-vs-1 per multi-rig), resta compatibile con entrambe le
+risposte. Nessun codice lato Gaia da cambiare (`device_id` è già
+trattato come stringa opaca). Rename concreti suggeriti nella sezione,
+non ancora applicati — in attesa di chi ha accesso Envoy.
+
+**2026-08-30 (Core), seguito** — canale 2 esteso con dati incrociati tra
+rig TD per stanza (`touchdesignerActive`, `dmxPalette.a/b`, `audioKick`)
+più `humidity`/`ambient_light` che mancavano anche prima di oggi — vedi
+sezione dedicata "Canale 2 — dati incrociati tra rig TD per stanza"
+sopra per dettaglio completo, esempi reali e verifica dal vivo. Nessuna
+modifica a `osc_bridge.py` o al trasporto, solo al payload JSON di
+`Build TD Canvas` lato Node-RED.
+
+**2026-08-31 (Core)** — proposta esporre 5 FX di PatchDeck come param
+continui (`fx_edge/feedback/fb_scale/fb_blur/mirror`) — vedi sezione
+dedicata "PatchDeck — esporre i 5 FX come param continui" sopra. Letto
+TD4PatchDeck (repo separato) per trovare gli operatori reali
+(`PATCHDECK/PATCHES/POST_FX/fx1..fx8`, `fx_lables.tsv`) — sono 8 in
+totale, l'utente vuole partire dai primi 5. Confermato con l'utente:
+sono knobs continui (`register_param`, non `register_service`). 3
+domande aperte per chi ha accesso Envoy a PatchDeck (nome/range del
+param reale su ogni fx{N}, se `Directndimode` è un prerequisito). Nessun
+codice scritto né lato TD né lato Gaia — lato Gaia pronto a rendersi
+generico dalla matrice non appena esiste.
+
+**2026-08-31 (Core), punto zero** — riletto tutto il file da cima a fondo
+per allinearmi con quanto costruito nel frattempo (richiesto
+esplicitamente dall'utente). Trovato un disallineamento nella
+documentazione, corretto qui: il **Vocabolario Asemico era già stato
+costruito il 2026-08-30** (commit `985e4f50` in questo repo — modulo
+`asemic`, algoritmo portato verbatim, integrato in `over_asemic` nella
+catena `over_lexicondream`→`over_roomlegend`, toggle `Showasemic`,
+chiuso anche il gap `voiceCommands` via `GetCanvasKeys()`, più un fix
+bonus per note concorrenti dello stesso ink che si sovrapponevano
+invece di alternarsi su corsie), ma la tabella "Canali attivi" e
+l'intestazione della sezione dedicata dicevano ancora "non ancora
+costruito" — aggiornate entrambe. Nessuna azione lato Gaia necessaria:
+TD è un consumatore in più degli stessi dati già pubblicati sul canale
+2, nulla da cambiare qui.
+
+Confermato anche: PatchDeck FX (sezione sopra, proposta di ieri)
+implementati **prima** che io finissi di scrivere la proposta —
+probabilmente richiesti anche direttamente a questa sessione in
+parallelo, non solo in risposta al documento. Schema verificato dal
+vivo lato Gaia coincide con quanto descritto nel commit
+`365c06af` (TD4PatchDeck).
+
+Nessun'altra novità trovata rispetto a quanto già in changelog qui.
+La domanda aperta su `nursery_components.json` (3 nuovi trigger
+proposti, sezione "Domande aperte" sotto) resta senza risposta da parte
+mia — non prioritaria per l'utente in questo momento, non affrontata in
+questo giro.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
