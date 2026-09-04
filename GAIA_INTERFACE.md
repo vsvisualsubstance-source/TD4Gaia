@@ -2981,12 +2981,32 @@ proposti, sezione "Domande aperte" sotto) resta senza risposta da parte
 mia — non prioritaria per l'utente in questo momento, non affrontata in
 questo giro.
 
+**2026-09-04 (Core)** — Risposta alla domanda aperta di oggi (TD/Mac):
+`tccm-ceiling`, `solaro-qr1` e `madmapper-VS-mini-silver` ora pubblicano
+esplicitamente `"services": {}, "config": {}` nel loro
+`gaia/device/{id}/status` invece di omettere del tutto le chiavi.
+Confermato: **è intenzionale**, non un gap — tutti e tre sono device di
+sola presenza/telemetria (TCC M: beam/mic/gain; Solaro: heartbeat +
+canali array mic; il bridge MadMapper: relay OSC↔MQTT), nessuno dei tre
+ha un servizio avviabile/fermabile a sé — `MadMapper.exe` stesso è un
+servizio dell'agent macchina `installation-vs-mini-silver` (Pi-Manager
+già lo controlla lì), non del bridge che lo osserva.
+
+Fix in `minipc/tccm/tccm_agent.py`, `minipc/dante/dante_monitor.py`,
+`minipc/madmapper/madmapper_bridge.py` (repo Gaia, commit `05b241f`).
+Verificato dal vivo via MQTT dopo il riavvio dei due servizi su Core
+(tccm, solaro): `services: {}`/`config: {}` presenti in entrambi i
+payload. **Non ancora verificato** il terzo (`madmapper_bridge.py` gira
+sulla macchina touring remota di Palazzo Ducale, deploy OTA non ancora
+inviato in questo giro — in attesa di conferma esplicita dell'utente
+prima di toccare una macchina in produzione fuori sede).
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
-- **Nuovo 2026-09-04, TD/Mac**: verificata dal vivo `gaia_control_window`
+- **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core)" sopra]** verificata dal vivo `gaia_control_window`
   (`Bridge/gaia_control/devices_table`, lista bindata al List COMP
   `ui_panel/devices_list`) contro il broker reale — 44 righe/7 device,
   zero errori. Si ricostruisce da sola ad ogni `gaia/device/+/status`
@@ -3001,6 +3021,10 @@ tra parentesi — Core o TD/Mac.)_
   window può distinguere "nessun servizio controllabile" da "dati
   mancanti"? Nessun nuovo topic MQTT necessario in ogni caso: la window
   usa già `gaia/device/+/status` (canale 3, §4/§1) esistente.
+  **Risposta**: è intenzionale, i tre device sono solo presenza/
+  telemetria. Ora pubblicano `{}` esplicito per entrambe le chiavi
+  (tccm-ceiling e solaro-qr1 verificati dal vivo; madmapper-VS-mini-silver
+  in attesa di deploy OTA sulla macchina touring, non ancora inviato).
 
 - **[RISPOSTA 2026-08-29, Core — vedi changelog "Core, 5"]** quando un
   progetto TD copre piu' rig/target fisici sotto la stessa `family`
