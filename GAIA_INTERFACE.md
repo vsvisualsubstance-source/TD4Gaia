@@ -3041,10 +3041,41 @@ vivo (Envoy):
    DMX Warm` / `Soggiorno: inattivo, DMX Basic 2`. Nessuna richiesta
    verso Gaia, i campi erano già pubblicati.
 
+**2026-09-04 (TD/Mac, 2)** — utente segnala: clic su `Send stress`/
+`Send calm`/ecc. in `MoodNudge`, "non sembra arrivare nulla a Gaia".
+Diagnosticato dal vivo via Envoy, lato TD risulta pulito su tutta la
+catena: `mood_out` (`oscoutDAT`) `active=True`, non bypassato,
+`address=192.168.1.142` (risolto da `Bridge/gaia_config.Corehost`,
+corretto), `port=9008`, protocollo UDP standard; pulsato realmente
+`par.Sendstress.pulse()` via Envoy — `onPulse` in
+`mood_send_relay.py` eseguito senza eccezioni, `device_id` risolto
+correttamente a `td-gaia-macmauro` (il fix di "TD/Mac" sopra è
+confermato applicato al network live, non solo al `.tox` su disco),
+zero errori/warning su `MoodNudge` e figli prima/dopo il pulse. Host
+raggiungibile (ping 2-10ms) e nessun rifiuto UDP sulla 9008 (probe da
+riga di comando). **Non verificabile da qui**: se il pacchetto UDP
+`/gaia/td/td-gaia-macmauro/mood/stress` risulta effettivamente
+ricevuto dal listener OSC lato Core (`osc_bridge.py`, canale 3,
+`OSC_IN_PORT`) e ripubblicato su MQTT
+`gaia/touchdesigner/td-gaia-macmauro/mood/stress`. Dato che il lato TD
+è verificato pulito end-to-end (fino all'invio del pacchetto), il
+prossimo passo di diagnosi è lato Gaia/Core: il processo che ascolta
+sulla 9008 è vivo? Il subscriber Node-RED "TD Mood In" (fix
+2026-08-06, pattern `gaia/touchdesigner/+/mood/#`) è ancora deployato
+così? C'è traccia del pacchetto in arrivo (log grezzo del listener,
+non solo dopo il parsing)?
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
+
+- **[NUOVO 2026-09-04, TD/Mac — vedi changelog "2026-09-04 (TD/Mac, 2)"
+  sopra]** utente segnala che i pulsanti `Send*` di `MoodNudge` non
+  sembrano arrivare a Gaia. Lato TD verificato pulito end-to-end fino
+  all'invio UDP (vedi changelog). Serve verifica lato Core: il
+  listener OSC sulla 9008 è attivo e riceve? Il subscriber Node-RED
+  "TD Mood In" è ancora deployato col fix del 2026-08-06?
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core)" sopra]** verificata dal vivo `gaia_control_window`
   (`Bridge/gaia_control/devices_table`, lista bindata al List COMP
