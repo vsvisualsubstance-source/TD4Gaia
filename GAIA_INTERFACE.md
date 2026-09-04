@@ -3001,6 +3001,46 @@ sulla macchina touring remota di Palazzo Ducale, deploy OTA non ancora
 inviato in questo giro — in attesa di conferma esplicita dell'utente
 prima di toccare una macchina in produzione fuori sede).
 
+**2026-09-04 (TD/Mac)** — tre cose in questo giro, tutte verificate dal
+vivo (Envoy):
+
+1. **`Deviceid` rinominato** secondo la convenzione proposta in "1d":
+   `TD-Gaia` → `td-gaia-macmauro` su `Bridge/gaia_client`. Confermato sul
+   broker reale: `devices_table` mostra il nuovo id coi 4 servizi
+   corretti (`osc_in`/`render`/`dmx_out`/`mocap_bridge`), `offline=False`.
+   Nessun codice cambiato altrove (`device_id` è stringa opaca, come già
+   notato in "1d") — la riga vecchia `TD-Gaia` in `devices_table` è solo
+   il retained MQTT precedente, decade da sola.
+
+2. **Bug reale trovato nei riferimenti incrociati `gaia_agent`→`gaia_client`**
+   — il changelog "2026-08-29" sopra dichiarava questi due riferimenti
+   già aggiornati, ma non lo erano: `gaia_nursery_control.py._myRoom()`
+   e `MoodNudge/mood_send_relay.py` chiamavano ancora
+   `.op('gaia_agent')`/`op('../Bridge/gaia_agent')`, un COMP rimosso il
+   29/8. Effetto reale in produzione: `_myRoom()` tornava sempre
+   `'unknown'` (il filtro-stanza della Nursery ignorava OGNI evento
+   `gaia/nursery/activate`, broadcast o mirato), e ogni MoodNudge veniva
+   pubblicato come device `unknown` invece del vero `device_id` (rompendo
+   silenziosamente l'attribuzione lato Gaia sul canale 3, MQTT
+   `gaia/td/unknown/mood/...`). Corretti entrambi su `gaia_client`,
+   verificato dal vivo (`_myRoom()` ora torna il valore reale di
+   `Stanza`). Nessuna azione richiesta lato Gaia — solo codice TD.
+
+3. **Due nuovi consumatori del canale 2 esteso** (sezione "Canale 2 —
+   dati incrociati tra rig TD per stanza" sopra): (a) `audioKick`
+   ridotto a un singolo segnale house-wide (Select+Math CHOP, Max su
+   `gaia/canvas/rooms/*/audioKick`) e sommato additivamente all'opacity
+   del mood wash tramite un nuovo par `Kickamount` su `moodwash_ctrl`
+   (default 0.12, 0 = nessuna reazione) — non ancora osservato con un
+   kick reale (nessuna sorgente audio attiva al momento del build),
+   verificato solo per correttezza del wiring (zero errori, stesso
+   pattern additivo già in produzione per `Burstamount`/`levelup_edge`).
+   (b) Room legend (`script_room_legend_callbacks.py`) estesa con
+   `ambient_light` (lux) e una riga cross-rig (`touchdesignerActive` +
+   `dmxPalette.a`) — **verificato con dati reali**: `Salotto: al lavoro,
+   DMX Warm` / `Soggiorno: inattivo, DMX Basic 2`. Nessuna richiesta
+   verso Gaia, i campi erano già pubblicati.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 

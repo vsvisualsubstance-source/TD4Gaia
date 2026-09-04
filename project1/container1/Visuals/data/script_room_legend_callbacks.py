@@ -28,9 +28,12 @@
 	for i, room in enumerate(rooms):
 		tempChan = canvas.chan('gaia/canvas/rooms/%s/temperature' % room)
 		darkChan = canvas.chan('gaia/canvas/rooms/%s/darkness' % room)
+		lightChan = canvas.chan('gaia/canvas/rooms/%s/ambient_light' % room)
 		bits = []
 		if tempChan is not None:
 			bits.append('%.0f°C' % tempChan.eval())
+		if lightChan is not None:
+			bits.append('%.0flux' % lightChan.eval())
 		dark = darkChan.eval() if darkChan is not None else 0.0
 		if dark > 0.5:
 			bits.append('buio')
@@ -39,6 +42,13 @@
 			bits.append(activity_it.get(activity, activity))
 		if lighting[i][3] > 0.5:
 			bits.append('luce')
+		# Cross-rig awareness (canale 2, 2026-08-30): another TD instance's
+		# active DMX palette in this room, mirrored via Gaia room aggregation
+		# -- no direct MQTT link needed between TD instances.
+		tdActiveChan = canvas.chan('gaia/canvas/rooms/%s/touchdesignerActive' % room)
+		if tdActiveChan is not None and tdActiveChan.eval() > 0.5:
+			palette = registry.GetCanvasString('gaia/canvas/rooms/%s/dmxPalette/a' % room, '') if registry is not None else ''
+			bits.append('DMX %s' % palette if palette else 'TD attivo')
 		text = ', '.join(bits) if bits else 'n/d'
 		parts.append('%s: %s' % (labels[room], text))
 	scriptOp.appendRow(['Sensori - ' + '  |  '.join(parts)])

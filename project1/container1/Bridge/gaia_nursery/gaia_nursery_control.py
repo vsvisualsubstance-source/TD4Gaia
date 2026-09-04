@@ -19,7 +19,7 @@ GAIA_INTERFACE.md.
 BROADCAST + FILTRO LOCALE: gaia/nursery/activate arriva a TUTTE le
 istanze TD (stesso pattern del canale 7 mocap opt-in) -- ogni istanza
 confronta il campo "room" del messaggio con il proprio
-Bridge/gaia_agent.par.Stanza e ignora l'evento se non combacia (room
+Bridge/gaia_client.par.Stanza e ignora l'evento se non combacia (room
 nullo = reagisce comunque, es. un evento non legato a una stanza).
 
 CICLO DI VITA: TTL di sicurezza (default 5 minuti, da ttl_ms nel
@@ -58,7 +58,7 @@ def _visuals():
 
 
 def _myRoom():
-    agent = me.parent().parent().op('gaia_agent')
+    agent = me.parent().parent().op('gaia_client')
     if agent is None:
         return 'unknown'
     return agent.par.Stanza.eval()

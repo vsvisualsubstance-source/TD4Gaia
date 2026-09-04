@@ -35,7 +35,7 @@ def onPulse(par: Par):
 	# live TD instances don't collide on the same MQTT topic on the Gaia
 	# side (gaia/touchdesigner/<path>). Requires osc_bridge.py's
 	# TouchDesignerToGaia to route by device_id -- coordinated there.
-	agent = op('../Bridge/gaia_agent')
+	agent = op('../Bridge/gaia_client')
 	device_id = agent.par.Deviceid.eval() if agent is not None else 'unknown'
 	op('mood_out').sendOSC(f'/gaia/td/{device_id}/mood/{dimension}', [delta])
 	return
