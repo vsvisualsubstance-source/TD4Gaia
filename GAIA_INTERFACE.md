@@ -2770,6 +2770,22 @@ tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
+- **Nuovo 2026-09-04, TD/Mac**: verificata dal vivo `gaia_control_window`
+  (`Bridge/gaia_control/devices_table`, lista bindata al List COMP
+  `ui_panel/devices_list`) contro il broker reale — 44 righe/7 device,
+  zero errori. Si ricostruisce da sola ad ogni `gaia/device/+/status`
+  (nessun aggiornamento manuale richiesto lato TD, per design §4). **3
+  device compaiono con `service=""`/`state="unknown"`**:
+  `madmapper-VS-mini-silver`, `solaro-qr1`, `tccm-ceiling` — non
+  pubblicano un blocco `services`/`config` nel loro status, quindi la
+  window non ha nulla da mostrare/controllare per loro. Domanda per il
+  lato Gaia: è intenzionale (device che non implementano il protocollo
+  di controllo, solo presenza) o dovrebbero pubblicare un blocco
+  `services`/`config` minimo — anche vuoto ma esplicito — così la
+  window può distinguere "nessun servizio controllabile" da "dati
+  mancanti"? Nessun nuovo topic MQTT necessario in ogni caso: la window
+  usa già `gaia/device/+/status` (canale 3, §4/§1) esistente.
+
 - **[RISPOSTA 2026-08-29, Core — vedi changelog "Core, 5"]** quando un
   progetto TD copre piu' rig/target fisici sotto la stessa `family`
   (oggi il caso DMX), l'Admin/fleet view lato Gaia preferisce **N
