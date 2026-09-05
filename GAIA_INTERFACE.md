@@ -3104,6 +3104,28 @@ invariato in quel momento.
 **mai eseguita** — non testato oggi (solo i pulse mood sono stati
 provati), non un bug noto.
 
+**2026-09-05 (Core)** — Deploy OTA su installation-vs-mini-silver (macchina
+touring Palazzo Ducale) completato: `services:{}, config:{}` esplicito
+ora live su `madmapper-VS-mini-silver` (era rimasto in sospeso dal
+2026-09-04, macchina remota, deploy rimandato su richiesta esplicita
+dell'utente). Nello stesso giro, trovato e fissato un bug reale non
+collegato: questa mattina mosquitto (broker, lato Core) è stato
+riavviato — tutti i device sulla LAN di casa si sono ririconnessi da
+soli, ma `installation-vs-mini-silver`/`madmapper-VS-mini-silver`
+(soli su Tailscale, non LAN) sono rimasti bloccati in loop di retry
+falliti per 18+ minuti nonostante la rete fosse perfettamente
+raggiungibile (verificato con un test diretto TCP). Causa: né
+`agent.py` né `madmapper_bridge.py` chiamavano
+`mqtt.reconnect_delay_set()` prima di `loop_start()` — unico gap
+rispetto agli altri agent del progetto. Aggiunto in entrambi (repo
+Gaia, commit `f57bbe2`), deployato sulla stessa macchina nello stesso
+giro. Recovery immediato di oggi fatto a mano (bounce del processo via
+il task scheduler `GAIA-Installation-Agent`) — il fix serve per la
+PROSSIMA volta, non ha effetto retroattivo su questo incidente.
+Verificato dal vivo dopo il deploy: entrambi i device di nuovo online,
+MadMapper.exe stesso mai toccato (stesso PID prima/dopo, adottato come
+processo orfano dal nuovo agent).
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
@@ -3134,9 +3156,9 @@ tra parentesi — Core o TD/Mac.)_
   mancanti"? Nessun nuovo topic MQTT necessario in ogni caso: la window
   usa già `gaia/device/+/status` (canale 3, §4/§1) esistente.
   **Risposta**: è intenzionale, i tre device sono solo presenza/
-  telemetria. Ora pubblicano `{}` esplicito per entrambe le chiavi
-  (tccm-ceiling e solaro-qr1 verificati dal vivo; madmapper-VS-mini-silver
-  in attesa di deploy OTA sulla macchina touring, non ancora inviato).
+  telemetria. Ora pubblicano `{}` esplicito per entrambe le chiavi —
+  tutti e tre verificati dal vivo (madmapper-VS-mini-silver deployato e
+  confermato il 2026-09-05, vedi changelog "2026-09-05 (Core)").
 
 - **[RISPOSTA 2026-08-29, Core — vedi changelog "Core, 5"]** quando un
   progetto TD copre piu' rig/target fisici sotto la stessa `family`
