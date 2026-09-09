@@ -3126,6 +3126,34 @@ Verificato dal vivo dopo il deploy: entrambi i device di nuovo online,
 MadMapper.exe stesso mai toccato (stesso PID prima/dopo, adottato come
 processo orfano dal nuovo agent).
 
+**2026-09-09 (Core)** — Segnalato dall'utente: nuovo rig DMX "nicola"
+(`device_id: dmx-nicola`, family `dmx`, stanza `studio`, IP
+`192.168.1.54`) connesso e vivo (status fresco, 6+4 fixture reali
+configurate, uptime confermato), ma **assente da `web/dmx.html`** —
+comportamento CORRETTO della UI, non un bug lato Gaia: quella pagina
+costruisce i controlli SOLO da `gaia/devices/{id}/dmx_matrix`
+(retained, introspezione reale dei parametri TD — stesso principio già
+in uso per PatchDeck), mai dal solo status. `dmx-nicola` non ha MAI
+pubblicato quel topic.
+
+Trovato un dettaglio che riguarda chi ha accesso Envoy a quel progetto:
+`dmx-nicola` e il vecchio `dmx-master-test` (quello che HA una
+`dmx_matrix` retained, probabilmente ormai stantia) condividono la
+STESSA IP (`192.168.1.54`) — stessa macchina, quasi certamente stesso
+progetto TD con `Deviceid` cambiato da un test a un nome reale.
+Entrambi riportano `sw_version:"1.0"` (non è quindi un client
+disallineato in versione) e — dato potenzialmente rilevante —
+`capabilities.dmx: false` nel loro `.../profile` nonostante il device
+sia letteralmente un rig DMX. Ipotesi da verificare con Envoy: la
+pubblicazione della `dmx_matrix` potrebbe essere gated dietro quella
+capability mai attivata dopo un import/rename del progetto (stesso
+schema di gotcha già visto altre volte: bundle importato "a freddo"
+con toggle nativi lasciati com'erano). Nessuna azione possibile da qui
+(questa sessione non ha Envoy/accesso TD dal vivo) — utile un check
+diretto sul progetto: perché `register_matrix()`/equivalente non
+scatta per questo rig quando invece scattava (o scattava) per
+`dmx-master-test`.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
