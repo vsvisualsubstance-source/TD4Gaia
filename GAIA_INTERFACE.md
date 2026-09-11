@@ -3154,6 +3154,46 @@ diretto sul progetto: perché `register_matrix()`/equivalente non
 scatta per questo rig quando invece scattava (o scattava) per
 `dmx-master-test`.
 
+**2026-09-11 (Core)** — Due verifiche dal vivo su richiesta dell'utente
+("controlli se gaia modifica il dmx attivo? è su pc win nicola" / "anche
+il patchdeck non sembra essere pilotato"), entrambe sulla stessa macchina
+di "PC win nicola" (IP `192.168.1.114`).
+
+**1) Il gap `dmx_matrix` del 2026-09-09 è tornato, sotto un nuovo
+device_id.** Il rig DMX vivo oggi su quella macchina è
+`td-pddmx-winnic` (family `dmx`, stanza `studio`, status fresco) — NON
+`dmx-nicola` (quello di allora, IP diverso `192.168.1.54`, probabilmente
+ormai spento/altra sessione). Stessa IP `192.168.1.114` è condivisa da
+un altro device_id, `pd-dmx-nic`, che INVECE ha una `dmx_matrix`
+retained (ma stantia, ultimo status ~2.5h fa al momento del check) —
+stessissimo pattern di allora (`dmx-nicola`/`dmx-master-test`): sembra
+che ogni volta che il progetto TD viene ri-esportato/rinominato, il
+nuovo device_id riparta senza mai richiamare
+`register_matrix()`/equivalente, mentre il vecchio device_id (mai
+ripulito) resta con la sua matrice ferma all'ultima versione buona.
+Utile capire se `register_matrix()` va richiamato esplicitamente ad
+ogni avvio (come pare fare `patchdeck_services.publish_matrix()`, vedi
+sopra "TD/Mac, 2" — "chiamata da `register_all()`, quindi ad ogni avvio
+pulito del progetto") o se per DMX manca quella chiamata nel percorso di
+avvio standard.
+
+**2) PatchDeck (`td-pd-winnic`, patchdeck_matrix presente e completa):
+un comando MQTT reale non sembra avere effetto.** Inviato
+`gaia/device/td-pd-winnic/command` con payload
+`{"action":"enable","service":"load_x1_a"}` (la stessa identica azione
+già verificata **chiamando `_apply_command()` direttamente dentro TD**
+il 2026-08-24, vedi sopra "TD/Mac" — "load_x5_a carica correttamente").
+Osservato `gaia/device/td-pd-winnic/status` per 40s dopo l'invio: è
+arrivato un nuovo status (quindi il device è vivo e pubblica), ma
+`load_x1_a` è rimasto `"inactive"` — nessun cambiamento. La nota del
+2026-08-24 diceva esplicitamente "non ancora verificato con un publish
+MQTT reale dal lato Gaia" per questa catena — questo test sembra
+confermare che il collegamento reale (subscribe MQTT → `_apply_command()`)
+non sia mai stato collaudato/cablato per questa istanza. Utile un check
+diretto: il progetto TD live di `td-pd-winnic` sottoscrive davvero
+`gaia/device/td-pd-winnic/command`? Nessuna azione possibile da qui
+(nessun accesso Envoy/TD dal vivo in questa sessione).
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
