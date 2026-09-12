@@ -9,6 +9,7 @@ def onCook(scriptOp):
 	"""
 	registry = op('../registry')
 	scriptOp.clear()
+	scriptOp.isTimeSlice = False
 	scriptOp.numSamples = 1
 
 	rooms = registry.GetRoomLighting() if registry is not None else []

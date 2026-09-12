@@ -9,6 +9,7 @@ def onCook(scriptOp):
 	registry = op('../registry')
 	ctrl = op('../event_ctrl')
 	scriptOp.clear()
+	scriptOp.isTimeSlice = False
 	scriptOp.numSamples = 1
 
 	amount = 1.0

@@ -32,6 +32,7 @@ def _liveValues(src, pattern, counts):
 
 def onCook(scriptOp: scriptCHOP):
 	scriptOp.clear()
+	scriptOp.isTimeSlice = False
 	scriptOp.numSamples = 1
 
 	src = scriptOp.inputs[0] if scriptOp.inputs else None

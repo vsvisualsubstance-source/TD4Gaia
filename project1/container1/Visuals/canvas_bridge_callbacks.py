@@ -6,6 +6,7 @@ def onCook(scriptOp):
 	"""
 	registry = op('registry')
 	scriptOp.clear()
+	scriptOp.isTimeSlice = False
 	if registry is None:
 		return
 	pairs = registry.GetCanvasNumeric()
