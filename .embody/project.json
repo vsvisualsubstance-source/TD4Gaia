@@ -1,3 +1,9 @@
 {
-  "td_build": "2025.33070"
+  "convoy": {
+    "id": "cv_ae8cd9edc75707bf",
+    "binding_state": "established",
+    "consent_scope": "revoked pending investigation of 2026-09-14 TD hang",
+    "granted_at": "2026-09-12T08:08:46Z",
+    "bound_at": "2026-09-12T15:10:13Z"
+  }
 }
