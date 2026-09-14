@@ -2,8 +2,8 @@
   "convoy": {
     "id": "cv_ae8cd9edc75707bf",
     "binding_state": "established",
-    "consent_scope": "revoked pending investigation of 2026-09-14 TD hang",
-    "granted_at": "2026-09-12T08:08:46Z",
+    "consent_scope": "trusted LAN Convoy mesh",
+    "granted_at": "2026-09-14T11:00:33Z",
     "bound_at": "2026-09-12T15:10:13Z"
   }
 }

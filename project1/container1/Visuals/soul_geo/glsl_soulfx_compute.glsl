@@ -110,9 +110,18 @@ void main() {
 	// mood family established above - plus the small per-point residual.
 	// hasTemp==0 means tempNorm sits at its neutral 0.5 fallback, so this
 	// term is naturally ~0 for rooms without a sensor instead of guessing.
-	float tempHueShift = (tempNorm - 0.5) * 0.20;
+	// Each of the 4 room sectors gets its own identifying hue family - was
+	// previously indistinguishable (only a +-0.10 temperature shift on top
+	// of the same global mood hue, confirmed via render1 capture 2026-09-03
+	// as a visually flat, undifferentiated green sphere). Spread chosen to
+	// stay in the same jewel-tone neighborhood as the existing cool/warm
+	// palette (no clashing complementary colors) - identity dominates,
+	// temperature is now a smaller secondary nudge within that room's own
+	// hue family rather than the only source of variation.
+	const float roomHueOffset[4] = float[4](-0.16, -0.05, 0.06, 0.17);
+	float tempHueShift = (tempNorm - 0.5) * 0.08;
 	vec3 baseHsv = rgb2hsv(base);
-	baseHsv.x = fract(baseHsv.x + tempHueShift + hueNoise);
+	baseHsv.x = fract(baseHsv.x + roomHueOffset[roomIdx] + tempHueShift + hueNoise);
 	base = hsv2rgb(baseHsv);
 
 	// Rim factor capped so the brightest channel (coolColor's blue, 0.95)
@@ -147,6 +156,18 @@ void main() {
 	// per-room, so it reads as ambient atmosphere, not another sector.
 	float houseAliveness = (uActiveLights + uActivePeople + uAverageLight) / 3.0;
 	col += vec3(0.05, 0.045, 0.03) * houseAliveness;
+
+	// TCCM beam glow - brightens the side of the sphere currently facing
+	// whoever the ceiling mic is tracking. uBeamDir is derived from the
+	// SAME ry/rx driving transform1's rotation (see soul_geo's "TCCM Beam
+	// Tracking" annotation), so it stays correct whether that rotation is
+	// idle-spin or actively tracking; uBeamGlow (data_canvas room_active,
+	// 1.5s-lagged) fades the highlight in/out so idle spin never shows a
+	// false glow. Tight pow() cone keeps it a small bright cap, not a wash -
+	// added pre-clamp like every other term above so it can't blow past 1.0.
+	float beamFacing = max(0.0, dot(normalize(p), normalize(uBeamDir)));
+	float beamHighlight = pow(beamFacing, 8.0) * uBeamGlow;
+	col += vec3(0.24, 0.20, 0.10) * beamHighlight;
 
 	col = clamp(col, 0.0, 1.0);                     // keep the mood mix visible - additive point blending amplifies any unclamped overshoot into a flat white sphere
 	Color[id] = vec4(col, 1.0);

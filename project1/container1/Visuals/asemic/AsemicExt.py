@@ -30,7 +30,7 @@ class AsemicExt:
 		'out':   {'width': 1.7, 'holdMs': 9000.0,  'fadeMs': 5000.0, 'bandY': 0.76},
 		'in':    {'width': 2.2, 'holdMs': 9000.0,  'fadeMs': 5000.0, 'bandY': 0.37, 'r': 88 / 255.0,  'g': 166 / 255.0, 'b': 255 / 255.0},
 		'dream': {'width': 1.6, 'holdMs': 75000.0, 'fadeMs': 9000.0, 'bandY': 0.50, 'r': 190 / 255.0, 'g': 135 / 255.0, 'b': 255 / 255.0},
-		'herb':  {'width': 1.9, 'holdMs': 9000.0,  'fadeMs': 5000.0, 'bandY': 0.56, 'r': 120 / 255.0, 'g': 240 / 255.0, 'b': 110 / 255.0},
+		'herb':  {'width': 1.9, 'holdMs': 9000.0,  'fadeMs': 5000.0, 'bandY': 0.56, 'r': 120 / 255.0, 'g': 240 / 255.0, 'b': 110 / 255.0, 'scale': 0.55, 'laneAxis': 'x'},
 		'rune':  {'width': 2.4, 'holdMs': 9000.0,  'fadeMs': 5000.0, 'bandY': 0.50, 'r': 255 / 255.0, 'g': 214 / 255.0, 'b': 90 / 255.0},
 	}
 
@@ -46,7 +46,8 @@ class AsemicExt:
 	# sentence immediately evicts whatever currently occupies that same
 	# lane (rather than letting them overlap until both happen to fade).
 	LANES = {'out': 3, 'in': 2, 'dream': 2, 'herb': 4, 'rune': 1}
-	LANE_SPACING = 0.14
+	LANE_SPACING = 0.14      # vertical lane spacing - safe for variable-length (multi-word) inks
+	LANE_SPACING_X = 0.10    # horizontal lane spacing - only for single-word inks (laneAxis='x'), see GetGlyphGeometry
 
 	def __init__(self, ownerComp):
 		self.ownerComp = ownerComp
@@ -229,9 +230,24 @@ class AsemicExt:
 			ink = s['ink']
 			style = self.INK[ink]
 			r, g, b = self._inkColor(ink)
-			hw = style['width'] * 0.0018
+			scale = style.get('scale', 1.0)
+			hw = style['width'] * 0.0018 * scale
 			nLanes = self.LANES.get(ink, 1)
-			bandY = style['bandY'] + (s['lane'] - (nLanes - 1) / 2.0) * self.LANE_SPACING
+			laneOffset = (s['lane'] - (nLanes - 1) / 2.0)
+			# Multi-word inks (thought/tts/lastMemory/voiceCommands/dream/
+			# rune, up to MAX_WORDS=26) keep vertical lane separation - a
+			# long sentence's rightward run-on could invade a horizontal
+			# neighbor's lane regardless of spacing, but never overlaps
+			# vertically. herb is always exactly one solfege syllable (see
+			# SOLFEGE lookup in Tick()), so it has zero run-on risk and can
+			# safely go horizontal - fixes "notes stacked in a column"
+			# without risking overlap on real (variable-length) sentences.
+			if style.get('laneAxis') == 'x':
+				bandY = style['bandY']
+				laneOffsetX = laneOffset * self.LANE_SPACING_X
+			else:
+				bandY = style['bandY'] + laneOffset * self.LANE_SPACING
+				laneOffsetX = 0.0
 			for wi, glyph in enumerate(s['glyphs']):
 				wordAge = age - wi * self.STAGGER_MS
 				if wordAge <= 0.0:
@@ -246,23 +262,23 @@ class AsemicExt:
 					alpha = max(0.0, 1.0 - (postWrite - style['holdMs']) / style['fadeMs'])
 				if alpha <= 0.0:
 					continue
-				wordU = 0.05 + wi * 0.09 * glyph['wide']
+				wordU = laneOffsetX + 0.05 + wi * 0.09 * glyph['wide'] * scale
 				for stroke in glyph['strokes']:
 					sampled = engine.sample_stroke(stroke)
 					count = max(2, int(round(writeFrac * len(sampled))))
 					pts = sampled[:count]
 					if len(pts) < 2:
 						continue
-					ndcPts = [self._toNDC(wordU + px * 0.08, bandY + (py - 0.5) * 0.12) for px, py in pts]
+					ndcPts = [self._toNDC(wordU + px * 0.08 * scale, bandY + (py - 0.5) * 0.12 * scale) for px, py in pts]
 					out.append((ndcPts, r, g, b, alpha, hw))
 				if writeFrac >= 1.0:
 					if glyph.get('dot'):
-						dx, dy = self._toNDC(wordU + glyph['dot']['x'] * 0.08, bandY + (glyph['dot']['y'] - 0.5) * 0.12)
+						dx, dy = self._toNDC(wordU + glyph['dot']['x'] * 0.08 * scale, bandY + (glyph['dot']['y'] - 0.5) * 0.12 * scale)
 						eps = 0.0015
 						out.append(([(dx - eps, dy), (dx + eps, dy)], r, g, b, alpha, hw * 1.4))
 					if glyph.get('bar'):
-						by0 = bandY + 0.07
+						by0 = bandY + 0.07 * scale
 						p0 = self._toNDC(wordU, by0)
-						p1 = self._toNDC(wordU + 0.08 * glyph['wide'], by0)
+						p1 = self._toNDC(wordU + 0.08 * glyph['wide'] * scale, by0)
 						out.append(([p0, p1], r, g, b, alpha, hw))
 		return out
