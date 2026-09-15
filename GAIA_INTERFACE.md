@@ -3229,6 +3229,62 @@ modifica lato Gaia (stesso consumer, stesso schema, nessun nuovo topic
 da aggiungere). Nessuna azione possibile da qui per costruire questo
 pezzo (nessun accesso Envoy/TD in questa sessione).
 
+**2026-09-15 (TD/Mac)** — Risposta al changelog "2026-09-15 (Core)" sopra,
+verificato dal vivo con Envoy.
+
+**Correzione sullo stato del device**: Herbarium/OPS ha GIÀ un
+`gaia_client`/agent (`/gaia_client`, tox `gaia_client.tox`) — non è vero
+che manca (l'assunzione del changelog Core era basata su informazione non
+aggiornata). Verificato dal vivo: `Connectionstatus: connected`,
+`Deviceagentstatus: connected`, broker auto-scoperto via beacon
+(`100.94.220.65`, stesso Core). Valori reali dei parametri, diversi da
+quelli suggeriti sopra: `Deviceid = "ops-silver"` (non `Herbarium-OPS`),
+`Stanza = "studio"` (non `soggiorno`), `Name = "Herbarum"`,
+`Family = "herbarum"`. **Non rinominati** in questa sessione — un rename
+di `Deviceid`/`Stanza` può rompere lo storico del device registry lato
+Gaia se non coordinato, e serve prima conferma umana sul valore fisico
+corretto (l'utente Herbarium/TD non ha ancora confermato se "studio" è la
+stanza reale o se va allineata a "soggiorno" per coerenza con la
+convenzione Herbarium-Pi). Se il rename va fatto, va coordinato qui prima
+di eseguirlo.
+
+**Passo 2 — publish note, costruito e verificato dal vivo**: creato un
+pezzo project-specific separato dal `gaia_client` condiviso (stesso
+principio di `patchdeck_services.py`, come richiesto sopra) —
+`/project1/note_publish` (CHOP Execute DAT) osserva `/project1/null1`
+(stessa CHOP sorgente già usata da `chopexec1` per innescare i plugin
+VST, canali nominati `ch{midiChannel}n{noteNumber}`, valore canale =
+velocity) e ad ogni nota-on pubblica via un `mqttclientDAT` dedicato
+(`/project1/mqtt_herbarium_note`, stesso broker di `/gaia_client`) su:
+
+```
+topic:   gaia/herbarium/studio/note
+payload: {"note": <midi 0-127>, "velocity": <1-127>, "channel": <int>, "ts": <ms epoca>}
+```
+
+Stanza nel topic letta dal vivo da `/gaia_client.par.Stanza` (oggi
+"studio"), non hardcoded — se lo `Stanza` cambia, il topic segue senza
+bisogno di ritoccare il codice. Formato payload verificato carattere per
+carattere contro la richiesta sopra (`note`/`velocity`/`channel`/`ts` in
+ms). **Verificato dal vivo con un test end-to-end reale** (sottoscrizione
+temporanea sullo stesso topic + trigger di una nota simulata): pubblicato
+e ricevuto in eco `{"note": 72, "velocity": 105, "channel": 1,
+"ts": 1789461125574}` — round-trip completo attraverso il broker reale,
+nessun errore. `get_op_errors` pulito, nessuna regressione di
+performance (frameTime 14.3→18.3ms, ancora ben sotto il budget 33ms/30fps
+a 30fps target; droppedFrames invariati). `chopexec1` (pipeline VST
+esistente) non toccato — il nuovo publish legge `null1` in modo
+indipendente.
+
+**Domanda aperta per Core**: `Stanza = "studio"` è il valore corretto per
+questa istanza OPS, o va allineato a "soggiorno" (o altro) per coerenza
+con la convenzione già in uso per gli altri device? Il topic pubblicato
+oggi è quindi `gaia/herbarium/studio/note`, non
+`gaia/herbarium/soggiorno/note` come ipotizzato nel changelog precedente
+— se Node-RED/UI gioco si aspettano `soggiorno` nominativamente (non solo
+un `{stanza}` qualsiasi), serve saperlo prima di considerare chiuso questo
+lavoro.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
