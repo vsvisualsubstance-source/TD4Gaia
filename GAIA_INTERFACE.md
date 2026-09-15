@@ -3194,6 +3194,41 @@ diretto: il progetto TD live di `td-pd-winnic` sottoscrive davvero
 `gaia/device/td-pd-winnic/command`? Nessuna azione possibile da qui
 (nessun accesso Envoy/TD dal vivo in questa sessione).
 
+**2026-09-15 (Core)** — Richiesta esplicita dall'utente: Herbarium su OPS
+(`C:\Users\vsvis\Documents\td\Herbarum\herbarum.toe`, ora controllabile
+da Pi Manager come `touchdesigner_herbarium`, vedi changelog lato Gaia)
+non ha ancora nessun `gaia_client`/agent dentro — non compare come device
+proprio (nessun canale 4/5), e soprattutto non manda le note suonate a
+Gaia come fa invece l'Herbarium reale sui Pi.
+
+**Passo 1 — registrazione device**: usare `gaia_client_portable.tox`
+(lo stesso gia' in uso su DMX/PatchDeck/ControllerV7), `Deviceid`
+esplicito (es. `Herbarium-OPS`, non l'auto-generato — stessa
+raccomandazione gia' data per PatchDeck dopo la collisione di
+device_id vista il 2026-08-28) e family/nome coerenti così appare in
+Pi Manager come gli altri device TD.
+
+**Passo 2 — dati note (quello che manca davvero)**: NON è coperto dal
+gaia_client generico, serve un pezzo a parte per questo progetto
+(stesso principio di `patchdeck_services.py`, tenuto fuori dal
+gaia_client condiviso per non comprometterne la portabilità). Ad ogni
+nota suonata, pubblicare su MQTT:
+
+```
+topic:   gaia/herbarium/{stanza}/note
+payload: {"note": <midi 0-127>, "velocity": <1-127>, "channel": <int>, "ts": <ms epoca>}
+```
+
+`{stanza}` per questa istanza = `soggiorno` (la stanza assegnata a OPS
+nel suo manifest agent) → topic reale `gaia/herbarium/soggiorno/note`.
+Formato IDENTICO a quello già pubblicato dal vero Herbarium sui Pi
+(`pi/herbarium/main.py`, riga 334: `note`/`velocity`/`channel` dal
+parsing di `aseqdump`, `ts` in millisecondi) — rispettandolo alla
+lettera, Node-RED/UI gioco lo consumano già senza bisogno di nessuna
+modifica lato Gaia (stesso consumer, stesso schema, nessun nuovo topic
+da aggiungere). Nessuna azione possibile da qui per costruire questo
+pezzo (nessun accesso Envoy/TD in questa sessione).
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
