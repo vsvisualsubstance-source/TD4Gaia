@@ -17,12 +17,12 @@ path	type	strategy	rel_file_path	timestamp	dirty	build	touch_build	node_x	node_y
 /project1/container1/Bridge/gaia_control/td_service_control	text	py	project1/container1/Bridge/gaia_control/td_service_control.py	2026-08-05 09:30:12 UTC				330	0	0.9000,0.3000,0.4000
 /project1/container1/Bridge/gaia_control/control_lifecycle	execute	py	project1/container1/Bridge/gaia_control/control_lifecycle.py	2026-08-05 09:30:43 UTC				660	0	0.9000,0.3000,0.4000
 /Control	window	tox	Control.tox	2026-09-14 15:44:34 UTC		4	2025.33070	25	-175	0.3250,0.8000,0.3000
-/project1/container1/Bridge/gaia_config	base	tox	project1/container1/Bridge/gaia_config.tox	2026-09-15 17:22:41 UTC		21	2025.33230	0	-2070	0.3250,0.8000,0.3000
+/project1/container1/Bridge/gaia_config	base	tox	project1/container1/Bridge/gaia_config.tox	2026-09-15 17:42:10 UTC		22	2025.33230	0	-2070	0.3250,0.8000,0.3000
 /project1/container1/MoodNudge	base	tox	project1/container1/MoodNudge.tox	2026-08-29 14:41:05 UTC		2	2025.33070	-75	-625	0.3250,0.8000,0.3000
 /project1/container1/Bridge/gaia_nursery	base	tox	project1/container1/Bridge/gaia_nursery.tox	2026-08-29 14:41:05 UTC		2	2025.33070	-125	-2600	0.6700,0.6700,0.6700
 /project1/container1/Visuals/person_sigil	geo	tox	project1/container1/Visuals/person_sigil.tox	2026-09-03 16:10:23 UTC		3	2025.33070	2050	1000	0.3250,0.8000,0.3000
 /project1/container1/Visuals/dream_fragment	geo	tox	project1/container1/Visuals/dream_fragment.tox	2026-09-03 16:10:23 UTC		2	2025.33070	2475	975	0.3250,0.8000,0.3000
-/project1/container1/Bridge/gaia_client	base	tox	project1/container1/Bridge/gaia_client.tox	2026-09-15 17:22:41 UTC		40	2025.33230	0	-1225	0.6700,0.6700,0.6700
+/project1/container1/Bridge/gaia_client	base	tox	project1/container1/Bridge/gaia_client.tox	2026-09-15 17:42:10 UTC		41	2025.33230	0	-1225	0.6700,0.6700,0.6700
 /project1/container1/Bridge/gaia_client/gaia_device_agent	text	py	project1/container1/Bridge/gaia_client/gaia_device_agent.py	2026-08-29 14:39:04 UTC				400	-3200	0.9000,0.3000,0.4000
 /project1/container1/Bridge/gaia_services	base	tox	project1/container1/Bridge/gaia_services.tox	2026-08-29 14:39:34 UTC		1	2025.33070	360	-1225	0.3250,0.8000,0.3000
 /project1/container1/Bridge/gaia_services/gaia_project_services	text	py	project1/container1/Bridge/gaia_services/gaia_project_services.py	2026-08-29 14:40:05 UTC				0	0	0.9000,0.3000,0.4000
@@ -131,7 +131,7 @@ path	type	strategy	rel_file_path	timestamp	dirty	build	touch_build	node_x	node_y
 /project1/container1/Bridge/gaia_control/mqtt_control_callbacks	text	py	project1/container1/Bridge/gaia_control/mqtt_control_callbacks.py	2026-09-12 07:42:33 UTC				990	-120	0.9000,0.3000,0.4000
 /project1/container1/Bridge/gaia_control/devices_table	table	tsv	project1/container1/Bridge/gaia_control/devices_table.tsv	2026-09-12 07:42:33 UTC				0	0	0.9000,0.3000,0.4000
 /project1/container1/Embody/convoy	base	tox	project1/container1/Embody/convoy.tox	2026-09-14 07:00:16 UTC		19	2025.33230	1800	-550	0.3250,0.8000,0.3000
-/project1/container1/Embody	container	tox		2026-09-15 17:22:41 UTC		1237	2025.33230	450	450	0.3250,0.8000,0.3000
+/project1/container1/Embody	container	tox		2026-09-15 17:42:10 UTC		1238	2025.33230	450	450	0.3250,0.8000,0.3000
 /POrtal	window	tox	POrtal.tox	2026-09-14 15:44:34 UTC		1	2025.33230	200	-475	0.3250,0.8000,0.3000
 /Ars	window	tox	Ars.tox	2026-09-14 15:44:34 UTC		1	2025.33230	200	-325	0.3250,0.8000,0.3000
 /Zenith	window	tox	Zenith.tox	2026-09-14 15:44:34 UTC		1	2025.33230	200	-175	0.3250,0.8000,0.3000
@@ -392,4 +392,4 @@ path	type	strategy	rel_file_path	timestamp	dirty	build	touch_build	node_x	node_y
 /project1/container1/Embody/Collection	base	tox		2026-09-14 07:29:06 UTC		4	2025.33230	200	-550	0.3250,0.8000,0.3000
 /project1/container1/Embody/CatalogManagerExt	text	py		2026-09-14 07:29:06 UTC				-2500	700	0.9000,0.3000,0.4000
 /project1/container1/Bridge/mqtt_bridge/mqtt_log	table	tsv	project1/container1/Bridge/mqtt_bridge/mqtt_log.tsv	2026-09-14 07:29:06 UTC				75	-561	0.9000,0.3000,0.4000
-/Regia	base	tox	Regia.tox	2026-09-15 17:22:01 UTC		3	2025.33230	200	-875	0.3250,0.8000,0.3000
+/Regia	base	tox	Regia.tox	2026-09-15 17:42:10 UTC		5	2025.33230	200	-875	0.3250,0.8000,0.3000
