@@ -11,6 +11,7 @@ minipc-core-node-0	core	salotto	core	mosquitto	active	False
 minipc-core-node-0	core	salotto	core	qdrant	active	False
 minipc-core-node-0	core	salotto	core	ollama	active	False
 minipc-core-node-0	core	salotto	core	openhab	active	False
+ops-silver	Herbarum	soggiorno	touchdesigner		unknown	False
 ops-silvermini2	ops	soggiorno	ops	camera	inactive	False
 ops-silvermini2	ops	soggiorno	ops	yolo	inactive	False
 ops-silvermini2	ops	soggiorno	ops	mediapipe	inactive	False
@@ -18,12 +19,13 @@ ops-silvermini2	ops	soggiorno	ops	voice	inactive	False
 ops-silvermini2	ops	soggiorno	ops	kiosk	inactive	False
 ops-silvermini2	ops	soggiorno	ops	mediaplayer	inactive	False
 ops-silvermini2	ops	soggiorno	ops	touchdesigner	inactive	False
-ops-silvermini2	ops	soggiorno	ops	touchdesigner_herbarium	inactive	False
+ops-silvermini2	ops	soggiorno	ops	touchdesigner_herbarium	active	False
+ops-silvermini2	ops	soggiorno	ops	touchdesigner_yolo	inactive	False
 ops-silvermini2	ops	soggiorno	ops	ollama	active	False
-pi-b2c8db	Cucina	cucina	pi	yolo	inactive	False
+pi-b2c8db	Cucina	cucina	pi	yolo	active	False
 pi-b2c8db	Cucina	cucina	pi	mediapipe	inactive	False
-pi-b2c8db	Cucina	cucina	pi	voice	failed	False
-pi-b2c8db	Cucina	cucina	pi	camera	inactive	False
+pi-b2c8db	Cucina	cucina	pi	voice	active	False
+pi-b2c8db	Cucina	cucina	pi	camera	active	False
 pi-b2c8db	Cucina	cucina	pi	screen	inactive	False
 pi-b2c8db	Cucina	cucina	pi	kiosk	inactive	False
 pi-b2c8db	Cucina	cucina	pi	mediaplayer	inactive	False
@@ -32,9 +34,9 @@ pi-b2c8db	Cucina	cucina	pi	herbsim	inactive	False
 pi-b2c8db	Cucina	cucina	pi	herbmp	inactive	False
 pi-b2c8db	Cucina	cucina	pi	livestream	inactive	False
 pi-fd75d8	Ingresso	ingresso	pi	yolo	active	False
-pi-fd75d8	Ingresso	ingresso	pi	mediapipe	active	False
-pi-fd75d8	Ingresso	ingresso	pi	voice	active	False
-pi-fd75d8	Ingresso	ingresso	pi	camera	inactive	False
+pi-fd75d8	Ingresso	ingresso	pi	mediapipe	inactive	False
+pi-fd75d8	Ingresso	ingresso	pi	voice	inactive	False
+pi-fd75d8	Ingresso	ingresso	pi	camera	active	False
 pi-fd75d8	Ingresso	ingresso	pi	screen	inactive	False
 pi-fd75d8	Ingresso	ingresso	pi	kiosk	inactive	False
 pi-fd75d8	Ingresso	ingresso	pi	mediaplayer	inactive	False
@@ -44,21 +46,15 @@ pi-fd75d8	Ingresso	ingresso	pi	herbmp	inactive	False
 pi-fd75d8	Ingresso	ingresso	pi	livestream	inactive	False
 solaro-qr1	Solaro QR1-UC		device		unknown	False
 tccm-ceiling	TCC M (Sennheiser)	zona-giorno	device		unknown	False
-td-controller-macmauro	Controller	salotto	touchdesigner	audio_device	active	True
-td-controller-macmauro	Controller	salotto	touchdesigner	audio_source_live	active	True
-td-controller-macmauro	Controller	salotto	touchdesigner	audio_source_file	inactive	True
-td-dmx-ops	DMXRIG	soggiorno	touchdesigner	dmx_a_kick_enable	active	True
-td-dmx-ops	DMXRIG	soggiorno	touchdesigner	dmx_a_use_file_input	inactive	True
-td-dmx-ops	DMXRIG	soggiorno	touchdesigner	dmx_a_apply_fixture_profile	unknown	True
-td-dmx-ops	DMXRIG	soggiorno	touchdesigner	dmx_b_kick_enable	active	True
-td-dmx-ops	DMXRIG	soggiorno	touchdesigner	dmx_b_use_file_input	inactive	True
-td-dmx-ops	DMXRIG	soggiorno	touchdesigner	dmx_b_apply_fixture_profile	unknown	True
+td-controller-macmauro	Controller	salotto	touchdesigner	audio_device	active	False
+td-controller-macmauro	Controller	salotto	touchdesigner	audio_source_live	active	False
+td-controller-macmauro	Controller	salotto	touchdesigner	audio_source_file	inactive	False
 td-gaia-macmauro	Gaia Agent	studio	touchdesigner	osc_in	active	False
 td-gaia-macmauro	Gaia Agent	studio	touchdesigner	render	active	False
 td-gaia-macmauro	Gaia Agent	studio	touchdesigner	dmx_out	inactive	False
 td-gaia-macmauro	Gaia Agent	studio	touchdesigner	mocap_bridge	active	False
 td-pd-macmauro	PatchDeck	salotto	touchdesigner	deck_a	active	False
-td-pd-macmauro	PatchDeck	salotto	touchdesigner	deck_b	active	False
+td-pd-macmauro	PatchDeck	salotto	touchdesigner	deck_b	inactive	False
 td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x1_a	inactive	False
 td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x1_b	inactive	False
 td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x2_a	inactive	False
@@ -75,10 +71,10 @@ td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x7_a	inactive	False
 td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x7_b	inactive	False
 td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x8_a	inactive	False
 td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x8_b	inactive	False
-td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x9_a	active	False
+td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x9_a	inactive	False
 td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x9_b	inactive	False
 td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x10_a	inactive	False
-td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x10_b	active	False
+td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x10_b	inactive	False
 td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x11_a	inactive	False
 td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x11_b	inactive	False
 td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x12_a	inactive	False
@@ -135,6 +131,6 @@ td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x37_a	inactive	False
 td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x37_b	inactive	False
 td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x38_a	inactive	False
 td-pd-macmauro	PatchDeck	salotto	touchdesigner	load_x38_b	inactive	False
-td-pddmx-macmauro	PD_DMX	salotto	touchdesigner	dmx_a_kick_enable	inactive	False
+td-pddmx-macmauro	PD_DMX	salotto	touchdesigner	dmx_a_kick_enable	active	False
 td-pddmx-macmauro	PD_DMX	salotto	touchdesigner	dmx_a_use_file_input	inactive	False
 td-pddmx-macmauro	PD_DMX	salotto	touchdesigner	dmx_a_apply_fixture_profile	unknown	False
