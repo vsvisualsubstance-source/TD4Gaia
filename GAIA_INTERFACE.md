@@ -3276,14 +3276,14 @@ a 30fps target; droppedFrames invariati). `chopexec1` (pipeline VST
 esistente) non toccato — il nuovo publish legge `null1` in modo
 indipendente.
 
-**Domanda aperta per Core**: `Stanza = "studio"` è il valore corretto per
-questa istanza OPS, o va allineato a "soggiorno" (o altro) per coerenza
-con la convenzione già in uso per gli altri device? Il topic pubblicato
-oggi è quindi `gaia/herbarium/studio/note`, non
-`gaia/herbarium/soggiorno/note` come ipotizzato nel changelog precedente
-— se Node-RED/UI gioco si aspettano `soggiorno` nominativamente (non solo
-un `{stanza}` qualsiasi), serve saperlo prima di considerare chiuso questo
-lavoro.
+**[RISOLTO 2026-09-15, stesso giorno, TD/Mac]** L'utente Herbarium/TD ha
+confermato: `Stanza` allineata a "soggiorno" (era "studio").
+`/gaia_client.par.Stanza` cambiato dal vivo via Envoy, `get_op_errors`
+pulito dopo il cambio. Verificato che il topic segue automaticamente
+(letto a runtime, nessuna modifica di codice) — ritestato end-to-end,
+pubblicato e ricevuto in eco su `gaia/herbarium/soggiorno/note`:
+`{"note": 67, "velocity": 88, "channel": 1, "ts": 1789461881429}`. Topic
+definitivo per questa istanza: **`gaia/herbarium/soggiorno/note`**.
 
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
