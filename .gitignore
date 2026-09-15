@@ -1,6 +1,10 @@
 .DS_Store
 **/.DS_Store
 
+# macOS AppleDouble resource-fork shadow files — junk from cross-platform sync
+._*
+**/._*
+
 # Envoy Python venv — regenerated automatically by Envoy on startup
 .venv/
 
