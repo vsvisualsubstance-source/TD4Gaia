@@ -3065,17 +3065,239 @@ sulla 9008 è vivo? Il subscriber Node-RED "TD Mood In" (fix
 così? C'è traccia del pacchetto in arrivo (log grezzo del listener,
 non solo dopo il parsing)?
 
+**2026-09-04 (Core, 2)** — Risposta a "TD/Mac, 2": il listener OSC sulla
+9008 è vivo e riceve, il subscriber "TD Mood In" è deployato col fix del
+2026-08-06 ed è stato eseguito davvero. Prova diretta, non dedotta:
+
+- Log grezzo del listener (`journalctl -u gaia-touchdesigner.service`),
+  PRIMA di qualunque parsing Node-RED — pacchetti UDP arrivati e
+  ripubblicati su MQTT:
+  ```
+  15:02:06 TouchDesigner → MQTT gaia/touchdesigner/td-gaia-macmauro/mood/stress = 1.0
+  15:02:20 TouchDesigner → MQTT gaia/touchdesigner/td-gaia-macmauro/mood/calm = 0.12
+  15:02:21 TouchDesigner → MQTT gaia/touchdesigner/td-gaia-macmauro/mood/social = 0.45
+  15:02:22 TouchDesigner → MQTT gaia/touchdesigner/td-gaia-macmauro/mood/curiosity = 1.0
+  15:02:23 TouchDesigner → MQTT gaia/touchdesigner/td-gaia-macmauro/mood/energy = 19.7
+  ```
+- `GET /gaia/debug/perf` (contatori interni Node-RED, incrementati SOLO
+  se la function viene davvero invocata): `gaia_td_mood_fn_01` → 7
+  esecuzioni, `since` coerente con l'orario sopra.
+- Effetto reale su `brain.mood` confermato subito dopo via
+  `gaia/td/canvas`: `stress:0.90, calm:0.83, curiosity:0.90` — coerenti
+  coi delta mandati, leggermente smorzati dal decadimento naturale del
+  mood nel frattempo (normale, non un problema).
+
+Catena TD→Gaia confermata sana end-to-end su questo test: OSC ricevuto
+→ MQTT → Node-RED → `brain.mood` aggiornato. **Ipotesi per il "non
+arriva niente" segnalato**: possibile timing (il primo tentativo
+dell'utente potrebbe essere stato guardato nel posto sbagliato lato
+Gaia — io stesso ho letto male `/gaia/debug/perf` al primo giro, la
+struttura reale è `{"nodes": {...}, "ts": ...}` non un dict piatto,
+facile sbagliare la lettura) oppure un pulse isolato perso in una
+finestra di verifica troppo stretta. Nessun bug trovato lato Core in
+questo giro — se il sintomo "non arriva niente" si ripresenta in modo
+riproducibile, utile sapere: con quale pulse, e se `/gaia/debug/perf`
+(letto correttamente, sotto `.nodes`) mostra `gaia_td_mood_fn_01`
+invariato in quel momento.
+
+`gaia_td_lighting_fn_01` (le luci, non il mood) risulta invece ancora
+**mai eseguita** — non testato oggi (solo i pulse mood sono stati
+provati), non un bug noto.
+
+**2026-09-05 (Core)** — Deploy OTA su installation-vs-mini-silver (macchina
+touring Palazzo Ducale) completato: `services:{}, config:{}` esplicito
+ora live su `madmapper-VS-mini-silver` (era rimasto in sospeso dal
+2026-09-04, macchina remota, deploy rimandato su richiesta esplicita
+dell'utente). Nello stesso giro, trovato e fissato un bug reale non
+collegato: questa mattina mosquitto (broker, lato Core) è stato
+riavviato — tutti i device sulla LAN di casa si sono ririconnessi da
+soli, ma `installation-vs-mini-silver`/`madmapper-VS-mini-silver`
+(soli su Tailscale, non LAN) sono rimasti bloccati in loop di retry
+falliti per 18+ minuti nonostante la rete fosse perfettamente
+raggiungibile (verificato con un test diretto TCP). Causa: né
+`agent.py` né `madmapper_bridge.py` chiamavano
+`mqtt.reconnect_delay_set()` prima di `loop_start()` — unico gap
+rispetto agli altri agent del progetto. Aggiunto in entrambi (repo
+Gaia, commit `f57bbe2`), deployato sulla stessa macchina nello stesso
+giro. Recovery immediato di oggi fatto a mano (bounce del processo via
+il task scheduler `GAIA-Installation-Agent`) — il fix serve per la
+PROSSIMA volta, non ha effetto retroattivo su questo incidente.
+Verificato dal vivo dopo il deploy: entrambi i device di nuovo online,
+MadMapper.exe stesso mai toccato (stesso PID prima/dopo, adottato come
+processo orfano dal nuovo agent).
+
+**2026-09-09 (Core)** — Segnalato dall'utente: nuovo rig DMX "nicola"
+(`device_id: dmx-nicola`, family `dmx`, stanza `studio`, IP
+`192.168.1.54`) connesso e vivo (status fresco, 6+4 fixture reali
+configurate, uptime confermato), ma **assente da `web/dmx.html`** —
+comportamento CORRETTO della UI, non un bug lato Gaia: quella pagina
+costruisce i controlli SOLO da `gaia/devices/{id}/dmx_matrix`
+(retained, introspezione reale dei parametri TD — stesso principio già
+in uso per PatchDeck), mai dal solo status. `dmx-nicola` non ha MAI
+pubblicato quel topic.
+
+Trovato un dettaglio che riguarda chi ha accesso Envoy a quel progetto:
+`dmx-nicola` e il vecchio `dmx-master-test` (quello che HA una
+`dmx_matrix` retained, probabilmente ormai stantia) condividono la
+STESSA IP (`192.168.1.54`) — stessa macchina, quasi certamente stesso
+progetto TD con `Deviceid` cambiato da un test a un nome reale.
+Entrambi riportano `sw_version:"1.0"` (non è quindi un client
+disallineato in versione) e — dato potenzialmente rilevante —
+`capabilities.dmx: false` nel loro `.../profile` nonostante il device
+sia letteralmente un rig DMX. Ipotesi da verificare con Envoy: la
+pubblicazione della `dmx_matrix` potrebbe essere gated dietro quella
+capability mai attivata dopo un import/rename del progetto (stesso
+schema di gotcha già visto altre volte: bundle importato "a freddo"
+con toggle nativi lasciati com'erano). Nessuna azione possibile da qui
+(questa sessione non ha Envoy/accesso TD dal vivo) — utile un check
+diretto sul progetto: perché `register_matrix()`/equivalente non
+scatta per questo rig quando invece scattava (o scattava) per
+`dmx-master-test`.
+
+**2026-09-11 (Core)** — Due verifiche dal vivo su richiesta dell'utente
+("controlli se gaia modifica il dmx attivo? è su pc win nicola" / "anche
+il patchdeck non sembra essere pilotato"), entrambe sulla stessa macchina
+di "PC win nicola" (IP `192.168.1.114`).
+
+**1) Il gap `dmx_matrix` del 2026-09-09 è tornato, sotto un nuovo
+device_id.** Il rig DMX vivo oggi su quella macchina è
+`td-pddmx-winnic` (family `dmx`, stanza `studio`, status fresco) — NON
+`dmx-nicola` (quello di allora, IP diverso `192.168.1.54`, probabilmente
+ormai spento/altra sessione). Stessa IP `192.168.1.114` è condivisa da
+un altro device_id, `pd-dmx-nic`, che INVECE ha una `dmx_matrix`
+retained (ma stantia, ultimo status ~2.5h fa al momento del check) —
+stessissimo pattern di allora (`dmx-nicola`/`dmx-master-test`): sembra
+che ogni volta che il progetto TD viene ri-esportato/rinominato, il
+nuovo device_id riparta senza mai richiamare
+`register_matrix()`/equivalente, mentre il vecchio device_id (mai
+ripulito) resta con la sua matrice ferma all'ultima versione buona.
+Utile capire se `register_matrix()` va richiamato esplicitamente ad
+ogni avvio (come pare fare `patchdeck_services.publish_matrix()`, vedi
+sopra "TD/Mac, 2" — "chiamata da `register_all()`, quindi ad ogni avvio
+pulito del progetto") o se per DMX manca quella chiamata nel percorso di
+avvio standard.
+
+**2) PatchDeck (`td-pd-winnic`, patchdeck_matrix presente e completa):
+un comando MQTT reale non sembra avere effetto.** Inviato
+`gaia/device/td-pd-winnic/command` con payload
+`{"action":"enable","service":"load_x1_a"}` (la stessa identica azione
+già verificata **chiamando `_apply_command()` direttamente dentro TD**
+il 2026-08-24, vedi sopra "TD/Mac" — "load_x5_a carica correttamente").
+Osservato `gaia/device/td-pd-winnic/status` per 40s dopo l'invio: è
+arrivato un nuovo status (quindi il device è vivo e pubblica), ma
+`load_x1_a` è rimasto `"inactive"` — nessun cambiamento. La nota del
+2026-08-24 diceva esplicitamente "non ancora verificato con un publish
+MQTT reale dal lato Gaia" per questa catena — questo test sembra
+confermare che il collegamento reale (subscribe MQTT → `_apply_command()`)
+non sia mai stato collaudato/cablato per questa istanza. Utile un check
+diretto: il progetto TD live di `td-pd-winnic` sottoscrive davvero
+`gaia/device/td-pd-winnic/command`? Nessuna azione possibile da qui
+(nessun accesso Envoy/TD dal vivo in questa sessione).
+
+**2026-09-15 (Core)** — Richiesta esplicita dall'utente: Herbarium su OPS
+(`C:\Users\vsvis\Documents\td\Herbarum\herbarum.toe`, ora controllabile
+da Pi Manager come `touchdesigner_herbarium`, vedi changelog lato Gaia)
+non ha ancora nessun `gaia_client`/agent dentro — non compare come device
+proprio (nessun canale 4/5), e soprattutto non manda le note suonate a
+Gaia come fa invece l'Herbarium reale sui Pi.
+
+**Passo 1 — registrazione device**: usare `gaia_client_portable.tox`
+(lo stesso gia' in uso su DMX/PatchDeck/ControllerV7), `Deviceid`
+esplicito (es. `Herbarium-OPS`, non l'auto-generato — stessa
+raccomandazione gia' data per PatchDeck dopo la collisione di
+device_id vista il 2026-08-28) e family/nome coerenti così appare in
+Pi Manager come gli altri device TD.
+
+**Passo 2 — dati note (quello che manca davvero)**: NON è coperto dal
+gaia_client generico, serve un pezzo a parte per questo progetto
+(stesso principio di `patchdeck_services.py`, tenuto fuori dal
+gaia_client condiviso per non comprometterne la portabilità). Ad ogni
+nota suonata, pubblicare su MQTT:
+
+```
+topic:   gaia/herbarium/{stanza}/note
+payload: {"note": <midi 0-127>, "velocity": <1-127>, "channel": <int>, "ts": <ms epoca>}
+```
+
+`{stanza}` per questa istanza = `soggiorno` (la stanza assegnata a OPS
+nel suo manifest agent) → topic reale `gaia/herbarium/soggiorno/note`.
+Formato IDENTICO a quello già pubblicato dal vero Herbarium sui Pi
+(`pi/herbarium/main.py`, riga 334: `note`/`velocity`/`channel` dal
+parsing di `aseqdump`, `ts` in millisecondi) — rispettandolo alla
+lettera, Node-RED/UI gioco lo consumano già senza bisogno di nessuna
+modifica lato Gaia (stesso consumer, stesso schema, nessun nuovo topic
+da aggiungere). Nessuna azione possibile da qui per costruire questo
+pezzo (nessun accesso Envoy/TD in questa sessione).
+
+**2026-09-15 (TD/Mac)** — Risposta al changelog "2026-09-15 (Core)" sopra,
+verificato dal vivo con Envoy.
+
+**Correzione sullo stato del device**: Herbarium/OPS ha GIÀ un
+`gaia_client`/agent (`/gaia_client`, tox `gaia_client.tox`) — non è vero
+che manca (l'assunzione del changelog Core era basata su informazione non
+aggiornata). Verificato dal vivo: `Connectionstatus: connected`,
+`Deviceagentstatus: connected`, broker auto-scoperto via beacon
+(`100.94.220.65`, stesso Core). Valori reali dei parametri, diversi da
+quelli suggeriti sopra: `Deviceid = "ops-silver"` (non `Herbarium-OPS`),
+`Stanza = "studio"` (non `soggiorno`), `Name = "Herbarum"`,
+`Family = "herbarum"`. **Non rinominati** in questa sessione — un rename
+di `Deviceid`/`Stanza` può rompere lo storico del device registry lato
+Gaia se non coordinato, e serve prima conferma umana sul valore fisico
+corretto (l'utente Herbarium/TD non ha ancora confermato se "studio" è la
+stanza reale o se va allineata a "soggiorno" per coerenza con la
+convenzione Herbarium-Pi). Se il rename va fatto, va coordinato qui prima
+di eseguirlo.
+
+**Passo 2 — publish note, costruito e verificato dal vivo**: creato un
+pezzo project-specific separato dal `gaia_client` condiviso (stesso
+principio di `patchdeck_services.py`, come richiesto sopra) —
+`/project1/note_publish` (CHOP Execute DAT) osserva `/project1/null1`
+(stessa CHOP sorgente già usata da `chopexec1` per innescare i plugin
+VST, canali nominati `ch{midiChannel}n{noteNumber}`, valore canale =
+velocity) e ad ogni nota-on pubblica via un `mqttclientDAT` dedicato
+(`/project1/mqtt_herbarium_note`, stesso broker di `/gaia_client`) su:
+
+```
+topic:   gaia/herbarium/studio/note
+payload: {"note": <midi 0-127>, "velocity": <1-127>, "channel": <int>, "ts": <ms epoca>}
+```
+
+Stanza nel topic letta dal vivo da `/gaia_client.par.Stanza` (oggi
+"studio"), non hardcoded — se lo `Stanza` cambia, il topic segue senza
+bisogno di ritoccare il codice. Formato payload verificato carattere per
+carattere contro la richiesta sopra (`note`/`velocity`/`channel`/`ts` in
+ms). **Verificato dal vivo con un test end-to-end reale** (sottoscrizione
+temporanea sullo stesso topic + trigger di una nota simulata): pubblicato
+e ricevuto in eco `{"note": 72, "velocity": 105, "channel": 1,
+"ts": 1789461125574}` — round-trip completo attraverso il broker reale,
+nessun errore. `get_op_errors` pulito, nessuna regressione di
+performance (frameTime 14.3→18.3ms, ancora ben sotto il budget 33ms/30fps
+a 30fps target; droppedFrames invariati). `chopexec1` (pipeline VST
+esistente) non toccato — il nuovo publish legge `null1` in modo
+indipendente.
+
+**[RISOLTO 2026-09-15, stesso giorno, TD/Mac]** L'utente Herbarium/TD ha
+confermato: `Stanza` allineata a "soggiorno" (era "studio").
+`/gaia_client.par.Stanza` cambiato dal vivo via Envoy, `get_op_errors`
+pulito dopo il cambio. Verificato che il topic segue automaticamente
+(letto a runtime, nessuna modifica di codice) — ritestato end-to-end,
+pubblicato e ricevuto in eco su `gaia/herbarium/soggiorno/note`:
+`{"note": 67, "velocity": 88, "channel": 1, "ts": 1789461881429}`. Topic
+definitivo per questa istanza: **`gaia/herbarium/soggiorno/note`**.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
 ## Domande aperte per la sessione TD/Envoy
 
-- **[NUOVO 2026-09-04, TD/Mac — vedi changelog "2026-09-04 (TD/Mac, 2)"
+- **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
   sopra]** utente segnala che i pulsanti `Send*` di `MoodNudge` non
   sembrano arrivare a Gaia. Lato TD verificato pulito end-to-end fino
-  all'invio UDP (vedi changelog). Serve verifica lato Core: il
-  listener OSC sulla 9008 è attivo e riceve? Il subscriber Node-RED
-  "TD Mood In" è ancora deployato col fix del 2026-08-06?
+  all'invio UDP (vedi changelog). **Risposta**: sì, il listener riceve
+  davvero — log grezzo pre-parsing, contatori Node-RED e brain.mood
+  aggiornato, tutti confermati per lo stesso test (mood/stress/calm/
+  social/curiosity/energy, 15:02). Nessun bug trovato lato Core; vedi
+  changelog per l'ipotesi sul sintomo isolato segnalato.
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core)" sopra]** verificata dal vivo `gaia_control_window`
   (`Bridge/gaia_control/devices_table`, lista bindata al List COMP
@@ -3093,9 +3315,9 @@ tra parentesi — Core o TD/Mac.)_
   mancanti"? Nessun nuovo topic MQTT necessario in ogni caso: la window
   usa già `gaia/device/+/status` (canale 3, §4/§1) esistente.
   **Risposta**: è intenzionale, i tre device sono solo presenza/
-  telemetria. Ora pubblicano `{}` esplicito per entrambe le chiavi
-  (tccm-ceiling e solaro-qr1 verificati dal vivo; madmapper-VS-mini-silver
-  in attesa di deploy OTA sulla macchina touring, non ancora inviato).
+  telemetria. Ora pubblicano `{}` esplicito per entrambe le chiavi —
+  tutti e tre verificati dal vivo (madmapper-VS-mini-silver deployato e
+  confermato il 2026-09-05, vedi changelog "2026-09-05 (Core)").
 
 - **[RISPOSTA 2026-08-29, Core — vedi changelog "Core, 5"]** quando un
   progetto TD copre piu' rig/target fisici sotto la stessa `family`
