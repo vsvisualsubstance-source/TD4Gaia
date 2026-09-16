@@ -38,9 +38,12 @@ import time
 
 OFFLINE_AFTER_S = 90
 STALENESS_CHECK_S = 10
+MIN_REBUILD_INTERVAL_S = 1.0   # cap disk-relevant rebuilds even under a status-message flood (v3 fix)
 
 _devices = {}   # device_id -> {status..., "_last_seen": float}
 _last_staleness_check = 0.0
+_last_rebuild = 0.0
+_pending = False  # True when _devices changed but devices_table hasn't been rebuilt yet
 _dirty = False  # set True by _rebuild_table(), cleared+reported by tick()
 
 
@@ -101,18 +104,40 @@ def _rebuild_table():
 			])
 
 
+def _maybe_rebuild(force=False):
+	"""Rebuild devices_table, but never more often than
+	MIN_REBUILD_INTERVAL_S -- a burst of status messages must not turn
+	into one table (and, when Sync to File is on, disk) write per
+	message (v3: root cause of the disk-write storm already fixed
+	repeatedly on this and on gaia_control/devices_table). Called from
+	on_message() (per-message, debounced) and from tick() (every frame,
+	to flush a pending rebuild once its debounce window elapses, and for
+	the periodic staleness sweep)."""
+	global _last_rebuild, _pending
+	now = time.time()
+	if not force and (now - _last_rebuild) < MIN_REBUILD_INTERVAL_S:
+		_pending = True
+		return
+	_last_rebuild = now
+	_pending = False
+	_rebuild_table()
+
+
 def tick():
 	"""Call from Execute DAT onFrameStart, EVERY FRAME -- recomputes the
 	'offline' flag every STALENESS_CHECK_S seconds (devices don't publish
 	every frame, but a vanished device must still show offline within
-	OFFLINE_AFTER_S). Returns True if devices_table changed this frame."""
+	OFFLINE_AFTER_S), flushes a rebuild left pending by _maybe_rebuild()'s
+	debounce, and returns True if devices_table changed this frame."""
 	global _last_staleness_check, _dirty
 	if not _enabled():
 		return False
 	now = time.time()
 	if (now - _last_staleness_check) >= STALENESS_CHECK_S:
 		_last_staleness_check = now
-		_rebuild_table()
+		_maybe_rebuild(force=True)
+	elif _pending and (now - _last_rebuild) >= MIN_REBUILD_INTERVAL_S:
+		_maybe_rebuild()
 	changed, _dirty = _dirty, False
 	return changed
 
@@ -148,4 +173,4 @@ def on_message(topic, payload):
 		return
 	d["_last_seen"] = time.time()
 	_devices[device_id] = d
-	_rebuild_table()
+	_maybe_rebuild()

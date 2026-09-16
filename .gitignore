@@ -31,7 +31,15 @@ logs/
 
 # Embody / Envoy (auto-managed)
 CrashAutoSave*
-.embody/*
-!.embody/project.json
 .claude/projects/
 __pycache__/
+.embody_backup/
+opencode.json
+.cursor/mcp.json
+.vscode/mcp.json
+.gemini/settings.json
+.codex/config.toml
+.agents/mcp_config.json
+**/.embody/*
+!**/.embody/project.json
+briefs/

@@ -61,9 +61,12 @@ import time
 
 OFFLINE_AFTER_S = 90
 STALENESS_CHECK_S = 10
+MIN_REBUILD_INTERVAL_S = 1.0   # cap disk-relevant rebuilds even under a status-message flood (v3 fix)
 
 _devices = {}   # device_id -> {status..., "_last_seen": float}
 _last_staleness_check = 0.0
+_last_rebuild = 0.0
+_pending = False   # True when _devices changed but devices_table hasn't been rebuilt yet
 _dirty = False   # set True by _rebuild_table(), cleared+reported by tick()
 
 
@@ -118,19 +121,42 @@ def _rebuild_table():
             ])
 
 
+def _maybe_rebuild(force=False):
+    """Rebuild devices_table, ma non piu' spesso di MIN_REBUILD_INTERVAL_S
+    -- una raffica di status MQTT non deve diventare una riscrittura (e,
+    con Sync to File acceso, una scrittura su disco) per ogni singolo
+    messaggio (v3: era la causa del disk-write storm gia' risolto piu'
+    volte su questa e su gaia_client/devices_table). Chiamata da
+    on_message() (per-messaggio, con debounce) e da tick() (ogni frame,
+    per svuotare un rebuild rimasto in sospeso appena scade la finestra
+    di debounce, e per il periodic staleness sweep)."""
+    global _last_rebuild, _pending
+    now = time.time()
+    if not force and (now - _last_rebuild) < MIN_REBUILD_INTERVAL_S:
+        _pending = True
+        return
+    _last_rebuild = now
+    _pending = False
+    _rebuild_table()
+
+
 def tick():
     """Chiamare da Execute DAT onFrameStart, OGNI FRAME — ricalcola il
     flag 'offline' ogni STALENESS_CHECK_S secondi (i device non
     pubblicano ad ogni frame, ma un device sparito deve comunque
-    apparire offline entro OFFLINE_AFTER_S) E riporta se devices_table e'
-    stata riscritta in QUESTO frame, sia dallo staleness check qui sotto
-    sia da un on_message() arrivato nel frattempo (_dirty e' condiviso),
-    cosi' control_lifecycle sa quando pulsare il reset della UI."""
+    apparire offline entro OFFLINE_AFTER_S), svuota un rebuild rimasto in
+    sospeso per il debounce di _maybe_rebuild(), E riporta se
+    devices_table e' stata riscritta in QUESTO frame, sia dallo staleness
+    check qui sotto sia da un on_message() arrivato nel frattempo (_dirty
+    e' condiviso), cosi' control_lifecycle sa quando pulsare il reset
+    della UI."""
     global _last_staleness_check, _dirty
     now = time.time()
     if (now - _last_staleness_check) >= STALENESS_CHECK_S:
         _last_staleness_check = now
-        _rebuild_table()
+        _maybe_rebuild(force=True)
+    elif _pending and (now - _last_rebuild) >= MIN_REBUILD_INTERVAL_S:
+        _maybe_rebuild()
     changed, _dirty = _dirty, False
     return changed
 
@@ -164,4 +190,4 @@ def on_message(topic, payload):
         return
     d["_last_seen"] = time.time()
     _devices[device_id] = d
-    _rebuild_table()
+    _maybe_rebuild()
