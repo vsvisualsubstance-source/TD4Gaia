@@ -3368,6 +3368,37 @@ etichettati con la stanza sbagliata (`gaia/studio/snapshot` invece di
 risulteranno "in studio" nel resto del sistema (index.html, room graph,
 ecc.).
 
+**2026-09-18 (Core, 2)** — verifica dal vivo dello snapshot inviato da
+`td-yolo-ops` (segue l'entry precedente, stesso giorno): il round-trip
+funziona (`gaia/soggiorno/snapshot` → `face_service.py` →
+`gaia/vision/identity`, 13 msg verificati in 20s, stanza corretta), MA
+**il riconoscimento fallisce sempre**: `unknown (0.00)` su ogni singolo
+frame, in modo consistente per più minuti.
+
+**Causa isolata dal lato Gaia**: ho scaricato e ispezionato visivamente
+alcuni degli `image` (JPEG 160×160, ~1.3-1.4KB) effettivamente ricevuti
+da `td-yolo-ops` — **non sono crop di una persona**: è un'immagine
+astratta sfocata (gradiente grigio/rosa uniforme, nessun volto/corpo
+riconoscibile, dimensione file molto piccola coerente con poco
+dettaglio/contrasto reale). Confronto diretto nello stesso minuto: uno
+snapshot arrivato da un'altra fonte per la stanza "salotto" (391×391,
+contenuto vero) ha dato match corretto (`mauro`, 0.62) — quindi
+`face_service.py`/InsightFace funzionano bene quando ricevono un crop
+vero, il problema è a monte, nel crop che TD Yolo genera prima di
+incapsularlo in base64.
+
+**Ipotesi da verificare lato TD** (nessuna verifica possibile da qui,
+niente Envoy): il Script/CHOP o TOP che genera il crop sta forse
+leggendo un buffer sbagliato — un layer di blur/feedback/post-process
+invece del feed camera grezzo al bounding box della persona? Vale la
+pena controllare da dove viene esattamente il TOP passato all'encoder
+JPEG prima del publish MQTT. Se utile per il confronto, i 3 JPEG
+scaricati (sha1 non salvati, solo ispezionati al momento) mostravano
+tutti la stessa immagine quasi identica frame dopo frame nonostante il
+`track_id` fosse lo stesso (81) — coerente con un buffer fermo/statico
+più che con un vero feed video in movimento, ulteriore indizio che la
+sorgente del crop non è quella attesa.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
