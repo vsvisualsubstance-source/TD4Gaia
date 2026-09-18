@@ -3285,6 +3285,89 @@ pubblicato e ricevuto in eco su `gaia/herbarium/soggiorno/note`:
 `{"note": 67, "velocity": 88, "channel": 1, "ts": 1789461881429}`. Topic
 definitivo per questa istanza: **`gaia/herbarium/soggiorno/note`**.
 
+**2026-09-18 (Core)** — spec per riconoscimento facciale su TD Yolo (OPS),
+richiesto esplicitamente dall'utente: sostituire `id_person` (il numero
+di traccia grezzo) con nome persona + probabilità, usando il
+riconoscimento facciale già esistente lato Gaia.
+
+**Niente di nuovo da costruire lato Gaia/Core** — l'intera catena esiste
+già e serve solo il device_id giusto: `gaia-face.service`
+(InsightFace+FAISS, `minipc/script/face_service.py`, ora riacceso su
+Core) ascolta `gaia/+/snapshot`, fa il match contro il DB volti
+(5 persone enrollate oggi: Eli, maurizio, mauro, nicola, nitai) e
+pubblica `gaia/vision/identity`. Node-RED normalizza/arricchisce
+(`IdentityNormalizer`→`IdentityBrain`) e rilancia sul canale 2 (OSC
+7001) come evento one-shot già documentato in questo file (righe
+189-198, sezione "Eventi one-shot"):
+
+```
+/gaia/canvas/event/person_recognized/person        nome della persona riconosciuta
+/gaia/canvas/event/person_recognized/camera         stanza/camera dove è avvenuto
+/gaia/canvas/event/person_recognized/confidence     confidenza del riconoscimento
+/gaia/canvas/event/person_recognized/track_id       id della traccia — VOSTRO track_id, quello che manderete nello snapshot
+```
+
+**Cosa deve fare TD Yolo (OPS), lato vostro, per chiudere il cerchio:**
+
+1. **Pubblicare uno snapshot per traccia riconosciuta**, MQTT diretto
+   (stesso client nativo già usato per canale 4/5, non OSC — "OSC non è
+   adatto a spedire pixel", vedi nota su `face_enrolled` più sopra in
+   questo file), topic **`gaia/{stanza}/snapshot`** (`{stanza}` = il
+   vostro `/gaia_client.par.Stanza` corrente, oggi "studio" — verificate
+   che sia quello vero, vedi nota sotto):
+   ```
+   {
+     "track_id": <il vostro track_id interno, stesso che userete per
+                  correlare la risposta>,
+     "image": "<JPEG base64>"
+   }
+   ```
+   Solo questi due campi sono letti da `face_service.py` — tutto il
+   resto del payload (node/location/zone/conf/timestamp) è ignorato lato
+   Gaia, includetelo solo se vi torna comodo per altri consumatori.
+   Riferimento upstream (stesso identico schema, per confronto):
+   `pi/yolo/main.py::encode_person_crop()` — crop della persona,
+   ridimensionato a 160×160, JPEG qualità 40 (equilibrio dimensione/
+   qualità già verificato dal vivo, sotto quella risoluzione il match
+   scende parecchio: soglia coseno 0.28, tarata proprio su crop a
+   160×160). Throttle consigliato come il Pi: non ad ogni frame, un
+   invio ogni ~1-2s per track_id confermata (`SNAPSHOT_REFRESH_S` lato
+   Pi) — altrimenti sommergete il servizio di richieste ridondanti sulla
+   stessa persona.
+
+2. **Sottoscrivere l'evento one-shot sopra** (canale 2, già attivo, non
+   serve nessuna configurazione aggiuntiva lato Gaia) e, quando arriva
+   con un `track_id` che corrisponde a una vostra traccia ancora attiva,
+   sostituire l'etichetta `id_person` con `{person} ({confidence*100:.0f}%)`.
+
+3. **Non serve pubblicare nessun evento "enter"/"presence" a parte** —
+   il solo snapshot con match positivo basta a far scattare
+   `person_recognized` lato Gaia (categoria `identity`, non serve
+   passare da un evento di ingresso separato).
+
+**Caveat importante**: `person_recognized` scatta SOLO per volti noti
+(`person !== 'unknown'`, filtro voluto lato Gaia — vedi nota già
+presente più sopra in questo file). Per una traccia sconosciuta **non
+arriverà mai nessun evento** — se volete un feedback esplicito anche per
+"non riconosciuto" invece di lasciare `id_person` fermo al numero
+grezzo, ditecelo qui: oggi non esiste un canale per quello, va deciso e
+costruito insieme (stesso principio del canale 9/Nursery, non lo
+inventiamo unilateralmente da un lato solo).
+
+**Da correggere, trovato verificando il client appena aggiunto**: il
+device_id del client Gaia su questo progetto era inizialmente la parola
+nuda `"ops"` (rischio di ambiguità con `ops-silvermini2`, la macchina
+stessa) — l'utente lo ha già rinominato **`td-yolo-ops`**, coerente con
+la convenzione (`td-dmx-ops`, `td-pd-macmauro`...). Resta però
+`Stanza = "studio"`: OPS è fisicamente in soggiorno
+(`ops-silvermini2` → soggiorno), sospetto sia rimasto dal copia-incolla
+del componente da TD Gaia (quello sì in studio) — verificate e
+correggete se non intenzionale, altrimenti gli snapshot arriveranno
+etichettati con la stanza sbagliata (`gaia/studio/snapshot` invece di
+`gaia/soggiorno/snapshot`) e le persone riconosciute a OPS
+risulteranno "in studio" nel resto del sistema (index.html, room graph,
+ecc.).
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
