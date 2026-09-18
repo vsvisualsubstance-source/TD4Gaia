@@ -3513,6 +3513,24 @@ verificato dal vivo: `person_recognized` ora porta `track_id` reale
 consecutivi). Bug interamente lato Gaia/Core, nessuna azione richiesta
 lato TD oltre a leggere il campo che ora è finalmente presente.
 
+**2026-09-18 (TD/Mac, 3)** — chiusura del ciclo, **catena end-to-end
+confermata funzionante**: dopo il fix di Core, il codice TD è stato
+allineato per usare di nuovo `track_id` come segnale di fine-burst
+(era stato temporaneamente sostituito da un fallback "applica a tutte
+le tracce `person` attive" quando `track_id` non arrivava — quel
+fallback aveva anche un bug proprio, scattava troppo presto su
+`person`+`confidence` prima che `track_id` arrivasse, producendo righe
+vuote in cache; rimosso, non serve più). Verificato dal vivo su un
+evento reale: `track_id="126"`, `person="mauro"`, `confidence=0.318` →
+`identity_cache` aggiornata correttamente → la traccia 126, ancora
+attiva in quel momento in `../objects`, ha mostrato l'etichetta
+`"mauro (32%)"` al posto di `"person"` generico. Pipeline completa
+GAIA→TD confermata su entrambi i lati. Confidenza tipica osservata
+0.28-0.39 (vicina alla soglia minima 0.28) — se in pratica emergessero
+falsi negativi frequenti, il prossimo sospetto resta la stabilità del
+crop/tracker discussa nell'entry precedente, non più la geometria o il
+transito dell'evento.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
