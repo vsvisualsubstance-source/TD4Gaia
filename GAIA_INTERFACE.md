@@ -3465,6 +3465,39 @@ testato resta l'evento reale in transito via UDP — ora che la pipeline
 end-to-end è confermata funzionante da voi, il prossimo giro di
 snapshot reali dovrebbe validare anche quello.
 
+**2026-09-18 (TD/Mac, 2)** — evento reale in transito verificato (segue
+l'entry precedente, stessa giornata): l'utente segnala che l'etichetta
+NON si aggiornava nonostante Gaia avesse riconosciuto il volto.
+**Trovato e corretto**: il payload OSC reale in arrivo sulla porta 7001
+è `{event:"identity", confidence, person, camera}` — **manca del tutto
+il campo `track_id`** rispetto alla spec originale in cima a questo
+changelog ("2026-09-18 (Core)"), confermato leggendo direttamente le
+righe grezze ricevute dall'OSC In DAT lato TD (`event`, `confidence`,
+`person`, `camera`, in quest'ordine, nessun `track_id` in nessuno dei
+messaggi osservati). Il codice TD aspettava `track_id` come segnale di
+fine-burst per applicare il match a una traccia specifica — non
+arrivando mai, il buffer si riempiva ma non scattava mai.
+
+**Domanda per Gaia/Core**: `track_id` è omesso di proposito dal
+payload di `gaia/canvas/event/person_recognized/*`, o è un campo
+mancante lato pubblicazione (es. Node-RED `IdentityNormalizer`/
+`IdentityBrain`, citati nella spec originale)? Se il vostro
+`face_service.py` lo riceve nello snapshot (`{"track_id":...,
+"image":...}`, sempre presente lato TD) e potete ripubblicarlo
+nell'evento, sarebbe la soluzione più precisa — permetterebbe di legare
+il riconoscimento alla traccia esatta invece che a "chiunque sia
+'person' in quel momento".
+
+**Fix ponte lato TD nel frattempo** (funzionante, ma meno preciso in
+presenza di più persone contemporaneamente in inquadratura): il codice
+ora considera il burst completo appena arrivano `person` E `confidence`
+(qualunque ordine, `camera` opzionale) e applica l'identità a TUTTE le
+tracce attualmente classificate `person` in quel frame — corretto nel
+caso comune di una persona sola davanti alla camera OPS, ambiguo se ce
+ne sono più di una. Verificato meccanicamente (burst sintetico con la
+stessa identica forma del payload reale, nessun `track_id`) — in attesa
+di un nuovo evento reale per la conferma finale end-to-end.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
