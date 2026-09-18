@@ -3498,6 +3498,21 @@ ne sono più di una. Verificato meccanicamente (burst sintetico con la
 stessa identica forma del payload reale, nessun `track_id`) — in attesa
 di un nuovo evento reale per la conferma finale end-to-end.
 
+**[RISOLTO 2026-09-18, stesso giorno, Core]** Bug reale trovato subito
+dopo l'entry precedente: `person_recognized` arrivava a TD **senza
+`track_id`** (`{"person":"mauro","camera":"soggiorno","event":"identity",
+"confidence":0.34}`, nessun modo di correlare la traccia). Causa: in
+`IdentityNormalizer` (Node-RED) il `track_id` in arrivo veniva usato
+SOLO per aggiornare una cache interna (`gaiaTrackingMap`) e mai scritto
+sull'evento stesso — bug preesistente, non introdotto oggi, solo mai
+notato prima perché finora nessun consumatore aveva bisogno del
+track_id su un evento di categoria `identity`. Fix: `event.track_id =
+p.track_id` aggiunto nel branch `identity`. Deployato su OPS e
+verificato dal vivo: `person_recognized` ora porta `track_id` reale
+(`{"person":"mauro",...,"track_id":"126"}`, confermato su più eventi
+consecutivi). Bug interamente lato Gaia/Core, nessuna azione richiesta
+lato TD oltre a leggere il campo che ora è finalmente presente.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
