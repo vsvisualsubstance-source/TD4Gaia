@@ -3413,6 +3413,58 @@ frequenti in pratica). Pipeline completa confermata funzionante fino a
 l'etichetta `id_person` sullo schermo — non verificabile da qui, nessun
 accesso a TD/Envoy.
 
+**2026-09-18 (TD/Mac)** — dettaglio tecnico dietro il fix confermato
+sopra ("crop fixato lato TD", 10/10 mauro), per chi tocca questo codice
+in futuro. **Non era la sorgente del crop** (verificato: `../in1` in TD
+è il feed camera grezzo, identico a `videodevin1`, zero effetti/
+tracking a monte) **ma la matematica delle coordinate**, per due motivi
+combinati:
+
+1. `TOP.numpyArray()` su quel TOP restituisce il frame capovolto
+   verticalmente (bottom-up) rispetto all'orientamento normale —
+   confermato salvando l'array grezzo vs. `np.flipud()` e confrontando
+   con una cattura dello stesso istante nel viewer TD.
+2. **Causa principale**: il codice JS in browser (repo
+   `torinmb/yolo-touchdesigner`, AGPL, letto direttamente da sorgente —
+   `src/inference/io.js`, `src/utils/{math,protocol}.js`,
+   `src/pipeline.js`, `src/config.js`) fa il letterbox del video vero
+   (640×480) dentro un canvas QUADRATO `INPUT_W×INPUT_H=640×640` prima
+   della detection (~80px di padding nero sopra/sotto). `pipeline.js`
+   chiama `formatPredictions(frameId, seq, tracksDet, tracksPose,
+   videoFrame)` **senza** passare `frameSize` → in `protocol.js`,
+   `width = frameSize?.width ?? INPUT_W` ricade SEMPRE sulle dimensioni
+   del canvas quadrato, mai sul frame video vero — confermato anche
+   empiricamente, un payload reale catturato mostrava
+   `"width":640,"height":640"` (non 640×480). La correzione già presente
+   in `datexec1` (vendor, dentro il progetto TD) è solo un offset
+   approssimato — non basta a compensare del tutto il letterbox
+   quadrato. Il fix annulla prima quella correzione approssimata per
+   risalire al valore grezzo del browser, poi applica la trasformazione
+   inversa completa (scala + offset) dal canvas quadrato al frame video
+   vero, usando le risoluzioni live invece di costanti fisse (resta
+   corretto anche se cambia la webcam).
+
+**Confidenza borderline (0.28-0.39) segnalata sopra**: coerente con un
+crop ancora non perfettamente centrato/stabile (la trasformazione
+corregge la geometria del letterbox ma il `track_id` del tracker
+browser continua a ruotare piuttosto spesso — osservato salire di
+parecchie unità in pochi minuti nella stessa sessione di test — quindi
+ogni traccia ha in pratica solo 1-2 snapshot utili prima di cambiare id
+e perdere lo storico identità lato TD). Se i falsi negativi risultassero
+frequenti in pratica, il prossimo tuning è probabilmente lì (stabilità
+del tracker browser), non la geometria del crop.
+
+**Sulla domanda aperta qui sopra** ("resta da confermare che
+`person_recognized` aggiorni l'etichetta"): verificato lato TD prima di
+questo fix, con un evento iniettato direttamente nella funzione di
+callback (non ancora in transito reale via rete sulla porta 7001) — la
+sostituzione etichetta funziona (`"nome (NN%)"` sostituisce
+correttamente l'etichetta generica sulla traccia corrispondente, e si
+ripulisce da sola quando la traccia scade). Il solo pezzo davvero non
+testato resta l'evento reale in transito via UDP — ora che la pipeline
+end-to-end è confermata funzionante da voi, il prossimo giro di
+snapshot reali dovrebbe validare anche quello.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
