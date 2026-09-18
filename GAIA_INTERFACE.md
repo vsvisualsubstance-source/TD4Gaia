@@ -3399,6 +3399,20 @@ tutti la stessa immagine quasi identica frame dopo frame nonostante il
 più che con un vero feed video in movimento, ulteriore indizio che la
 sorgente del crop non è quella attesa.
 
+**[RISOLTO 2026-09-18, stesso giorno, Core]** Il bug del crop nel
+"2026-09-18 (Core, 2)" sopra è risolto — lato TD è stato corretto cosa
+alimentava l'encoder JPEG. Verificato dal vivo, 10/10 snapshot
+consecutivi su `track_id=98` (stanza soggiorno): il crop ora mostra
+davvero un primo piano della persona (confermato ispezionando i JPEG
+decodificati), match `mauro` con confidenza 0.28-0.39 su tutti e 10
+(soglia minima 0.28 — alcuni borderline, valutate se serve un crop più
+largo/stabile o altri campioni enrollati se emergono falsi negativi
+frequenti in pratica). Pipeline completa confermata funzionante fino a
+`gaia/vision/identity`; resta da confermare lato TD che l'evento
+`person_recognized` in arrivo (canale 2/OSC) aggiorni davvero
+l'etichetta `id_person` sullo schermo — non verificabile da qui, nessun
+accesso a TD/Envoy.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
