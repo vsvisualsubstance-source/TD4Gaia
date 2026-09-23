@@ -3531,6 +3531,36 @@ falsi negativi frequenti, il prossimo sospetto resta la stabilità del
 crop/tracker discussa nell'entry precedente, non più la geometria o il
 transito dell'evento.
 
+**2026-09-19 (Core)** — possibile regressione rispetto alla conferma
+end-to-end del 18/9 (vedi "2026-09-18 (TD/Mac, 3)" sopra): l'utente
+segnala che `id_person` su TD Yolo (OPS) mostra ancora l'etichetta
+generica "person", non il nome. Verificato dal vivo lato Gaia con lo
+STESSO identico schema gia' confermato funzionante il 18/9:
+
+```
+{"person":"mauro","camera":"soggiorno","event":"identity","confidence":0.3131,"track_id":"34"}
+```
+
+`track_id`/`person`/`confidence`/`camera` tutti presenti e corretti,
+round-trip snapshot→identity→person_recognized confermato più volte in
+15s. Quindi lato Gaia/Core il comportamento è identico a quando
+funzionava — se TD non aggiorna più l'etichetta, il cambiamento è
+altrove.
+
+**Differenza reale rispetto al test del 18/9**: da oggi (stesso giorno,
+vedi changelog "feat(ops): Herbarium e Yolo possono girare insieme")
+OPS fa girare **contemporaneamente** due istanze TouchDesigner.exe —
+`touchdesigner_yolo` E `touchdesigner_herbarium` insieme, non più un
+solo progetto TD alla volta come durante il test originale. Possibile
+che il canale 1/2 (fan-out dinamico "a TUTTE le istanze TD vive",
+vedi §1 di questo documento) o la logica di correlazione track_id lato
+TD non si aspettasse due istanze vive in parallelo — vale la pena
+controllare se l'evento arriva davvero alla finestra/istanza giusta
+(Yolo) quando anche Herbarium è online, o se qualcosa nel routing
+per-istanza si confonde con due target invece di uno.
+
+Non verificabile oltre da qui (nessun accesso a Envoy/ai nodi TD).
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
