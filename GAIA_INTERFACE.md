@@ -3561,6 +3561,39 @@ per-istanza si confonde con due target invece di uno.
 
 Non verificabile oltre da qui (nessun accesso a Envoy/ai nodi TD).
 
+**2026-09-24 (Core)** — richiesta per la sessione TD/Mac: gli agent TD
+(`gaia_client`) devono funzionare in LOCALE senza Internet (scenario demo
+25/9: rete cablata isolata, nessun Tailscale, nessun DNS). Segnalazione
+dell'utente: senza Internet gli agent PatchDeck/TD Yolo non si registravano;
+appena Core e' stato collegato a Internet si sono registrati tutti.
+
+**Verificato lato Core** (nessun accesso a Envoy/TD da qui): il beacon
+risponde correttamente sulla LAN (`192.168.1.142`) alle query di Mac
+(`192.168.1.73`) e OPS (`192.168.1.240`); mosquitto ascolta su tutte le
+interfacce; orologi coerenti (skew di pochi secondi, online).
+Attenzione: il Mac appare con DUE IP sulla stessa subnet (`.114` per
+PatchDeck/controller/pddmx, `.73` per TD Gaia) — multi-homed.
+
+**Ipotesi, NON verificata** (dalla "Sezione 3" di questo file: failover di
+`beacon_discovery.py` su `Tailscalehost` dopo ~90s, opt-in, mai testato dal
+vivo su nessuno dei 4 progetti): il failover scrive l'IP Tailscale dentro
+`Brokerhost` e non esiste un percorso di ritorno alla LAN — stesso schema
+del bug `MQTT_HOST` "cristallizzato" gia' corretto lato Python (`pi/agent`,
+`minipc/installation`: se disconnesso oltre 90s, ri-esegue la discovery e
+ripunta il client; commit `6fd986e` nel repo Gaia).
+
+**Richieste** (in ordine di importanza):
+1. Mai sovrascrivere `Brokerhost` col valore Tailscale: tenere separati
+   l'host LAN configurato/scoperto e l'host ATTIVO.
+2. Se non connesso, ri-eseguire periodicamente il beacon LAN; se connesso
+   via Tailscale, continuare a interrogare il beacon e tornare alla LAN
+   appena risponde (LAN sempre primaria).
+3. Nessuna dipendenza da DNS/MagicDNS/Internet per il funzionamento in LAN
+   (usare IP, non hostname `.ts.net`/`.local`, sul percorso LAN).
+4. Test dal vivo offline: Core con SOLO la LAN cablata, avvio a freddo dei
+   progetti TD, verificare la registrazione (status+profile) entro ~30s.
+   Da fare prima del 25/9.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
