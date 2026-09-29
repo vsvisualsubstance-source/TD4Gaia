@@ -3594,6 +3594,45 @@ ripunta il client; commit `6fd986e` nel repo Gaia).
    progetti TD, verificare la registrazione (status+profile) entro ~30s.
    Da fare prima del 25/9.
 
+**2026-09-29 (Core)** — richiesta per la sessione TD/Mac, utile proprio ora
+che il `.tox` `gaia_client` si sta finalizzando per tutti i progetti:
+l'utente ha chiesto se siamo pronti a ricevere mocap (canale 7) da macchine
+diverse da OPS e a distribuirlo sia in LAN sia via Tailscale. Verificato dal
+vivo lato Gaia (`pi/mediapipe/mediapipe_node.py`, `_MocapTargetRegistry`, e
+l'equivalente canale 2 in `minipc/touchdesigner/osc_bridge.py`,
+`TDDeviceRegistry`):
+
+- **Multi-sender e multi-receiver sono già pronti**: ogni sender mocap è
+  già identificato dal proprio `device_id`/hostname (topic
+  `gaia/mocap-bridge/{sender}/...` separato per macchina, zero conflitto),
+  e un target TD può già essere abilitato a ricevere da più sender
+  contemporaneamente. Nessun limite architetturale — oggi è così solo
+  perché `OSC_LANDMARKS=1` è configurato solo su OPS, non un vincolo di
+  codice.
+- **Gap reale, stesso su canale 2 e canale 7**: entrambi i registry
+  costruiscono il client OSC verso il target SOLO dal campo `ip` (LAN)
+  letto dallo status/profile del device TD — mai un fallback Tailscale.
+  Se un'istanza TD è raggiungibile solo via Tailscale (rete diversa dal
+  sender), il pacchetto OSC va a un IP LAN irraggiungibile e si perde in
+  silenzio (UDP, nessun errore).
+- **La causa è a monte**: dal changelog "2026-08-30" più su in questo
+  stesso file — nessun `gaia_client` pubblica ancora `tailscale_ip`/
+  `internet` nel proprio `profile` (stesso campo già in produzione su
+  Pi/OPS/Core, sezione 3 di questo documento). Senza quel campo lato TD,
+  Gaia non ha il dato per costruire un secondo client OSC di riserva anche
+  volendo.
+
+**Richiesta**: quando finalizzate il `.tox`, aggiungere `tailscale_ip` (e
+idealmente `internet`, bool) al `profile` pubblicato da `gaia_client` —
+stesso nome di campo, stesso schema già usato da Pi/OPS/Core (vedi sezione
+3), popolato leggendo l'IP dell'interfaccia Tailscale locale se presente,
+altrimenti omesso/null. Appena arriva quel campo, lato Gaia estendo i due
+registry (mocap-bridge + osc_bridge canale 2) per aprire un secondo client
+OSC verso l'IP Tailscale quando diverso da quello LAN e mandare su
+entrambi — un UDP verso un indirizzo non raggiungibile è innocuo, quindi
+non serve nemmeno decidere quale dei due percorsi userà davvero, prova
+entrambi.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
