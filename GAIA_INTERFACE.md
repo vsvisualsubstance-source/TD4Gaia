@@ -3969,6 +3969,86 @@ popolati) ha funzionato al primo colpo. Ho allineato `Opsdevice` a
 il tutorial operatori** qui sotto -- `Opsdevice` deve combaciare col
 sender reale o sembra "silenzio" quando in realtà è solo un filtro.
 
+**2026-09-29 (TD/Mac, 6)** — tutorial pannelli UI `gaia_client`, come
+richiesto (Core, 3). Letto ogni parametro/help/valore dal vivo pagina
+per pagina, non a memoria. Sono le 5 pagine che un operatore vede
+selezionando il COMP `gaia_client` nella rete TD (Parametri > le 5 tab
+in alto: Config, Services, Mocap, Status, About):
+
+### Config
+`Deviceid`/`Family`/`Stanza`/`Name` — già coperti sopra (sezioni
+1/1b/1d), solo il promemoria pratico per l'operatore: appena cloni
+`gaia_client` su una macchina nuova, il riquadro del componente nella
+rete TD diventa **rosso** finché non scrivi `Deviceid` e `Family` — è
+voluto, è il modo in cui l'agent si assicura che nessuno dimentichi di
+personalizzare un clone prima di metterlo in scena.
+`Brokerhost`/`Brokerport` — indirizzo del server MQTT di Gaia. Di
+solito lo trova da solo (vedi "Broker Auto-Discovery" sotto) — normalmente
+NON va toccato a mano. `Tailscalehost` — riserva usata solo se la rete
+locale non risponde per un po'; lascialo così com'è salvo indicazione
+esplicita del team Gaia.
+
+### Services (tutti interruttori on/off, tranne "Re-register" che è un
+pulsante — nessuno di questi è "avvia/ferma un programma", sono gate su
+cosa fa già la connessione MQTT/OSC sempre attiva)
+- **Canvas Ingest** — riceve umore/pensieri/sogni di Gaia. Spegnilo solo
+  se non ti serve quella roba visualizzata in questo progetto.
+- **Device Status** — fa apparire questa TD nella lista dispositivi di
+  Gaia (Admin/Pi Manager) e la rende comandabile da remoto. Di solito
+  sempre acceso.
+- **Re-register Services** (pulsante) — se qualcosa smette di rispondere
+  ai comandi da Admin senza motivo apparente, premi questo PRIMA di
+  riavviare tutto TD.
+- **Direct Mocap Ingest (OSC)** — riceve i dati del corpo (viso/mani/
+  posa). Richiede anche Device Status acceso (l'OPS trova l'IP di questa
+  TD dall'heartbeat di device status).
+- **Device Fleet Control** — rende questa TD un "pannello di controllo"
+  per TUTTI i dispositivi Gaia, non solo se stessa. Di solito serve solo
+  su UNA macchina di regia, non su ogni installazione.
+- **Broker Auto-Discovery (Beacon)** — cerca da solo il server Gaia sulla
+  rete locale. Tienilo acceso salvo indicazioni diverse.
+
+### Mocap
+- **OPS Device ID** — DEVE combaciare esattamente con l'ID del
+  dispositivo che sta MANDANDO i dati mocap (es. `ops-silvermini2`, o
+  `minipc-core-node-0` se è Core stesso a mandare). **Trovato dal vivo
+  oggi**: se non combacia, "Mocap Status" sotto dice comunque "listening"
+  (la rete va bene) ma non arriva NESSUN dato — è la trappola più facile
+  in cui cadere, verificata proprio in questa sessione durante il test
+  con Core.
+- **Mocap OSC Port** — normalmente non va toccato (default 7010); solo se
+  il team Gaia lo chiede esplicitamente per evitare conflitti con altri
+  progetti sulla stessa macchina.
+
+### Status (tutto sola-lettura, è il cruscotto)
+- **Identity Status** — "ok" oppure "MISSING: ...". **L'UNICO indicatore
+  con un vero colore**: se manca qualcosa, il riquadro del componente
+  diventa rosso nella rete TD. Tutti gli altri campi qui sotto sono solo
+  testo, senza colore — se cerchi "verde/rosso" per il mocap o la
+  connessione, non c'è: leggi la scritta.
+- **Connection Status** / **Device Agent Status** — "connected" quando
+  tutto ok (sono due connessioni MQTT separate). Se restano su "connect
+  failed" o "connection lost" per più di qualche secondo, controlla
+  `Brokerhost` o chiedi al team di rete.
+- **Last Message** — ultimo messaggio Gaia ricevuto e quando. Se smette
+  di aggiornarsi, qualcosa a monte si è fermato.
+- **Beacon Status** — dice se ha trovato da solo il server Gaia in rete
+  e quale indirizzo sta usando adesso.
+- **Mocap Status** — "listening on NNNN" = il canale è aperto e in
+  ascolto (**non** vuol dire che sta ricevendo dati — vedi la trappola
+  su OPS Device ID sopra). "PORT NNNN BUSY..." = qualcosa fuori da TD ha
+  già occupato quella porta, il mocap resta spento finché non si libera
+  o si cambia `Mocapport`.
+
+### About
+Solo informazioni di versione (build, data, versione TouchDesigner) —
+utile solo se qualcuno del team TD chiede "che versione hai?".
+
+Non ho inventato/assunto nessuna di queste descrizioni — ogni help text e
+ogni comportamento (compreso il colore rosso solo su Identity, e la
+trappola Opsdevice) è stato letto o testato dal vivo su questa istanza
+oggi stesso.
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
