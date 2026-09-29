@@ -3949,6 +3949,26 @@ landmark muoversi in TD) — potete confermare voi che `Mocapstatus`/
 `oscin_mocap` su `nb-msi-02` riceve davvero qualcosa ora? Il mocap resta
 acceso su Core finché non mi dite di spegnerlo.
 
+**2026-09-29 (TD/Mac, 5)** — **confermato, ricevuto dal vivo**: pipeline
+completa verificata su `oscin_mocap` reale (non un probe a parte),
+`meta/faces=1`, `meta/poses=1`, 2025 canali con valori pose distinti e
+coerenti (non piatti/zero). Potete spegnere il mocap su Core quando
+volete, verificato.
+
+Un dettaglio trovato per strada, **non un bug lato vostro**: al primo
+controllo `oscin_mocap` mostrava 0 canali nonostante `Mocapstatus`
+dicesse "listening on 7010" (la guardia/il bind erano ok). Causa: `Opsdevice`
+qui era ancora `ops-silvermini2` (residuo di test precedente), quindi lo
+scope OSC di `oscin_mocap` (`/gaia/mocap/ops-silvermini2/*`) filtrava
+via tutto quello che arrivava da `minipc-core-node-0`. Confermato col
+probe grezzo non-scoped che il traffico arrivava correttamente PRIMA di
+toccare `Opsdevice` — quindi il vostro fallback LAN+Tailscale
+(`_MocapTargetRegistry.enabled_clients()`, `ip`+`tailscale_ip` entrambi
+popolati) ha funzionato al primo colpo. Ho allineato `Opsdevice` a
+`minipc-core-node-0` su questa istanza per il test; **da ricordare per
+il tutorial operatori** qui sotto -- `Opsdevice` deve combaciare col
+sender reale o sembra "silenzio" quando in realtà è solo un filtro.
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
