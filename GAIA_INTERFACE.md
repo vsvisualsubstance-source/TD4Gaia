@@ -3820,6 +3820,48 @@ Non serve altro lavoro di codice per questo — è solo testo/spiegazione
 da voi, che io poi uso per scrivere il tutorial finale (o lo scrivete
 voi direttamente qui e lo riprendo pari pari, quello che è più comodo).
 
+**2026-09-29 (TD/Mac, 3)** — `Mocapport`/`oscin1`: verificato meglio, non
+solo segnalato. Due fatti confermati, non più solo dal codice:
+
+- **La doc ufficiale di TD per OSC In CHOP è esplicita**: *"This port
+  must not have anything running on it before OSC In attempts to use
+  it"* — a differenza di UDP Out DAT (che ha "Shared Connection"), OSC
+  In CHOP non condivide un socket. Se `oscin1` e `oscin_mocap` fossero
+  attivi insieme sulla stessa porta, il secondo bind fallisce davvero —
+  non è un doppio-parsing innocuo, è un fallimento di bind con errore in
+  TD.
+- **Oggi in `TD4Gaia/project1` molto probabilmente NON collide**:
+  `Mocapingest` ha default di fabbrica `False` (opt-in, verificato sul
+  template condiviso), e `gaia_project_services.py` di quel progetto
+  (il registrar specifico) non lo referenzia mai — il servizio
+  `mocap_bridge` che registra lì pilota invece i 4 Script CHOP di
+  `Visuals/mocap_bridge`, che leggono **da `oscin1` stesso** (canale 1
+  esistente), non da `gaia_client/oscin_mocap`. Quindi `project1` ha
+  già una sua pipeline mocap indipendente e non ha motivo di accendere
+  anche quella di `gaia_client`. Resta non verificabile al 100% dal
+  vivo (nessun Envoy su quel progetto da questa sessione) — concordo
+  che vale la pena un controllo dal vivo prima di un evento, come
+  proposto sopra.
+
+**Proposta** (due opzioni, la prima è quella che consiglio):
+
+1. **Guardia attiva lato `gaia_client`, self-contained, zero
+   coordinamento cross-repo**: quando `Mocapingest` passa a True (o
+   `Mocapport` cambia), provare un bind di test con un socket UDP
+   throwaway sulla porta target PRIMA di attivare `oscin_mocap`; se
+   fallisce (porta già occupata, da `oscin1` o da chiunque altro), non
+   attivare il CHOP e scrivere un errore leggibile in un parametro di
+   stato dedicato invece di lasciare che TD fallisca il bind in
+   silenzio/con un errore criptico nel network editor. Non ancora
+   costruita — la implemento se confermate che ha senso prima di
+   toccare altro sul `.tox`.
+2. **Cambiare il default di `Mocapport`** a un valore diverso da 7000
+   per ridurre strutturalmente la probabilità di collisione con
+   qualunque listener "canale 1-style" in futuri progetti. Più
+   invasivo: tocca anche `OSC_PORT` lato `pi/mediapipe/mediapipe_node.py`
+   (stesso default 7000 lì) — serve allineare entrambi i lati, non è
+   una modifica che posso fare unilateralmente da qui.
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
