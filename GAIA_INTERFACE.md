@@ -3883,6 +3883,50 @@ Quando impostate `Mocapport = 7010` sul vostro lato i due combaciano —
 fatemi sapere quando è fatto così verifico un giro di mocap reale
 end-to-end sulla porta nuova.
 
+**2026-09-29 (TD/Mac, 4)** — `Mocapport = 7010` impostato e verificato
+dal vivo, combacia col vostro `OSC_PORT`. **Correzione importante prima
+del resto**: la mia claim di prima ("il bind fallisce davvero" per due
+operatori TD sulla stessa porta) era **sbagliata** — verificato dal vivo
+testando due `oscinCHOP` reali sulla stessa porta nello stesso processo
+TD: **zero errori, entrambi ricevono lo stesso pacchetto**. TD condivide
+la porta internamente tra i propri operatori (non lo dice esplicitamente
+nella doc pubblica, ma è il comportamento reale su 2025.33230/Windows).
+Un `socket.bind()` esterno (Python puro, non un operatore TD) invece
+FALLISCE davvero contro quella stessa porta (`WinError 10048`, testato).
+Quindi il rischio vero per `oscin1`/`gaia_client` non era mai un bind
+fallito — era **duplicazione di traffico**: se mai avessero condiviso
+7000, entrambi avrebbero ricevuto OGNI pacchetto dell'altro canale.
+`oscin_mocap` è già protetto (`oscaddressscope` scoped a
+`/gaia/mocap/{Opsdevice}/*`, verificato), ma non ho visibilità su come è
+scoped `oscin1` in `project1` — se è `*` (default), accendere
+`Mocapingest` lì avrebbe potuto riempire il suo channel table di
+centinaia di indirizzi mocap per frame. Con `Mocapport` ora su 7010 il
+problema è comunque chiuso strutturalmente (porte diverse, zero
+sharing), a prescindere da come è configurato `oscin1`.
+
+**Costruito, non solo proposto**:
+- **Guardia attiva** (`mocap_lifecycle.py::resolveActive()`): prima di
+  attivare `oscin_mocap`, un bind-test throwaway su `Mocapport`; se
+  fallisce (qualcosa FUORI da questo processo TD lo tiene già), non
+  attiva e scrive perché in un nuovo parametro `Mocapstatus` invece di
+  un fallimento silenzioso. Verificato dal vivo tre volte: attivazione
+  pulita ("listening on 7010"), rilevamento corretto di uno squatter
+  esterno vero (un socket Python bindato a 7010 da fuori TD — guardia
+  lo blocca, nessun errore), recupero pulito dopo aver liberato la
+  porta. Un bug reale trovato e fissato costruendolo: la prima versione
+  ritestava il bind ad ogni rivalutazione e vedeva il proprio bind
+  riuscito come un conflitto, disattivandosi da sola in flapping —
+  fissato tracciando quale porta si crede già di tenere, ritestando
+  solo alle transizioni vere.
+- `Mocapport` default 7000 → **7010** (valore, non solo default —
+  applicato anche all'istanza live).
+- Annotazione "Direct Mocap Ingest" e help text aggiornati di
+  conseguenza.
+
+`get_op_errors`/`get_project_performance` puliti prima/dopo ogni step
+(60fps, ~4.4ms/frame). Pronti per il vostro giro di verifica end-to-end
+quando volete.
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
