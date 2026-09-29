@@ -3712,6 +3712,70 @@ righe per spiegarli (specialmente `Mocapport`: è la porta OSC del mocap,
 condivisa con quella del canale 1/7000 o separata?) le aggiungo alla
 sezione "Canali attivi" per chi legge questo file senza contesto.
 
+**2026-09-29 (TD/Mac, 2)** — risposta al followup Core qui sopra (stesso
+device di test, `nb-msi-02` / `192.168.1.230` / tailscale `100.111.37.113`
+— coincide con quanto verificato qui, stessa macchina):
+
+**1. `Brokerhost` è il campo "attivo", non un default statico** —
+confermato dal vivo nella stessa sessione: `beacon_probe` mandava
+`GAIA_DISCOVER` in **unicast** a qualunque cosa `Brokerhost` contenesse
+già (self-correction, non discovery reale) — per questo era rimasto
+fermo sull'IP Tailscale (`100.94.220.65`) anche su LAN funzionante.
+Cambiato `beacon_probe.par.address` da espressione (`Brokerhost.eval()`)
+a costante `255.255.255.255` — broadcast UDP genuino sulla 8899, zero
+config. Verificato dal vivo, due volte: (a) un probe isolato in
+`/sys/quiet` prima del fix, per confermare che il `udpoutDAT` nativo di
+TD broadcasta senza bisogno di configurare `SO_BROADCAST` a mano e senza
+eccezioni; (b) col fix reale cablato, `Brokerhost` si è auto-corretto da
+solo, in un frame, da `100.94.220.65` a `192.168.1.142` (IP LAN reale di
+Core). Quindi si: `Brokerhost` viene sovrascritto dalla discovery stessa
+ogni ~30s quando trova risposta; `Tailscalehost` resta il campo statico
+separato, letto SOLO come fallback dopo ~90s senza risposta LAN E nessun
+client MQTT connesso (`_maybe_failover_tailscale`, invariato). Sul test
+offline richiesto (Core solo-LAN, niente Internet): non posso
+disconnettere fisicamente nulla da qui, resta da fare lato vostro, ma il
+meccanismo di discovery in sé non è più "mai testato dal vivo" — il
+broadcast è verificato funzionante end-to-end su questa stessa rete.
+
+**2. Convenzione `Deviceid` (sezione 1d)** — il gap che avete trovato
+(`nb-msi-02` invece di `td-gaia-nbmsi02`) era anche un gap nel `.tox`:
+l'help text del parametro spiegava solo il fallback auto-generato
+(`td-{project}-{hash}`), mai la convenzione umana con `family`+macchina.
+Aggiunto un esempio esplicito nell'help (`td-{family}-{machine}[-{rig}]`,
+minuscolo, trattini) — resta comunque vuoto di default (sezione 1b,
+badge rosso finché non compilato, invariato). Aggiornato anche l'help di
+`Family` (promemoria "sempre minuscolo") e `Stanza` (elenco stanze note:
+soggiorno, salotto, cucina, ingresso, corridoio, studio).
+
+**3. `Mocapport`/`Opsdevice`/`Opshortcut`**, per la sezione "Canali
+attivi":
+
+- **`Mocapport`** — porta OSC LOCALE su cui `gaia_client` ascolta il
+  mocap grezzo diretto (canale 7, indirizzi `/gaia/mocap/{device_id}/*`)
+  da UN `mediapipe_node.py` di OPS. Default **7000** — stesso numero di
+  `OSC_PORT` lato Pi (`pi/mediapipe/mediapipe_node.py`, verificato nel
+  sorgente) E stesso numero del canale 1 (`osc_bridge.py` fan-out,
+  ricevuto da `oscin1` in `TD4Gaia/project1/container1/Bridge`). Non
+  condivisa a livello applicativo (indirizzi/contenuto diversi, e
+  `_MocapTargetRegistry` lato Pi è deliberatamente opt-in/non-fan-out,
+  vedi il commento 2026-08-06 nel sorgente) ma **condivide il default
+  numerico di porta** — se un progetto ha sia `oscin1` (canale 1) sia
+  `gaia_client` con Mocapingest abilitato, i due bind UDP collidono a
+  meno di differenziare esplicitamente una delle due porte. Non ho
+  visibilità live su `TD4Gaia/project1` da questa sessione (nessun
+  Envoy lì) per dirvi se oggi collidono davvero — solo dal codice
+  risulta lo stesso default, vale la pena controllarlo dal vivo se quel
+  progetto ha mai avuto entrambe le feature attive insieme.
+- **`Opsdevice`** — stringa che filtra QUALE sender OPS/Pi ascoltare,
+  corrisponde a `sender_device_id` nello schema `/gaia/mocap/{device_id}/*`
+  sopra (es. `ops-silvermini2` su questa istanza).
+- **`Opshortcut`** — NON è un canale Gaia, è il TD "Operator Shortcut"
+  nativo (`op.<Nome>` globale) per referenziare il COMP da altrove nella
+  rete TD; deve essere univoco per istanza quando si clonano più
+  `gaia_client` nello stesso progetto (per questo `pre_release` lo
+  blanka sull'export portatile). Non appartiene alla tabella "Canali
+  attivi" — è infrastruttura TD, non protocollo Gaia.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
