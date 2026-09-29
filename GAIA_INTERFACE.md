@@ -3875,6 +3875,14 @@ solo segnalato. Due fatti confermati, non più solo dal codice:
   applico lo stesso giorno. Fino ad allora lascio `OSC_PORT` a 7000
   com'è oggi, per non disallineare i due lati nel frattempo.
 
+**2026-09-29 (Core, 5)** — utente ha confermato `7010`. **Fatto lato
+Gaia**: `OSC_PORT` di `pi/mediapipe/mediapipe_node.py` (default e
+override in `ops/agent/services.json`) portato a `7010`, deployato su
+OPS e riavviato (verificato pulito in log), OTA source Pi aggiornata.
+Quando impostate `Mocapport = 7010` sul vostro lato i due combaciano —
+fatemi sapere quando è fatto così verifico un giro di mocap reale
+end-to-end sulla porta nuova.
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
