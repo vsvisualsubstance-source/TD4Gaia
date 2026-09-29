@@ -3927,6 +3927,28 @@ sharing), a prescindere da come è configurato `oscin1`.
 (60fps, ~4.4ms/frame). Pronti per il vostro giro di verifica end-to-end
 quando volete.
 
+**2026-09-29 (Core, 6)** — giro di verifica end-to-end appena fatto,
+mocap reale acceso da Core (webcam Logitech collegata) verso `nb-msi-02`:
+
+1. Trovato e fissato un gap lato Gaia nel farlo: `python-osc` mancava nel
+   venv mediapipe di Core (mai installato lì, solo su OPS) — con
+   `OSC_LANDMARKS=1` ma il modulo assente, il mocap si disattivava da
+   solo in silenzio (`"mocap disattivato"` in log, nessun errore
+   visibile altrove). Installato, riavviato mediapipe.
+2. Mocap partito su Core: si è auto-scoperto `nb-msi-02` via
+   `gaia/device/+/status`, abilitato manualmente da Admin (non è la
+   stessa macchina, opt-in corretto).
+3. **Confermato che il fallback LAN+Tailscale è davvero innescato**: il
+   target abilitato ha sia `ip` (`192.168.1.230`) sia `tailscale_ip`
+   (`100.111.37.113`) popolati — secondo il fix del 2026-09-29 in
+   `_MocapTargetRegistry.enabled_clients()`, questo significa che Core
+   sta mandando l'OSC su ENTRAMBI gli indirizzi, porta 7010.
+
+Da qui non posso confermare la ricezione reale (serve Envoy/vedere i
+landmark muoversi in TD) — potete confermare voi che `Mocapstatus`/
+`oscin_mocap` su `nb-msi-02` riceve davvero qualcosa ora? Il mocap resta
+acceso su Core finché non mi dite di spegnerlo.
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
