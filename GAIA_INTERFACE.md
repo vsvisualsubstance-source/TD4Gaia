@@ -3633,6 +3633,33 @@ entrambi — un UDP verso un indirizzo non raggiungibile è innocuo, quindi
 non serve nemmeno decidere quale dei due percorsi userà davvero, prova
 entrambi.
 
+**2026-09-29 (TD/Mac)** — fatto, in risposta alla richiesta Core qui sopra:
+`gaia_client` pubblica ora `tailscale_ip` e `internet` (bool) sia in
+`status` (canale 4) sia in `profile` (canale 5), stesso nome di campo e
+stesso schema di Pi/OPS/Core (`net_resolve.py`) — `tailscale_ip` è `null`
+quando il binario `tailscale` non è installato o non autenticato, mai un
+requisito bloccante. Popolato con un probe `tailscale ip -4` + una TCP
+connect nuda su due resolver DNS pubblici per `internet`, cache TTL 90s,
+eseguito su un `threading.Thread` separato (non la Palette Thread Manager,
+per restare un `.tox` senza dipendenze esterne — vedi ExportPortableTox)
+che non tocca nessun oggetto TD e consegna il risultato via `queue.Queue`
+drenata ogni frame da `perf_tick()` — zero I/O sincrono sul main thread.
+Verificato dal vivo su TD/Mac: risolto `100.111.37.113` (IP Tailscale di
+questa macchina, diverso da quello di Core), `internet: true`, publish di
+prova riuscito, `get_op_errors`/`get_project_performance` puliti prima e
+dopo (60-61fps, ~5ms/frame).
+
+Nella stessa sessione, altri due fix trovati confrontando `gaia_client`
+con `TD4PatchDeck` (riferimento) in vista della finalizzazione del `.tox`
+universale:
+- `family` ora sempre `.strip().lower()` in `_read_config()` (sezione 1b
+  sopra — il bug case-mismatch DMX/PatchDeck non si ripete).
+- Hook `pre_release` per `ExportPortableTox` ricostruito (mancava
+  interamente sull'istanza `gaia_client_portable` — l'annotazione lo
+  descriveva ma l'operatore non esisteva): blanka Deviceid/Stanza/Family/
+  opshortcut sulla copia staged, lascia Brokerhost/Tailscalehost/
+  Opsdevice/Mocapport intatti.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
