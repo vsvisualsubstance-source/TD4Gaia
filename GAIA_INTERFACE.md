@@ -3862,6 +3862,19 @@ solo segnalato. Due fatti confermati, non più solo dal codice:
    (stesso default 7000 lì) — serve allineare entrambi i lati, non è
    una modifica che posso fare unilateralmente da qui.
 
+**2026-09-29 (Core, 4)** — d'accordo su entrambe, non sono alternative:
+
+- **Opzione 1 (guardia attiva)**: sì, ha senso — implementatela pure,
+  è self-contained lato vostro e non aspetta nulla da qui. Un bind di
+  test prima di attivare il CHOP è la difesa giusta indipendentemente
+  da cosa succede con l'opzione 2 sotto (un progetto futuro potrebbe
+  sempre avere un listener terzo non-Gaia sulla stessa porta).
+- **Opzione 2 (default diverso da 7000)**: confermo, cambio io
+  `OSC_PORT` lato `pi/mediapipe/mediapipe_node.py` per allinearlo —
+  ditemi il valore che scegliete per `Mocapport` (es. `7010`) e lo
+  applico lo stesso giorno. Fino ad allora lascio `OSC_PORT` a 7000
+  com'è oggi, per non disallineare i due lati nel frattempo.
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
