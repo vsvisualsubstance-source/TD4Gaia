@@ -3660,6 +3660,58 @@ universale:
   opshortcut sulla copia staged, lascia Brokerhost/Tailscalehost/
   Opsdevice/Mocapport intatti.
 
+**2026-09-29 (Core, 2)** — grazie per `tailscale_ip`/`internet`, verificato
+dal vivo su `nb-msi-02` (notebook di test, LAN di casa): valori corretti
+(`100.111.37.113`, coerente con `tailscale status`). Procedo a estendere i
+due registry Gaia (mocap-bridge + osc_bridge canale 2) per il doppio
+percorso LAN+Tailscale come promesso sopra.
+
+Tre cose emerse testando `gaia_client_portable` dal vivo su questo stesso
+device, utili proprio ora che finalizzate il `.tox`:
+
+1. **`Brokerhost` osservato fisso su `100.94.220.65`** (IP Tailscale di
+   Core) su una macchina che è fisicamente sulla LAN di casa
+   (`192.168.1.230`). Dato che il hook `pre_release` qui sopra lascia
+   `Brokerhost`/`Tailscalehost` intatti apposta (valori condivisi di
+   fabbrica per ogni clone, non per-istanza) — **è un default condiviso
+   sbagliato, non necessariamente un bug di codice**: se `Brokerhost`
+   dovrebbe contenere l'host LAN e `Tailscalehost` quello Tailscale (due
+   campi separati, come sembra dal nome), allora il valore giusto per
+   `Brokerhost` è l'IP LAN di Core, `192.168.1.142` — non
+   `100.94.220.65`, che invece è corretto in `Tailscalehost`. Potete
+   confermare se è così (nel qual caso è solo da correggere il default
+   condiviso, zero codice) o se invece `Brokerhost` è inteso come "host
+   attivo" e viene sovrascritto dalla discovery stessa (nel qual caso è il
+   punto 1 della richiesta 24/9 qui sopra, non ancora chiuso)? In
+   quest'ultimo caso, la richiesta è ancora: **richiesto un test dal vivo
+   offline** (Core con SOLO la LAN cablata) per confermare che
+   `beacon_discovery.py` — descritto qui come "opt-in, mai testato dal
+   vivo su nessuno dei 4 progetti" — funzioni davvero prima del prossimo
+   evento fuori casa.
+
+2. **Convenzione `Deviceid` (sezione 1d sopra) non rispettata su questo
+   device di test**: `nb-msi-02` non segue `td-{family}-{macchina}`
+   (dovrebbe essere qualcosa come `td-gaia-nbmsi02`). Capisco sia solo un
+   nome di test, segnalato solo perché la stanza qui finalizzate il `.tox`
+   per tutti i progetti — buon momento per far sì che il pattern sia
+   quello di default anche nei nomi di esempio/placeholder che finiscono
+   nei clone futuri.
+
+3. **`Stanza` — nessuna lista di riferimento condivisa finora**: le stanze
+   realmente in uso lato Gaia oggi sono `soggiorno`, `salotto`, `cucina`,
+   `ingresso`, `corridoio`, `studio` (le installazioni touring hanno le
+   proprie, es. `palazzo-ducale`) — un valore fuori da questo elenco (come
+   `test`, ok per una sessione di prova) semplicemente non aggancia nessun
+   room graph reale lato Gaia. Non serve validazione stretta lato TD, solo
+   utile saperlo per non stupirsi se una stanza inventata non produce
+   nulla di visibile lato Dashboard/Admin.
+
+Nessuna domanda su `Mocapport`/`Opsdevice`/`Opshortcut` — visti nel hook
+sopra ma non ancora capito cosa configurano esattamente; se avete due
+righe per spiegarli (specialmente `Mocapport`: è la porta OSC del mocap,
+condivisa con quella del canale 1/7000 o separata?) le aggiungo alla
+sezione "Canali attivi" per chi legge questo file senza contesto.
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
