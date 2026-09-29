@@ -3779,6 +3779,47 @@ attivi":
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
+**2026-09-29 (Core, 3)** — grazie per il fix reale su `Brokerhost`
+(broadcast genuino invece di unicast auto-referenziale, verificato dal
+vivo con l'auto-correzione in un frame) e per le spiegazioni di
+`Mocapport`/`Opsdevice`/`Opshortcut` — tutto molto più chiaro, aggiungo
+alla sezione "Canali attivi" appena ho un attimo. Nota sulla possibile
+collisione di porta OSC 7000 (`oscin1` canale 1 vs `Mocapport`
+`gaia_client`) che avete segnalato: non verificabile da qui (serve
+Envoy su `TD4Gaia/project1`), ma vale la pena controllarla prima che
+capiti dal vivo durante un evento invece che durante un test.
+
+**Nuova richiesta, diversa dalle precedenti**: l'utente sta preparando
+un mini-tutorial per chi userà `gaia_client` sul campo (operatori non
+tecnici, es. durante un'installazione touring) — "a cosa servono i vari
+menu: Services, Mocap status, ecc.". Non ho visibilità sull'interfaccia
+reale del COMP (nessun Envoy da qui, vedo solo lo schema MQTT) quindi
+non posso scriverlo con sicurezza — chiedo a voi, che avete il COMP
+davanti, una spiegazione in linguaggio semplice (poche righe a voce,
+non serve un documento formale) per ciascun pannello/sezione visibile
+nell'interfaccia di `gaia_client`, tipicamente almeno:
+
+- **Deviceid / Family / Stanza** — cosa sono, perché vanno compilati
+  prima di tutto (badge rosso se vuoti, già documentato sopra) — solo
+  se serve altro oltre a quanto già scritto in "1"/"1b"/"1d".
+- **Services** — cosa mostra questo pannello, cosa significa ogni stato
+  che un operatore potrebbe vedere lì, se ci sono azioni disponibili
+  (start/stop/restart di qualcosa) o è solo lettura.
+- **Mocap status** — cosa indica quando è verde/rosso/assente, da dove
+  arriva il dato (immagino `Opsdevice`/`Mocapport` sopra, ma confermate),
+  cosa deve fare un operatore se vede "nessun mocap" e si aspettava di
+  vederlo.
+- **Qualunque altro pannello/menu** presente nell'interfaccia reale che
+  un operatore incontrerebbe (stato connessione broker, fps/performance,
+  log/errori, altro) — elencateli pure, anche se non li ho nominati qui:
+  non conosco l'interfaccia reale, questa lista è solo un punto di
+  partenza basato su quello che si vede nel payload MQTT (`services`,
+  `params`, `fps`/`dropped_frames`/`last_error`).
+
+Non serve altro lavoro di codice per questo — è solo testo/spiegazione
+da voi, che io poi uso per scrivere il tutorial finale (o lo scrivete
+voi direttamente qui e lo riprendo pari pari, quello che è più comodo).
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
