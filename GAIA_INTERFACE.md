@@ -3776,6 +3776,77 @@ attivi":
   blanka sull'export portatile). Non appartiene alla tabella "Canali
   attivi" — è infrastruttura TD, non protocollo Gaia.
 
+**2026-09-30 (TD/Win)** — `gaia_client` di TD-Gaia allineato alla
+versione portabile aggiornata (progetto `Desktop/dev`, commit
+`308409c`), con fusione nei due sensi invece di un reimport cieco del
+`.tox`. Verificato dal vivo via Envoy su `td-gaia-macmauro`.
+
+**Cosa cambia per Gaia (wire)**:
+- **`sw_version` = `"1.1.0"`** sia in `status` (canale 4) sia in
+  `profile` (canale 5). Prima era sempre `"1.0"` scritto a mano in ogni
+  build, quindi inutile per la sezione 1c. Regola: da qui in poi viene
+  aggiornato a ogni release del portabile (costante `SW_VERSION` in
+  `gaia_device_agent.py`). Un'istanza che pubblica ancora `"1.0"` gira
+  una build precedente al 30/9 e va aggiornata.
+- **`tailscale_ip` + `internet`** ora presenti in status/profile (stesso
+  nome e schema di Pi/OPS/Core, sezione 3). Chiude il "gap aperto su
+  tutti e 4 i progetti" del 29/8 almeno per TD-Gaia: verificato
+  `tailscale_ip=100.111.37.113`, `internet=true`. Rilevamento anche su
+  macOS (la CLI di Tailscale.app non sta nel PATH, prima restava `null`).
+- **MQTT client_id per device**: i 3 client ora usano
+  `{Deviceid}-device|-ingest|-control` invece di `me.id` (collisione
+  fra istanze dello stesso template → il broker chiude una sessione
+  e i comandi finiscono sul device sbagliato). Riconnesso pulito.
+- **Recovery remoto**: nuovo comando `{"action":"reregister"}` (vedi
+  risposta a "Core, 12" sotto).
+- **Beacon**: `beacon_probe` in broadcast `255.255.255.255:8899`
+  (discovery a configurazione zero sulla LAN). Verificato: Core trovato.
+- **Mocap remoto da Admin: DISATTIVATO su TD-Gaia di proposito.** Nuovo
+  toggle `Mocapremote` (default on nel portabile): se off, `Mocapingest`/
+  `Opsdevice` NON vengono registrati come param remoti. TD-Gaia usa la
+  propria pipeline `Visuals/mocap_bridge`; il pulsante Mocap di Admin qui
+  avrebbe acceso una seconda ingest parallela. Quindi per
+  `td-gaia-macmauro` il pulsante Admin non ha effetto lato TD (atteso).
+  `Mocapport` 7000 → 7010 (7000 è `oscin1`, canale 1), `Mocapingest`
+  off (prima era on ma `oscin_mocap` era spento: non funzionava comunque).
+
+**Fix riportati nel portabile (dev) da TD-Gaia**: il debounce anti
+"disk-write storm" di `gaia_fleet_control.py` (commit `7a15e6b` del
+16/9) mancava nella build portabile: reimportandola sarebbe tornato.
+Reintegrato, più la riscrittura di `devices_table` solo quando il
+contenuto cambia davvero (gli heartbeat identici ogni 30s non fanno più
+ricalcolare le liste collegate). `mocap_lifecycle.py` salta i force-cook
+dei 4 Script CHOP quando l'ingest è spento.
+
+**Per chi reimporta il portabile altrove** (PatchDeck, DMX, ControllerV7,
+Herbarium): dopo `loadTox` l'identità è vuota (hook `pre_release`),
+quindi vanno reimpostati `Deviceid`/`Family`/`Stanza`. Controllare anche
+`Mocapremote` se il progetto ha una sua pipeline mocap. In dev resta da
+spegnere Sync to File su `devices_table` (serve TD aperto su quel
+progetto); nel frattempo il debounce limita le scritture.
+
+**Risposta a "Core, 12" (4 punti su cosa manca al client)**:
+1. `sw_version` — **chiuso**, vedi sopra (`1.1.0`, bump a ogni release).
+   Admin può già leggerlo da status/profile.
+2. Recovery remoto — **chiuso**: nuovo comando canale 4
+   `{"action":"reregister"}` su `gaia/device/{id}/command` (nessun campo
+   `service`/`param`), stesso effetto del pulsante Re-register dentro TD.
+   Verificato dal vivo su `td-gaia-macmauro` (nessun errore, servizi
+   ripopolati, MQTT resta connesso). Arriva sulle altre istanze solo
+   quando ricopiano `gaia_device_agent.py` 1.1.0.
+3. Guardie sugli altri toggle built-in — Canvas Ingest/Device Status NON
+   sono param remoti (non registrati via `register_param`), quindi non
+   hanno il bug della registrazione persa: sono letti dal vivo ad ogni
+   uso. Solo `Mocapingest`/`Opsdevice` sono remoti, e quelli hanno la
+   guardia sullo stato reale del target (fix del 30/9) più il nuovo gate
+   `Mocapremote`.
+4. Aggiornamento remoto del `.tox` — **aperto**. Primo passo fatto
+   (versione visibile). Proposta semplice per Admin: segnalare in rosso le
+   istanze con `sw_version` < ultima nota; l'OTA vero resta la sezione 8.
+
+**Non verificato**: il round-trip del pulsante Mocap di Admin su un
+progetto con `Mocapremote` on (qui è off).
+
 _(Prossime entry: aggiungere qui, datate, con la sessione che le scrive
 tra parentesi — Core o TD/Mac.)_
 
