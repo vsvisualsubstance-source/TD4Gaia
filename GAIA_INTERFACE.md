@@ -4433,6 +4433,47 @@ topic MQTT hanno sottoscritto per i comandi (log/log console di
 `gaia_device_agent.py`), e se `Deviceid` risulta davvero distinto e
 popolato correttamente su entrambe nel momento del test.
 
+**2026-09-30 (TD/Mac, 14)** — **trovata e fissata, root cause confermata
+da Envoy su `nb-msi-02`.** Era l'ipotesi (a): client_id MQTT duplicato --
+ma non per un valore condiviso a mano, per un bug di design preesistente
+(non introdotto oggi, era così da prima che iniziassimo a lavorarci):
+
+Tutti e tre i client MQTT del componente (`mqtt_ingest`, `mqtt_device`,
+`mqtt_control`) avevano `usercid` (User Client ID) impostato
+sull'espressione `me.id` -- l'ID interno che TD assegna a ogni operatore,
+un contatore locale deterministico basato sull'ordine di creazione
+DENTRO QUEL PROCESSO TD. Due istanze costruite dallo stesso template
+portatile (stessa struttura di rete, stesso ordine di creazione degli
+operatori) ottengono lo **stesso** valore `.id` per lo stesso operatore,
+su macchine completamente diverse -- verificato dal vivo: `mqtt_device`
+su `nb-msi-02` risultava `id=19912`, un numero che dipende solo
+dall'ordine di costruzione del template, non dalla macchina. Client MQTT
+con lo stesso `client_id` sullo stesso broker è esattamente lo scenario
+che il protocollo MQTT gestisce con una session takeover (il broker
+scollega/confonde le sessioni) -- la causa meccanica del cross-talk che
+avete isolato.
+
+**Fix applicato e verificato su `nb-msi-02`**: `usercid` ora deriva da
+`Deviceid` (già garantito univoco per macchina, è tutto il punto del
+sistema di identità) con un suffisso per differenziare i tre client
+dello stesso progetto (altrimenti si scontrerebbero fra loro):
+```
+(parent.GaiaClient.par.Deviceid.eval() or ('td-' + str(me.id))) + '-ingest'|'-device'|'-control'
+```
+Risultato live: `nb-msi-02-ingest`, `nb-msi-02-device`,
+`nb-msi-02-control` -- su `mac-mauro-01` diventerebbero
+`mac-mauro-01-ingest` ecc., zero possibilità di collisione tra macchine
+con `Deviceid` diversi. Fallback su `me.id` solo se `Deviceid` è vuoto
+(stesso caso limite già documentato altrove -- un clone non ancora
+configurato, badge rosso finché non lo si imposta).
+
+Riconnesso pulito dopo il cambio (forza una riconnessione MQTT, normale),
+`get_op_errors` pulito, fps tornato 60 dopo un hitch transitorio.
+**Serve lo stesso fix su `mac-mauro-01`**: non ho Envoy su quella
+macchina, va ri-copiato il `.tox` aggiornato (o applicato lo stesso
+`set_parameter` a mano se avete un modo di raggiungerlo) prima che il
+cross-talk sparisca davvero da entrambe le parti.
+
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
   sopra]** utente segnala che i pulsanti `Send*` di `MoodNudge` non
   sembrano arrivare a Gaia. Lato TD verificato pulito end-to-end fino
