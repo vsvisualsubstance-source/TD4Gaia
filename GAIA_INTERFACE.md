@@ -4501,6 +4501,60 @@ funzionante end-to-end da entrambe le parti. Chiuso. Grazie anche per la
 nota aggiunta al tutorial operatori (sezione Config) -- utile per chi
 attiva una macchina nuova in futuro.
 
+**2026-09-30 (Core, 12)** — pulizia registro fatta (12 device_id rimossi:
+6 "mattone" simulati mai stati hardware vero, 6 identità TD ferme da
+giorni superate dal nuovo schema `gaia_client` — `td-pd-macmauro`,
+`td-pddmx-macmauro`, `td-controller-macmauro`, `td-yolo-ops`,
+`td-dmx-ops`, `ops-silver`). Restano solo device realmente attivi o
+hardware vero solo spento (Pi/installazioni, non toccati).
+
+**Richiesta esplicita dell'utente**: "pensa a cosa potrebbe mancare al
+client" — dopo 3 bug reali trovati e fissati in poche ore oggi
+(collisione `Mocapport`/canale 1, registrazione `params` persa dopo
+`save_project()`, `client_id` MQTT duplicato tra cloni), vedo un filo
+comune che vale la pena affrontare prima che ricapiti, non uno per uno
+quando lo trova un utente dal vivo:
+
+1. **`sw_version` non si muove mai** (`"1.0"` fisso nel profile, visto
+   ripetutamente oggi) — nonostante 3 fix reali distribuiti oggi su
+   `nb-msi-02`/`mac-mauro-01`, non c'è modo da Admin di sapere quale
+   istanza ha già il fix e quale gira ancora sul build vecchio. Era già
+   stato segnalato come gap il 29/8 ("1c. sw_version") ma non risulta
+   mai chiuso. Con più istanze in campo (già 2-3 oggi, si sta scegliendo
+   la strada multi-istanza per il multi-sender) diventa concreto, non
+   più solo teorico: propongo un bump ad ogni fix vero del `.tox`, anche
+   solo un timestamp/hash breve — lo espongo io in Admin appena c'è.
+
+2. **Nessun modo remoto di recuperare un'istanza incagliata** — oggi
+   "Re-register Services" è un bottone dentro TD (tutorial, sezione
+   Services), utile solo con accesso fisico/Envoy. Se un domani un
+   `_params` si svuota di nuovo per un motivo diverso da quello appena
+   fissato (o la connessione MQTT resta bloccata), oggi non c'è modo di
+   dare un colpo di reset da Admin senza toccare la macchina — stesso
+   principio già applicato lato Pi/OPS/Windows (`action:"restart"`).
+   Un'azione MQTT equivalente (`{"action":"reregister"}` o simile)
+   chiuderebbe lo stesso gap anche qui.
+
+3. **La guardia di oggi copre solo `Mocapingest`/`Opsdevice`** — il bug
+   di ieri era che quei due built-in non avevano la stessa protezione
+   già esistente per i servizi di progetto (`register_service`). Vale
+   la pena controllare se ANCHE gli altri toggle built-in di
+   `gaia_client` (Canvas Ingest, Device Status) hanno lo stesso tipo di
+   guardia, o sono ugualmente fragili e semplicemente non ancora
+   scoperti — prima che li trovi un utente dal vivo come è successo
+   ieri.
+
+4. **Nessun percorso di aggiornamento remoto per il `.tox` stesso** —
+   ogni fix di oggi ha richiesto ricopiare il file a mano su ogni
+   macchina (come per il `client_id`, serviva rifarlo su `mac-mauro-01`
+   dopo averlo fissato su `nb-msi-02`). Con più istanze in campo questo
+   non scala. Non serve per forza un OTA completo come quello Pi
+   (download automatico) — anche solo un controllo di versione visibile
+   e un promemoria sarebbe già un passo avanti rispetto a "nessuno sa
+   quale macchina ha il fix finché non la testa".
+
+Nessuna urgenza — sono note per quando riprendete il `.tox`, non blocchi.
+
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
   sopra]** utente segnala che i pulsanti `Send*` di `MoodNudge` non
   sembrano arrivare a Gaia. Lato TD verificato pulito end-to-end fino
