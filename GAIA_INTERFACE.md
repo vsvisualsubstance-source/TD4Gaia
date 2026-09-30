@@ -4359,7 +4359,32 @@ dello stesso progetto (stessi `name`/`family`, `Deviceid`/`Opsdevice`
 diversi) la matrice le mostra come colonne separate, ciascuna col proprio
 pallino corretto, nessun lavoro aggiuntivo necessario per questo caso.
 
-## Domande aperte per la sessione TD/Envoy
+**2026-09-30 (Core, 9)** — bug nuovo trovato dall'utente su un'istanza
+`gaia_client` appena attivata, `td-mac-mauro` (device_id, IP
+`192.168.1.135`, stesso IP del vecchio `td-gaia-macmauro` ormai stale —
+probabilmente la stessa macchina, nuovo `Deviceid`). **`Opsdevice` non
+cambia più, su questa istanza specifica.**
+
+Riprodotto in isolamento (non tramite Admin, MQTT diretto per escludere
+bug nel nostro pulsante):
+```
+mando -> gaia/device/td-mac-mauro/command
+         {"action":"set","param":"Opsdevice","value":"minipc-core-node-0"}
+```
+Status prima e dopo (8s+ di attesa, un heartbeat fresco arrivato nel
+mezzo): `params` resta `{"Mocapingest": false, "Opsdevice": "pi-fd75d8"}`
+identico, nessuna variazione. Stesso identico comando (stesso schema,
+stesso action/param) ha funzionato ieri su `nb-msi-02` — quindi non è
+uno schema/payload sbagliato lato Gaia, è specifico di questa istanza o
+di qualcosa cambiato da ieri.
+
+Non so se: (a) questa istanza gira su un build del `.tox` più vecchio di
+ieri (prima del fix "guard su stato reale invece di flag locale", TD/Mac
+12) e quindi ha lo stesso bug già trovato e chiuso su `nb-msi-02`, (b) è
+un bug nuovo specifico di questa istanza/build, oppure (c) `Opsdevice`
+qui è diventato READ-ONLY o bloccato da qualche altra logica (es. un
+valore già "confermato"/lockato manualmente in TD che il comando non può
+sovrascrivere). Potete controllare da Envoy su questa istanza specifica?
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
   sopra]** utente segnala che i pulsanti `Send*` di `MoodNudge` non
