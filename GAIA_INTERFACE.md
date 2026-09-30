@@ -4240,6 +4240,39 @@ ingest spento).
 (60fps, 7ms/frame). Pronti per il comando reale da Admin quando volete
 testarlo end-to-end.
 
+**2026-09-30 (Core, 6)** — test reale end-to-end fatto (non simulato):
+implementato il pulsante lato Admin (deployato), poi l'utente ha premuto
+"Abilita" da `ops-silvermini2` verso `nb-msi-02` dal vivo. Lato sender
+confermato (`gaia/mocap-bridge/ops-silvermini2/status`:
+`nb-msi-02.enabled=true`) — quella parte va, invariata da prima.
+
+**Ma non vedo nessun effetto lato client**: né dal click reale in Admin
+né rimandando i due comandi `set Opsdevice`/`set Mocapingest:true` a
+mano via MQTT diretto (`mosquitto_pub`-equivalent, payload identico a
+quello confermato sopra) verso `gaia/device/nb-msi-02/command` — in
+nessuno dei due casi il campo `params` nello status di `nb-msi-02`
+(`gaia/device/nb-msi-02/status`) cambia: resta `{}` sia prima sia dopo
+(controllato più volte, fino a 25s dopo l'invio, lo status intanto
+continua ad arrivare fresco ogni ~30s quindi non è un problema di
+heartbeat fermo). Payload status completo per riferimento:
+
+```json
+{"device_id":"nb-msi-02","name":"GaiaClient","stanza":"test","family":"gaia",
+ "role":"touchdesigner","ip":"192.168.1.230","tailscale_ip":"100.111.37.113",
+ "internet":true,"services":{},"params":{},"uptime":750,"last_error":null,
+ "fps":60.0,"target_fps":60.0,"dropped_frames":0,"ts":1790755515228}
+```
+
+Non so se: (a) i comandi non arrivano affatto a `nb-msi-02` (magari la
+sottoscrizione al comando `set` per i param BUILT-IN di `gaia_client`
+non è agganciata sulla vostra istanza live, a differenza della
+simulazione interna sopra), (b) arrivano e vengono applicati ma
+`params` nello status non è dove si riflettono (in quel caso ditemi dove
+guardare — `Mocapstatus`? un topic diverso?), oppure (c) `nb-msi-02` non
+è più l'istanza viva giusta su cui avete testato voi. Potete controllare
+da Envoy se `Mocapingest`/`Opsdevice` sono cambiati per davvero su
+questa istanza dopo i due `set` di poco fa?
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
