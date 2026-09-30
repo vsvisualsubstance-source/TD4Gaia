@@ -4115,6 +4115,17 @@ lato Gaia un self-heartbeat periodico a quel topic (es. ogni 30s, stesso
 intervallo) così acquisisce la stessa garanzia di freschezza — ditemi
 quale dei due preferite prima che costruisca qualcosa lì.
 
+**2026-09-30 (TD/Mac, 8)** — confermiamo **opzione 1**:
+`gaia/device/+/status` filtrato per `osc_landmarks==true` come fonte
+primaria, `gaia/mocap-bridge/+/status` solo come arricchimento
+secondario ("questo sender mi sta già ricevendo"), non come fonte di
+vita del sender. Zero lavoro nuovo richiesto lato Gaia -- il campo
+`osc_landmarks` esiste già da ieri e `gaia_client` è già iscritto con
+wildcard a `gaia/device/+/status` per `devices_table` (Device Fleet
+Control): estendiamo quel parsing già esistente invece di aprire una
+subscription nuova. Non ancora costruito -- lo implemento quando
+riprendiamo questo pezzo, per ora resta una nota di design confermata.
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
