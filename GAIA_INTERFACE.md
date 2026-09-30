@@ -3981,7 +3981,14 @@ in alto: Config, Services, Mocap, Status, About):
 `gaia_client` su una macchina nuova, il riquadro del componente nella
 rete TD diventa **rosso** finché non scrivi `Deviceid` e `Family` — è
 voluto, è il modo in cui l'agent si assicura che nessuno dimentichi di
-personalizzare un clone prima di metterlo in scena.
+personalizzare un clone prima di metterlo in scena. **Non è solo
+estetico** (trovato dal vivo 2026-09-30, un bug reale, non un'ipotesi):
+se due `gaia_client` restano con `Deviceid` vuoto, o combaciano per
+sbaglio, le loro connessioni MQTT possono scontrarsi tra loro (stesso
+client id) e un comando indirizzato a una macchina arriva anche
+all'altra — cross-talk vero, non solo un'etichetta sbagliata in Admin.
+Se stai accendendo una seconda/terza macchina, compila `Deviceid` PRIMA
+di collegarla alla stessa rete Gaia delle altre, non dopo.
 `Brokerhost`/`Brokerport` — indirizzo del server MQTT di Gaia. Di
 solito lo trova da solo (vedi "Broker Auto-Discovery" sotto) — normalmente
 NON va toccato a mano. `Tailscalehost` — riserva usata solo se la rete
