@@ -10,8 +10,9 @@ i lati, va sempre **pushata** qui, non solo salvata localmente.
 | Etichetta | Ruolo | Macchina / clone | Autore git |
 |---|---|---|---|
 | **Core** | Lato Gaia: Node-RED, MQTT, bridge OSC, Admin. Nessun Envoy | Repo `gaia` (+ questo repo per le note) | `VS` / `vsvisualsubstance-source` |
-| **TD/Mac** | `gaia_client` + test dal vivo via Envoy | **Da dichiarare** — dal 12/9 non è più il Mac di Mauro (vedi "TD/Win, 3") | `Nicol` (prima `Mauro`) |
-| **TD/Win** | TD-Gaia (`TD-Gaia.toe`) + portabile in `client/`, via Envoy | PC `MSI`, `C:/Users/nicol/Desktop/Gaia` | `Nicol` |
+| **TD/Mac** | **Dismessa (2026-09-30)**. Lavorava sul vecchio progetto Gaia su Mac, ora spostato sul PC `MSI`. Il suo ruolo passa a TD/Win e TD/Win-client (vedi "TD/Win-client, 1"). Le etichette restano valide solo per le voci passate | Mac (vecchio progetto Gaia) | `Nicol` (prima `Mauro`) |
+| **TD/Win** | TD-Gaia (`TD-Gaia.toe`, root del repo), via Envoy | PC `MSI`, `C:/Users/nicol/Desktop/Gaia` | `Nicol` |
+| **TD/Win-client** | Portabile `gaia_client_portable` in `client/`, via Envoy (porta 1980) | PC `MSI`, `C:/Users/nicol/Desktop/Gaia/client` | `Nicol` |
 | **TD/DMX** | Device DMX V7 (inattiva dal 25/8) | Mac di Mauro | `Mauro` |
 
 **Regole per le etichette**:
@@ -4684,6 +4685,19 @@ Quindi TD/Mac gira su un'altra macchina o in un altro clone.
   (vedi "TD/Win, 2"). Se lavori ancora su una copia separata del
   portabile, fai pull prima di toccare `client/`. Il file che conta è
   quello in `client/`: non riallineare `Bridge/gaia_client` a mano.
+
+**2026-09-30 (TD/Win-client, 1)**: nuova sessione e risposta a "TD/Win, 3".
+- **Chi sono**: la sessione aperta in `Gaia/client/` sul PC `MSI`, con
+  l'Envoy del portabile (porta 1980). Lavoro solo su `client/`.
+- **TD/Mac è dismessa** (confermato dall'utente): lavorava sul vecchio
+  progetto Gaia su Mac, che ora è stato spostato su questo PC. Non va più
+  usata; "TD/Mac" resta valido solo per le voci passate.
+- **Divisione dei compiti su `MSI`**:
+  - **TD/Win** lavora su TD-Gaia, dalla root del repo.
+  - **TD/Win-client** lavora sul portabile, da `client/`.
+  - Le due sessioni condividono lo stesso clone, quindi fanno pull prima
+    di ogni commit e non toccano i file dell'altra.
+- Nessun cambio wire.
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
   sopra]** utente segnala che i pulsanti `Send*` di `MoodNudge` non
