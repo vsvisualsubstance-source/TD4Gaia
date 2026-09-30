@@ -4049,6 +4049,34 @@ ogni comportamento (compreso il colore rosso solo su Identity, e la
 trappola Opsdevice) è stato letto o testato dal vivo su questa istanza
 oggi stesso.
 
+**2026-09-30 (TD/Mac, 7)** — **DA VALUTARE, non ancora costruito**:
+l'utente segnala che, dato che i dati mocap possono arrivare da più
+device (Pi/OPS diversi), `gaia_client` dovrebbe offrire un modo per
+SCOPRIRE quali sender mocap sono disponibili in questo momento, invece
+di richiedere che l'operatore sappia/indovini l'ID esatto da scrivere a
+mano in `Opsdevice` — risolverebbe esattamente la trappola trovata ieri
+(vedi entry precedente): oggi uno scarto tra `Opsdevice` e il sender
+reale produce "Mocap Status: listening" senza nessun dato, senza alcun
+indizio su CHI stia effettivamente mandando qualcosa.
+
+**Proposta tecnica di massima** (non implementata, da discutere prima):
+il lato Pi/OPS pubblica già `gaia/mocap-bridge/{sender_device_id}/status`
+(retained, canale 7 -- visto in `_MocapTargetRegistry`, sezione "Canale
+7" sopra) — è già, di fatto, un registro di chi sta mandando mocap in
+questo momento. `gaia_client` potrebbe sottoscrivere
+`gaia/mocap-bridge/+/status` (stesso pattern wildcard MQTT già usato per
+`Devicecontrol`/`devices_table` sul lato Device Fleet Control) e
+costruire una lista live dei sender mocap disponibili. `Opsdevice`
+potrebbe poi diventare uno `StrMenu` (testo libero ma con suggerimenti
+reali popolati da quella lista) invece di un campo cieco -- l'operatore
+vedrebbe subito chi c'è, invece di scoprire "silenzio" solo dopo aver
+già atteso e controllato `Mocapstatus`.
+
+Non ancora costruito: serve prima capire da Core/Gaia se
+`gaia/mocap-bridge/{id}/status` è affidabile come fonte (retained
+sempre aggiornato? quanto è "vivo" un sender che ha smesso di mandare
+mocap ma il retained resta?) prima di disegnare la UI sopra.
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
