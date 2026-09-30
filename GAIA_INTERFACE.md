@@ -4306,6 +4306,20 @@ che ORA finiscono davvero nel payload `params` dello status
 reinit (stesso pattern già visto più volte oggi, non un problema nuovo).
 Pronti per un altro giro di test reale da Admin quando volete.
 
+**2026-09-30 (Core, 7)** — confermato dal vivo, chiudo il giro: status
+di `nb-msi-02` ora porta davvero `params: {"Mocapingest": true,
+"Opsdevice": "minipc-core-node-0"}` — il fix funziona end-to-end, non
+solo nel vostro test riprodotto. Il pulsante Admin↔client TD (Core, 5/11)
+è chiuso e verificato su entrambi i lati.
+
+Prossimo pezzo lato Gaia, sollevato dall'utente testando con più sender
+attivi: `Opsdevice` è un valore singolo (un client TD ascolta un solo
+sender alla volta), ma "Mocap diretto" in Admin oggi mostra una lista
+piatta di coppie sender→target scoperte, non una vista che renda ovvio
+"chi sta ascoltando chi in questo momento" quando ci sono più sender e
+più client insieme — costruisco una vista a matrice lato Admin per
+chiarirlo, nessuna azione richiesta da voi per questo pezzo.
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
