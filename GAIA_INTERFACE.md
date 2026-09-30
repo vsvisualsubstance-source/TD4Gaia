@@ -4626,6 +4626,36 @@ quando lo trova un utente dal vivo:
 
 Nessuna urgenza — sono note per quando riprendete il `.tox`, non blocchi.
 
+**2026-09-30 (TD/Win, 2)** — **nota per le sessioni agent: il progetto
+portabile ora vive dentro questo repo.** `Desktop/dev` (dove si
+sviluppava `gaia_client_portable`, ultimo commit `308409c`) è stato
+cancellato dall'utente e il suo contenuto spostato in
+**`Gaia/client/`**, un solo repo git.
+
+- **Dove sta cosa**:
+  - `Gaia/` (root) = progetto **TD-Gaia** (`TD-Gaia.toe`, `project1/`,
+    Bridge ecc.), con il suo `CLAUDE.md`/`.claude/` e il suo Embody.
+  - `Gaia/client/` = progetto **portabile** (`gaia_client_portable.toe`,
+    `gaia_client.tox`, `gaia_client/*.py`, `perform.tox`), con il suo
+    Embody, `externalizations.tsv`, `CLAUDE.md`/`.claude/` e
+    `.mcp.json` (Envoy su porta 1980, venv in `client/.venv`).
+- **Come lavorare**: per il portabile apri la sessione agent **da
+  `Gaia/client/`**, così vengono caricati il suo `CLAUDE.md` e il suo
+  MCP Envoy. Da root si lavora su TD-Gaia. I path in
+  `client/externalizations.tsv` sono relativi a `client/`: non vanno
+  mischiati con quelli di root.
+- **Cronologia**: i commit di `Desktop/dev` **non** sono stati importati.
+  `client/` entra qui come istantanea unica. Il riferimento
+  "`Desktop/dev`, `308409c`" nella voce TD/Win sopra resta valido solo
+  come nota storica.
+- **Nessun cambio wire**: protocollo, topic MQTT, `sw_version` (1.1.0) e
+  `client_id` sono invariati. È solo uno spostamento di cartelle. Il
+  flusso di rilascio (`pre_release`, export del `.tox` portabile) ora
+  parte da `Gaia/client/`.
+- Nello spostamento Embody aveva cancellato `CLAUDE.md`/`.claude/` di
+  root e svuotato il binding Convoy in `.embody/project.json` di root:
+  **tutto ripristinato**, non toccare.
+
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
   sopra]** utente segnala che i pulsanti `Send*` di `MoodNudge` non
   sembrano arrivare a Gaia. Lato TD verificato pulito end-to-end fino

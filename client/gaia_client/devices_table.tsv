@@ -1,0 +1,43 @@
+device_id	name	stanza	role	service	state	offline
+install-msi-02	test	test	installation		unknown	False
+installation-vs-mini-silver	palazzo-ducale	palazzo-ducale	installation	madmapper	active	False
+installation-vs-mini-silver	palazzo-ducale	palazzo-ducale	installation	madmapper_bridge	active	False
+mac-mauro-01	GaiaClient-mac	test	touchdesigner		unknown	True
+madmapper-VS-mini-silver	MadMapper	palazzo-ducale	device		unknown	False
+minipc-core-node-0	core	salotto	core	mediaplayer	inactive	False
+minipc-core-node-0	core	salotto	core	kiosk	inactive	False
+minipc-core-node-0	core	salotto	core	yolo	inactive	False
+minipc-core-node-0	core	salotto	core	mediapipe	active	False
+minipc-core-node-0	core	salotto	core	scene	active	False
+minipc-core-node-0	core	salotto	core	mosquitto	active	False
+minipc-core-node-0	core	salotto	core	qdrant	active	False
+minipc-core-node-0	core	salotto	core	ollama	inactive	False
+minipc-core-node-0	core	salotto	core	openhab	active	False
+nb-msi-02	GaiaClient-Win	test	touchdesigner		unknown	False
+ops-silvermini2	ops	soggiorno	ops	camera	active	False
+ops-silvermini2	ops	soggiorno	ops	yolo	inactive	False
+ops-silvermini2	ops	soggiorno	ops	mediapipe	active	False
+ops-silvermini2	ops	soggiorno	ops	voice	inactive	False
+ops-silvermini2	ops	soggiorno	ops	kiosk	inactive	False
+ops-silvermini2	ops	soggiorno	ops	mediaplayer	inactive	False
+ops-silvermini2	ops	soggiorno	ops	touchdesigner	inactive	False
+ops-silvermini2	ops	soggiorno	ops	touchdesigner_herbarium	inactive	False
+ops-silvermini2	ops	soggiorno	ops	touchdesigner_yolo	inactive	False
+ops-silvermini2	ops	soggiorno	ops	ollama	active	False
+pi-fd75d8	Ingresso	ingresso	pi	yolo	active	False
+pi-fd75d8	Ingresso	ingresso	pi	mediapipe	active	False
+pi-fd75d8	Ingresso	ingresso	pi	voice	inactive	False
+pi-fd75d8	Ingresso	ingresso	pi	camera	active	False
+pi-fd75d8	Ingresso	ingresso	pi	screen	inactive	False
+pi-fd75d8	Ingresso	ingresso	pi	kiosk	inactive	False
+pi-fd75d8	Ingresso	ingresso	pi	mediaplayer	inactive	False
+pi-fd75d8	Ingresso	ingresso	pi	herbarium	inactive	False
+pi-fd75d8	Ingresso	ingresso	pi	herbsim	inactive	False
+pi-fd75d8	Ingresso	ingresso	pi	herbmp	inactive	False
+pi-fd75d8	Ingresso	ingresso	pi	livestream	inactive	False
+solaro-qr1	Solaro QR1-UC		device		unknown	False
+tccm-ceiling	TCC M (Sennheiser)	zona-giorno	device		unknown	False
+td-gaia-macmauro	Gaia Agent	studio	touchdesigner	osc_in	active	False
+td-gaia-macmauro	Gaia Agent	studio	touchdesigner	render	active	False
+td-gaia-macmauro	Gaia Agent	studio	touchdesigner	dmx_out	inactive	False
+td-gaia-macmauro	Gaia Agent	studio	touchdesigner	mocap_bridge	active	False
