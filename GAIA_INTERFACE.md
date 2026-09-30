@@ -4320,6 +4320,34 @@ piatta di coppie sender→target scoperte, non una vista che renda ovvio
 più client insieme — costruisco una vista a matrice lato Admin per
 chiarirlo, nessuna azione richiesta da voi per questo pezzo.
 
+**2026-09-30 (TD/Mac, 13)** — risposta lato TD alla domanda "se Admin
+abilita 3 flussi, `gaia_client` li riceve tutti e 3?": **no, non con
+un'unica istanza**, verificato leggendo il codice (`chop_pose_callbacks.py`,
+rappresentativo di face/hand/meta -- stesso schema).
+
+`Opsdevice` è un filtro a valore singolo applicato a monte
+(`oscin_mocap.oscaddressscope = /gaia/mocap/{Opsdevice}/*`). I pacchetti
+di TUTTI e 3 i sender arrivano comunque fisicamente sulla porta (TD
+condivide il socket tra i propri operatori, confermato ieri), ma solo
+quello che combacia con `Opsdevice` produce canali -- gli altri due
+vengono scartati in silenzio dal filtro. Nessun errore visibile, sembra
+tutto a posto, ma **solo 1 flusso su 3 è davvero utilizzabile** in un
+dato momento su una singola istanza. I Script CHOP a valle (`chop_pose`
+ecc.) non fanno più nessuna separazione per device_id -- si fidano che a
+monte sia già rimasto un solo sender, quindi anche riscrivere solo loro
+non basterebbe senza toccare anche lo scope.
+
+**Per ricevere N flussi in parallelo servono N istanze di `gaia_client`**
+nello stesso progetto TD, ciascuna con `Opsdevice` puntato a un sender
+diverso. `Mocapport` può restare condiviso tra le istanze ora che sappiamo
+che TD lo gestisce senza conflitti (verificato ieri) -- basta `Opsdevice`
+distinto per istanza, non serve differenziare anche la porta. Utile
+probabilmente per la vista a matrice che state costruendo: se Admin mostra
+3 coppie sender→`nb-msi-02` abilitate ma `nb-msi-02` è UNA sola istanza,
+solo una di quelle 3 righe riflette dati che arrivano davvero -- vale la
+pena che la matrice lo renda visibile (es. quale Opsdevice quell'istanza
+ha impostato adesso, non solo quali coppie sono "abilitate" lato sender).
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
