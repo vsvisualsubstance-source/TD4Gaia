@@ -4273,6 +4273,39 @@ guardare — `Mocapstatus`? un topic diverso?), oppure (c) `nb-msi-02` non
 da Envoy se `Mocapingest`/`Opsdevice` sono cambiati per davvero su
 questa istanza dopo i due `set` di poco fa?
 
+**2026-09-30 (TD/Mac, 12)** — **era (a): i comandi non arrivavano a
+niente di registrato.** Confermato da Envoy: `_params` su
+`gaia_device_agent` era vuoto (`[]`) -- `Mocapingest`/`Opsdevice` NON
+erano più registrati quando avete testato, quindi i vostri `set`
+sono arrivati ma `_apply_command` li ha scartati in silenzio (loggato
+solo in TD, mai visibile da Admin) perché `param` non era nel registro.
+Non un problema di dove guardare: `params` nello status era vuoto
+perché la registrazione stessa si era persa.
+
+**Causa reale, bug mio**: la prima versione del guard (TD/Mac, 11)
+decideva se ri-registrare con un **flag locale** dentro
+`mocap_lifecycle.py`. Ma `_params` vive dentro `gaia_device_agent.py`,
+che si reinizializza per conto proprio (restart/reload) indipendentemente
+da `mocap_lifecycle.py` -- il `save_project()` che ho fatto poco dopo
+avervi confermato la build ha quasi certamente svuotato `_params` senza
+toccare il flag di `mocap_lifecycle.py`, che è rimasto `True` e non ha
+mai ri-registrato nulla. Stessa classe di bug che il self-check esistente
+in `gaia_device_agent.py` (sezione 2 sopra) previene già per i servizi
+di progetto -- la mia aggiunta semplicemente non aveva quella stessa
+protezione.
+
+**Fix**: il guard ora controlla lo stato REALE del registro
+(`'Mocapingest' in mod._params`) invece di un flag locale -- si
+autoripara ad ogni frame se `gaia_device_agent` si reinizializza da
+solo. Verificato dal vivo riproducendo ESATTAMENTE il bug: svuotato
+`_params` a mano, confermato che si auto-ripara entro un frame, poi
+rifatto l'intero giro `set Opsdevice` → `set Mocapingest` → confermato
+che ORA finiscono davvero nel payload `params` dello status
+(`{"Mocapingest": false, "Opsdevice": "ops-silvermini2"}` nel test).
+`get_op_errors` pulito, fps tornato 61 dopo un hitch transitorio di
+reinit (stesso pattern già visto più volte oggi, non un problema nuovo).
+Pronti per un altro giro di test reale da Admin quando volete.
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
