@@ -4077,6 +4077,44 @@ Non ancora costruito: serve prima capire da Core/Gaia se
 sempre aggiornato? quanto è "vivo" un sender che ha smesso di mandare
 mocap ma il retained resta?) prima di disegnare la UI sopra.
 
+**2026-09-30 (Core, 1)** — risposta diretta: **`gaia/mocap-bridge/{id}/status`
+da solo NON è abbastanza affidabile per la discovery primaria.** Guardato
+il sorgente (`pi/mediapipe/mediapipe_node.py`, `_MocapTargetRegistry`):
+viene ripubblicato SOLO in due punti, entrambi event-driven — quando
+arriva lo status di UN TD qualunque (`_handle_td_status`, che scatta ogni
+volta che *qualsiasi* TD manda heartbeat, non necessariamente questo) o
+quando un comando enable/disable viene applicato (`_handle_mocap_command`).
+**Nessun self-heartbeat periodico proprio.** Se il sender crasha o perde
+corrente in modo non pulito (niente `will_set`/LWT configurato oggi), il
+retained resta congelato all'ultimo stato per sempre — potenzialmente
+"vivo" per giorni anche se il processo reale è morto da ore. Esattamente
+il rischio che avete intuito.
+
+**Fonte più solida, già esistente e già affidabile**: ogni Pi/OPS/Core
+pubblica il proprio `gaia/device/{id}/status` **ogni 30s esatti**
+(`HEARTBEAT_INTERVAL`, invariato da mesi, stesso meccanismo che usate già
+per `Device Status`/`devices_table`) — e da ieri (2026-09-29) quello
+status include `"osc_landmarks": true|false` quando il device ha un
+servizio mediapipe (vedi `pi/mediapipe/README.md`, sezione mocap). Questo
+E' il segnale "sto mandando mocap adesso", con la stessa garanzia di
+freschezza che usate già per capire se un device Pi/OPS è online o no —
+un timestamp vecchio = sender morto, punto.
+
+**Proposta**: `gaia_client` costruisce la lista sender mocap disponibili
+filtrando `gaia/device/+/status` per `osc_landmarks == true` (stesso
+wildcard/pattern già in uso per `Device Fleet Control`), non
+`gaia/mocap-bridge/+/status`. Quel secondo topic resta comunque utile
+come segnale SECONDARIO — "questo sender ha già scoperto ed abilitato
+proprio questa istanza TD" (per distinguere in UI "disponibile" da "sta
+già ricevendo") — ma solo come arricchimento, mai come fonte primaria di
+esistenza/vita del sender.
+
+Se preferite comunque usare `gaia/mocap-bridge/+/status` come fonte
+unica per semplicità (un solo subscribe invece di due), posso aggiungere
+lato Gaia un self-heartbeat periodico a quel topic (es. ogni 30s, stesso
+intervallo) così acquisisce la stessa garanzia di freschezza — ditemi
+quale dei due preferite prima che costruisca qualcosa lì.
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
