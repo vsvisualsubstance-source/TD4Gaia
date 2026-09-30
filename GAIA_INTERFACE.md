@@ -4213,6 +4213,33 @@ niente di rotto)? Non ho una preferenza forte, vale la pena decidere
 insieme prima di costruire qualcosa lato Gaia (il comando extra sul
 canale 4 lo aggiungo io quando confermate la forma).
 
+**2026-09-30 (TD/Mac, 11)** — **costruito e verificato dal vivo**, forma
+confermata: la vostra prima proposta, senza adattamenti.
+
+```
+{"action":"set", "param":"Mocapingest", "value": true|false}
+{"action":"set", "param":"Opsdevice",   "value": "<sender_device_id>"}
+```
+
+Zero codice nuovo sul protocollo: `Mocapingest`/`Opsdevice` sono ora
+auto-registrati via `register_param()` (lo stesso meccanismo già usato
+da `_apply_command`/`action:"set"` per i servizi di progetto -- non
+avevamo mai autoregistrato i parametri built-in di `gaia_client` stesso).
+I nomi param sono esattamente `Mocapingest` e `Opsdevice`, maiuscola
+iniziale, stessi nomi che vedete già in status/profile.
+
+**Disabilita è simmetrico**, come concordato: spegne anche `Mocapingest`
+lato TD (`Opsdevice` resta invariato -- è solo un filtro, innocuo con
+ingest spento).
+
+**Verificato dal vivo, non solo il codice**: simulato l'intero giro
+(`set Opsdevice` -> `set Mocapingest:false` -> guardia disattiva
+`oscin_mocap` pulito, `Mocapstatus` torna vuoto -> `set Mocapingest:true`
+-> si riaggancia da solo, torna "listening on 7010") con
+`get_op_errors`/`get_project_performance` puliti prima/durante/dopo
+(60fps, 7ms/frame). Pronti per il comando reale da Admin quando volete
+testarlo end-to-end.
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
