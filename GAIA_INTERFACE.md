@@ -4165,6 +4165,54 @@ propone entrambi nel menu ("minipc-core-node-0 (salotto)",
 (TD/Mac, 9 sopra) è verificata end-to-end con la configurazione reale a
 regime, non solo con un singolo sender di test.
 
+**2026-09-30 (Core, 5)** — proposta nuova, diversa dalla discovery sopra
+(quella risolve "che sender scrivo in `Opsdevice`", questa risolve un
+problema successivo trovato dal vivo dall'utente testando il pulsante
+"🎭 Mocap diretto" in Admin, sezione Pi Devices).
+
+**Il problema**: oggi Admin e `gaia_client` sono due interruttori
+scollegati, entrambi necessari perché il mocap arrivi DAVVERO:
+1. Admin → "Abilita" pubblica `gaia/mocap-bridge/{sender}/command`
+   `{"device_id":"<td_id>","action":"enable"}` — il SENDER (Pi/OPS/Core)
+   comincia a mandare pacchetti OSC veri verso quel target. Tutto qui,
+   non tocca in nessun modo il lato TD.
+2. Dentro TD, separatamente, l'operatore deve impostare a mano
+   `Mocapingest=ON` + `Opsdevice` = esattamente il device_id del sender
+   (`Mocapport` ora si autoallinea, discorso chiuso sopra).
+
+Se uno dei due manca, "Abilita" in Admin non produce nessun effetto
+visibile lato TD, e viceversa — è la stessa "trappola" già documentata
+ieri (Opsdevice sbagliato → "listening" ma zero dati), solo vista dal
+lato opposto: oggi premere il pulsante in Admin non garantisce che
+qualcuno stia davvero ascoltando dall'altra parte, e l'operatore Admin
+non ha modo di saperlo da lì.
+
+**Proposta**: quando "Abilita" viene premuto in Admin, oltre al comando
+al sender (invariato), mandiamo ANCHE un comando diretto al client TD
+sul suo canale 4 esistente (`gaia/device/{td_id}/command`, stesso
+transport già usato per `register_param`/`action:"set"`) per impostare
+da soli `Mocapingest=true` + `Opsdevice=<sender_device_id>` — un solo
+click in Admin, zero passaggi manuali dentro TD. Schema payload
+proposto (adattate pure ai vostri nomi param interni, note qui sono solo
+indicativi):
+```
+{"action":"set", "param":"Mocapingest", "value": true}
+{"action":"set", "param":"Opsdevice",   "value": "<sender_device_id>"}
+```
+oppure un singolo comando cumulativo se preferite, es.
+`{"action":"set_mocap_source","device_id":"<sender_device_id>"}` — a voi
+la forma più comoda da ricevere lato `.tox`, lo schema esatto lo
+adattiamo insieme.
+
+**Domanda aperta su "Disabilita"**: quando l'operatore disabilita da
+Admin, ha senso spegnere anche `Mocapingest` lato TD (simmetrico), o
+meglio lasciarlo acceso e limitarsi a fermare l'invio lato sender (visto
+che `Opsdevice` sembra un valore singolo, non una lista — un TD in
+ascolto senza nessun sender attivo semplicemente non riceve nulla,
+niente di rotto)? Non ho una preferenza forte, vale la pena decidere
+insieme prima di costruire qualcosa lato Gaia (il comando extra sul
+canale 4 lo aggiungo io quando confermate la forma).
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
