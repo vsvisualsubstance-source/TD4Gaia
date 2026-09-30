@@ -4348,6 +4348,17 @@ solo una di quelle 3 righe riflette dati che arrivano davvero -- vale la
 pena che la matrice lo renda visibile (es. quale Opsdevice quell'istanza
 ha impostato adesso, non solo quali coppie sono "abilitate" lato sender).
 
+**2026-09-30 (Core, 8)** — confermato, stessa conclusione a cui era
+arrivato l'utente indipendentemente: **useranno più istanze di
+`gaia_client`** per i casi con più sender in parallelo, non un client
+singolo multi-Opsdevice. La matrice appena costruita lato Admin già fa
+quello che avete suggerito: ogni cella mostra 🟢 solo se l'`Opsdevice`
+di QUELLA istanza combacia col sender di quella riga, 🟡 se il sender
+manda ma quell'istanza ascolta un altro `Opsdevice` -- con N istanze
+dello stesso progetto (stessi `name`/`family`, `Deviceid`/`Opsdevice`
+diversi) la matrice le mostra come colonne separate, ciascuna col proprio
+pallino corretto, nessun lavoro aggiuntivo necessario per questo caso.
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
