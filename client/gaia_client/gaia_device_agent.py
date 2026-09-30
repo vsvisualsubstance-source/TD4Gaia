@@ -82,11 +82,15 @@ import time
 # up to 2026-09-29; 1.1.0 = tailscale_ip/internet, broadcast beacon,
 # per-device MQTT client_id, mocap remote control + sender discovery;
 # 1.2.0 = stable output connectors (soul, mocap, status, words, word, thought).
-SW_VERSION = "1.2.0"
+# 1.2.1 = _self_check ignores gaia_client's own built-in params (Mocapingest/
+#         Opsdevice): with them registered the project registrar never ran
+#         (PatchDeck showed 0 services after upgrading to 1.2.0).
+SW_VERSION = "1.2.1"
 
 _START_TS = time.time()
 _services = {}   # name -> {"start": fn, "stop": fn, "status": fn}
 _params = {}     # name -> {"get": fn, "set": fn(value)} -- continuous values
+_builtin_params = set()  # _params keys owned by gaia_client itself, not the project
 
 _HEARTBEAT_S = 30
 _last_heartbeat = 0.0
@@ -272,12 +276,18 @@ def register_service(name, start=None, stop=None, status=None):
 	_services[name] = {"start": start, "stop": stop, "status": status}
 
 
-def register_param(name, get=None, set=None):
+def register_param(name, get=None, set=None, builtin=False):
 	"""Call from your project-specific script to expose a CONTINUOUS
 	controllable value (gain, threshold, ...), not a simple on/off. get()
 	returns the current value (any JSON-serializable type); set(value)
-	applies a new one."""
+	applies a new one. builtin=True is for gaia_client's own params only
+	(mocap_lifecycle): they don't count as "the project registered" in
+	_self_check()."""
 	_params[name] = {"get": get, "set": set}
+	if builtin:
+		_builtin_params.add(name)
+	else:
+		_builtin_params.discard(name)
 
 
 def register_project_registrar(fn):
@@ -316,7 +326,7 @@ def _self_check():
 	documented silent-empty-registry failure mode (a hot-reloaded module
 	whose onCreate/onStart never reran, GAIA_INTERFACE.md section 2)."""
 	global _last_registrar_check
-	if _registrar is None or _services or _params:
+	if _registrar is None or _services or (_params.keys() - _builtin_params):
 		return
 	now = time.time()
 	if (now - _START_TS) < _REGISTRAR_GRACE_S:

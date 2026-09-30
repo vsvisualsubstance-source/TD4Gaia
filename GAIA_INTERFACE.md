@@ -4760,6 +4760,30 @@ Envoy con mocap vero da `ops-silvermini2`, a 60 fps, senza errori.
   Quando non ci sono volti, i punti vecchi restano e il preview li mostra
   attenuati.
 
+**2026-09-30 (TD/Win-client, 4)**: **PatchDeck passa a `gaia_client`
+1.2.1** (copia Windows, `Desktop/release/PatchDeck V8 - EXPORT WIN`).
+Verificato dal vivo: 86 servizi e 5 parametri FX visibili sul broker, 0
+errori.
+- **Bug del client, corretto in `sw_version` 1.2.1**: con la 1.2.0
+  PatchDeck mostrava **0 servizi**. `mocap_lifecycle` registra due
+  parametri propri (`Mocapingest`, `Opsdevice`), e `_self_check()`
+  chiamava il registrar del progetto solo con `_services` e `_params`
+  entrambi vuoti. Quindi non lo chiamava mai. Ora quei due sono
+  `register_param(..., builtin=True)` e il controllo li ignora. Il bug
+  colpisce **qualunque progetto** con servizi propri caricato con la
+  1.2.0: va distribuito il nuovo `client/gaia_client.tox`.
+- **Nuovi device_id su questa macchina**: `td-pd-win` (family
+  `patchdeck`) e `td-pddmx-win` (family `dmx`). Il Mac di Mauro tiene
+  `td-pd-macmauro` / `td-pddmx-macmauro`. **Per Core**: se Admin filtra
+  PatchDeck per device_id esatto (`PD_HIDDEN_IDS`), vanno aggiunti i due
+  nuovi ID, oppure si filtra per `family`.
+- **Nota per chi integra altri progetti**: il `.tox` del client ha i DAT
+  in `syncfile` su `gaia_client/*.py` relativi al progetto ospite. Quella
+  cartella va tenuta allineata a `client/gaia_client/` a ogni release,
+  altrimenti TD ricarica i file vecchi. `opshortcut` (`Gaia`) va
+  reimpostato a mano: il `.tox` portabile non lo porta.
+- Prossimo passo: `gaia_dmx_client` dentro PatchDeck, stesso schema.
+
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
   sopra]** utente segnala che i pulsanti `Send*` di `MoodNudge` non
   sembrano arrivare a Gaia. Lato TD verificato pulito end-to-end fino

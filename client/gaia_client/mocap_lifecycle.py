@@ -141,10 +141,12 @@ def _ensureMocapRemoteControl():
 		return
 	mod.register_param('Mocapingest',
 		get=lambda: bool(cfg.par.Mocapingest.eval()),
-		set=lambda value: setattr(cfg.par, 'Mocapingest', bool(value)))
+		set=lambda value: setattr(cfg.par, 'Mocapingest', bool(value)),
+		builtin=True)
 	mod.register_param('Opsdevice',
 		get=lambda: cfg.par.Opsdevice.eval(),
-		set=lambda value: setattr(cfg.par, 'Opsdevice', str(value)))
+		set=lambda value: setattr(cfg.par, 'Opsdevice', str(value)),
+		builtin=True)
 
 
 def onFrameStart(frame: int):
