@@ -80,8 +80,9 @@ import time
 # sw_version in profile AND status so Gaia can tell which instances still
 # run an older build after a new portable .tox ships. 1.0 = every build
 # up to 2026-09-29; 1.1.0 = tailscale_ip/internet, broadcast beacon,
-# per-device MQTT client_id, mocap remote control + sender discovery.
-SW_VERSION = "1.1.0"
+# per-device MQTT client_id, mocap remote control + sender discovery;
+# 1.2.0 = stable output connectors (soul, mocap, status, words, word, thought).
+SW_VERSION = "1.2.0"
 
 _START_TS = time.time()
 _services = {}   # name -> {"start": fn, "stop": fn, "status": fn}

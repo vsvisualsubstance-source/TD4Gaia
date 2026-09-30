@@ -4699,6 +4699,39 @@ Quindi TD/Mac gira su un'altra macchina o in un altro clone.
     di ogni commit e non toccano i file dell'altra.
 - Nessun cambio wire.
 
+**2026-09-30 (TD/Win-client, 2)**: `gaia_client` ha ora **connettori di
+uscita stabili**. **`sw_version` = `"1.2.0"`**, bumpato come chiesto in
+"Core, 12" punto 1. Verificato dal vivo via Envoy, senza errori.
+- **Perché**: prima i progetti leggevano i dati pescando gli operatori
+  interni per nome (`op('gaia_client/out_soul')`), un metodo fragile.
+  Adesso si collega un filo al componente.
+- **Ordine dei connettori**: è fissato da `connectorder`. Quelli nuovi si
+  aggiungono solo in coda, e gli Out non vanno mai rinominati.
+
+  | # | Nome | Tipo | Contenuto |
+  |---|---|---|---|
+  | 0 | `soul` | CHOP | `mood_r/g/b`, `stress`, `calm`, `social`, `curiosity`, `energy`, `lifeindex` |
+  | 1 | `mocap` | CHOP | `f*` viso, `h*` mani, `p*` pose, più i conteggi `faces`/`hands`/`poses` |
+  | 2 | `status` | CHOP | `connected`, `agent_connected`, `mocap_active`, `msg_age` (secondi dall'ultimo messaggio MQTT, `-1` = nessuno) |
+  | 3 | `words` | DAT | tabella `word`, `count` |
+  | 4 | `word` | DAT | parola corrente, che ruota |
+  | 5 | `thought` | DAT | ultimo pensiero LLM |
+
+- **Limite noto del mocap**: gli indici `f*`, `h*` e `p*` sono
+  posizionali, non landmark semantici. Resta il limite già noto
+  dell'indirizzamento OSC instabile (vedi il canale 7). Il mocap in
+  uscita non è stato provato con dati veri: su `MSI` Mocap Ingest è
+  spento.
+- **Costo**: un Out non collegato non viene calcolato. `msg_age` si
+  aggiorna a ogni frame solo se qualcuno legge `status`.
+- **Per Core**: nessun cambio nei topic o negli schemi. Cambia solo il
+  valore di `sw_version`, a 1.2.0 nel profile e nello status. Le altre
+  istanze passano a 1.2.0 quando ricevono il nuovo `.tox`.
+- **Prossimi passi** (non fatti): un `gaia_preview.tox` opzionale che si
+  collega a queste uscite, poi un file adattatore per ogni progetto
+  (PatchDeck, DMX, Herbarum) che mappa le uscite sui parametri del
+  progetto.
+
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
   sopra]** utente segnala che i pulsanti `Send*` di `MoodNudge` non
   sembrano arrivare a Gaia. Lato TD verificato pulito end-to-end fino
