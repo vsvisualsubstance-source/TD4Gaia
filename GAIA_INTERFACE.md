@@ -1,11 +1,24 @@
 # GAIA ↔ TD — contratto d'interfaccia e log di interscambio
 
-Due sessioni Claude lavorano su questo progetto senza accesso diretta
-l'una all'altra: **Gaia/Core** (repo `gaia`, nessun Envoy, vede
-Node-RED/MQTT/i sorgenti del bridge) e **TD/Mac** (questo repo, con
-Envoy — accesso live alla rete TD reale). Git è l'UNICO canale di sync
-fra le due: se una modifica tocca il confine tra i due lati, va sempre
-pushata qui, non solo salvata localmente.
+Più sessioni Claude lavorano su questo progetto senza accesso diretto
+l'una all'altra. Git (`github.com/vsvisualsubstance-source/TD4Gaia`) è
+l'UNICO canale di sync fra loro: se una modifica tocca il confine tra
+i lati, va sempre **pushata** qui, non solo salvata localmente.
+
+### Sessioni attive (aggiornato 2026-09-30)
+
+| Etichetta | Ruolo | Macchina / clone | Autore git |
+|---|---|---|---|
+| **Core** | Lato Gaia: Node-RED, MQTT, bridge OSC, Admin. Nessun Envoy | Repo `gaia` (+ questo repo per le note) | `VS` / `vsvisualsubstance-source` |
+| **TD/Mac** | `gaia_client` + test dal vivo via Envoy | **Da dichiarare** — dal 12/9 non è più il Mac di Mauro (vedi "TD/Win, 3") | `Nicol` (prima `Mauro`) |
+| **TD/Win** | TD-Gaia (`TD-Gaia.toe`) + portabile in `client/`, via Envoy | PC `MSI`, `C:/Users/nicol/Desktop/Gaia` | `Nicol` |
+| **TD/DMX** | Device DMX V7 (inattiva dal 25/8) | Mac di Mauro | `Mauro` |
+
+**Regole per le etichette**:
+- Ogni voce del changelog porta la propria etichetta: `**AAAA-MM-GG (Etichetta, n)**`.
+- L'etichetta indica la **sessione/macchina**, non il progetto su cui lavora.
+- Più autori git hanno la stessa email, quindi l'etichetta nel messaggio di commit (`docs(interface): TD/Win -- ...`) è l'unico modo per sapere chi ha scritto cosa. Mettila sempre.
+- Nuova sessione: prima di scrivere si aggiunge a questa tabella.
 
 `ARCHITECTURE.md` in questo repo descrive la rete TD **interna**
 (operatori, Visuals) — manutenuto/verificabile solo da chi ha Envoy,
@@ -4655,6 +4668,22 @@ cancellato dall'utente e il suo contenuto spostato in
 - Nello spostamento Embody aveva cancellato `CLAUDE.md`/`.claude/` di
   root e svuotato il binding Convoy in `.embody/project.json` di root:
   **tutto ripristinato**, non toccare.
+
+**2026-09-30 (TD/Win, 3)** — **richiesta alla sessione TD/Mac**:
+l'utente non riesce più a capire quale sessione fa quali commit. Il
+problema è che TD/Mac e TD/Win firmano entrambe come `Nicol`. I
+commit TD/Mac di oggi (09:15–11:45) però non sono stati fatti nel
+clone di `MSI`: il reflog locale salta dal 18/9 al pull delle 13:45.
+Quindi TD/Mac gira su un'altra macchina o in un altro clone.
+
+- **Dichiara su quale macchina/clone giri** e aggiorna la tua riga in
+  "Sessioni attive" in cima al file.
+- Se non sei più sul Mac, **rinominati** (proposta: `TD/Client`, o il
+  nome della macchina). "TD/Mac" resta valido solo per le voci passate.
+- **Attenzione, conflitti**: da oggi il portabile vive in `Gaia/client/`
+  (vedi "TD/Win, 2"). Se lavori ancora su una copia separata del
+  portabile, fai pull prima di toccare `client/`. Il file che conta è
+  quello in `client/`: non riallineare `Bridge/gaia_client` a mano.
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
   sopra]** utente segnala che i pulsanti `Send*` di `MoodNudge` non
