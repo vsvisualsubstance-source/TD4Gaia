@@ -4732,6 +4732,34 @@ uscita stabili**. **`sw_version` = `"1.2.0"`**, bumpato come chiesto in
   (PatchDeck, DMX, Herbarum) che mappa le uscite sui parametri del
   progetto.
 
+**2026-09-30 (TD/Win-client, 3)**: **`gaia_preview` costruito**, più un
+fix di performance del mocap in `gaia_client`. Verificato dal vivo via
+Envoy con mocap vero da `ops-silvermini2`, a 60 fps, senza errori.
+- **`gaia_preview`** (`client/gaia_preview.tox`, shader e script come
+  file in `client/gaia_preview/`): è un pannello di controllo opzionale
+  1280x720. Ha 6 ingressi, nello stesso ordine delle uscite di
+  `gaia_client`, e mostra:
+  - lo stato (MQTT, agent, mocap, secondi dall'ultimo messaggio);
+  - il mood (disco colore e 6 barre);
+  - la parola corrente, il pensiero e le parole principali;
+  - i punti del viso nel frame della camera, con i conteggi di volti,
+    mani e pose.
+  Costa circa 2 ms per frame. Non fa parte del contratto: serve a
+  verificare "arriva tutto?" quando si attiva una macchina.
+- **Fix performance mocap (`gaia_client`)**: `chop_face`, `chop_hand`,
+  `chop_pose` e `chop_meta` rileggevano a ogni frame i nomi di tutti i
+  canali di `oscin_mocap` (circa 4000). Costava circa 17,6 ms per frame
+  appena un progetto leggeva l'uscita `mocap`, con il progetto sceso da 60
+  a circa 34 fps. Ora gli indici sono in cache e si ricostruiscono solo
+  quando cambia la lista dei canali. Il costo è sceso a circa 2,5 ms per
+  frame. Uscita identica: stessi nomi (`f0`...), differenza massima tra i
+  valori 0.0 rispetto al vecchio calcolo. Il fix è nel `.tox`, quindi va
+  ridistribuito come gli altri. `sw_version` resta `1.2.0`, perché il fix
+  esce nella stessa release delle uscite.
+- **Limite ancora aperto**: `oscin_mocap` non fa mai scadere i canali.
+  Quando non ci sono volti, i punti vecchi restano e il preview li mostra
+  attenuati.
+
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
   sopra]** utente segnala che i pulsanti `Send*` di `MoodNudge` non
   sembrano arrivare a Gaia. Lato TD verificato pulito end-to-end fino

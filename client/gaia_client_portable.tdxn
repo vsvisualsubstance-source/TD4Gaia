@@ -2,8 +2,8 @@ format: tdxn
 version: '2.1'
 generator: Embody/6.2.65
 td_build: 099.2025.33230
-source_file: gaia_client_portable.6.toe
-exported_at: '2026-09-30T12:55:03Z'
+source_file: gaia_client_portable.10.toe
+exported_at: '2026-09-30T13:55:38Z'
 network_path: /
 options:
   include_dat_content: false
@@ -18,6 +18,17 @@ type_defaults:
       clone: =op.TDTox.op('defaultCOMPs/button')
       repocomp: =me
       resizecomp: =me
+  choptoTOP:
+    parameters:
+      format: rgba32float
+    size: [130, 90]
+    color: [0.67, 0.67, 0.67]
+  constantCHOP:
+    parameters:
+      autoexportroot: =parent()
+      rate: =me.time.rate
+    size: [130, 90]
+    color: [0.67, 0.67, 0.67]
   containerCOMP:
     parameters:
       repocomp: =me
@@ -33,6 +44,14 @@ type_defaults:
     color: [0.9, 0.3, 0.4]
     tags:
     - py
+  inCHOP:
+    parameters:
+      autoexportroot: =parent()
+    size: [130, 90]
+    color: [0.67, 0.67, 0.67]
+  inDAT:
+    size: [130, 90]
+    color: [0.67, 0.67, 0.67]
   listCOMP:
     parameters:
       hscrollbar: false
@@ -42,6 +61,11 @@ type_defaults:
     color: [0.325, 0.8, 0.3]
     tags:
     - tox
+  mergeCHOP:
+    parameters:
+      autoexportroot: =parent()
+    size: [130, 90]
+    color: [0.67, 0.67, 0.67]
   mqttclientDAT:
     parameters:
       fromop: =parent()
@@ -55,10 +79,10 @@ type_defaults:
   outCHOP:
     parameters:
       autoexportroot: =parent()
-      label: =me.name
-    flags:
-    - viewer
     size: [130, 90]
+  outDAT:
+    size: [130, 90]
+    color: [0.67, 0.67, 0.67]
   panelexecuteDAT:
     parameters:
       fromop: =parent()
@@ -83,6 +107,10 @@ type_defaults:
   scriptDAT:
     size: [130, 90]
     color: [0.67, 0.67, 0.67]
+  selectCHOP:
+    parameters:
+      autoexportroot: =parent()
+    size: [130, 90]
   selectDAT:
     parameters:
       colexpr: =re.match('.*',me.inputCell.val) != None
@@ -101,6 +129,9 @@ type_defaults:
     parameters:
       repocomp: =me
       resizecomp: =me
+  textTOP:
+    size: [130, 90]
+    color: [0.67, 0.67, 0.67]
   windowCOMP:
     color: [0.325, 0.8, 0.3]
     tags:
@@ -1653,6 +1684,10 @@ operators:
         children:
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           inputs:
           - par1
@@ -1756,6 +1791,10 @@ operators:
       children:
       - name: out1
         type: outCHOP
+        parameters:
+          label: =me.name
+        flags:
+        - viewer
         position: [275, 175]
         inputs:
         - par1
@@ -1845,6 +1884,10 @@ operators:
       children:
       - name: out1
         type: outCHOP
+        parameters:
+          label: =me.name
+        flags:
+        - viewer
         position: [275, 175]
         inputs:
         - par1
@@ -1934,6 +1977,10 @@ operators:
       children:
       - name: out1
         type: outCHOP
+        parameters:
+          label: =me.name
+        flags:
+        - viewer
         position: [275, 175]
         inputs:
         - par1
@@ -2018,6 +2065,10 @@ operators:
       children:
       - name: out1
         type: outCHOP
+        parameters:
+          label: =me.name
+        flags:
+        - viewer
         position: [275, 175]
         inputs:
         - par1
@@ -2105,6 +2156,10 @@ operators:
       children:
       - name: out1
         type: outCHOP
+        parameters:
+          label: =me.name
+        flags:
+        - viewer
         position: [275, 175]
         inputs:
         - par1
@@ -2192,6 +2247,10 @@ operators:
       children:
       - name: out1
         type: outCHOP
+        parameters:
+          label: =me.name
+        flags:
+        - viewer
         position: [275, 175]
         inputs:
         - par1
@@ -2277,6 +2336,10 @@ operators:
       children:
       - name: out1
         type: outCHOP
+        parameters:
+          label: =me.name
+        flags:
+        - viewer
         position: [275, 175]
         inputs:
         - par1
@@ -2363,6 +2426,10 @@ operators:
       children:
       - name: out1
         type: outCHOP
+        parameters:
+          label: =me.name
+        flags:
+        - viewer
         position: [275, 175]
         inputs:
         - par1
@@ -2487,6 +2554,10 @@ operators:
       children:
       - name: out1
         type: outCHOP
+        parameters:
+          label: =me.name
+        flags:
+        - viewer
         position: [275, 175]
         inputs:
         - par1
@@ -2572,6 +2643,10 @@ operators:
       children:
       - name: out1
         type: outCHOP
+        parameters:
+          label: =me.name
+        flags:
+        - viewer
         position: [275, 175]
         inputs:
         - par1
@@ -2668,6 +2743,10 @@ operators:
       children:
       - name: out1
         type: outCHOP
+        parameters:
+          label: =me.name
+        flags:
+        - viewer
         position: [275, 175]
         inputs:
         - par1
@@ -2767,6 +2846,10 @@ operators:
       children:
       - name: out1
         type: outCHOP
+        parameters:
+          label: =me.name
+        flags:
+        - viewer
         position: [275, 175]
         inputs:
         - par1
@@ -2852,6 +2935,10 @@ operators:
       children:
       - name: out1
         type: outCHOP
+        parameters:
+          label: =me.name
+        flags:
+        - viewer
         position: [275, 175]
         inputs:
         - par1
@@ -3108,6 +3195,10 @@ operators:
         children:
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -3205,6 +3296,10 @@ operators:
         children:
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -3380,6 +3475,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [200, 200]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -3529,6 +3628,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [200, 200]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -3694,6 +3797,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -3843,6 +3950,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -4007,6 +4118,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [200, 200]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -4217,6 +4332,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -4364,6 +4483,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -4513,6 +4636,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -4662,6 +4789,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -4811,6 +4942,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -4960,6 +5095,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -5109,6 +5248,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -5273,6 +5416,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [200, 200]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -5423,6 +5570,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [200, 200]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -5585,6 +5736,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -5735,6 +5890,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -5885,6 +6044,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -6046,6 +6209,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -6194,6 +6361,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -6342,6 +6513,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -6523,6 +6698,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [200, 200]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -6671,6 +6850,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [200, 200]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -6820,6 +7003,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [200, 200]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -6983,6 +7170,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -7132,6 +7323,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -7281,6 +7476,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -7430,6 +7629,10 @@ operators:
           color: [0.67, 0.67, 0.67]
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           color: [0.67, 0.67, 0.67]
           inputs:
@@ -7629,9 +7832,7 @@ operators:
     type: selectCHOP
     parameters:
       channames: click
-      autoexportroot: =parent()
     position: [-500, -525]
-    size: [130, 90]
     inputs:
     - mousein1
   - name: toolbar
@@ -7735,8 +7936,6 @@ operators:
         fontsizex: 10
         fontsizey: 10
       position: [1400, -200]
-      size: [130, 90]
-      color: [0.67, 0.67, 0.67]
     - name: container_left
       type: containerCOMP
       parameters:
@@ -10173,6 +10372,10 @@ operators:
         children:
         - name: out1
           type: outCHOP
+          parameters:
+            label: =me.name
+          flags:
+          - viewer
           position: [275, 175]
           inputs:
           - par1
@@ -10411,6 +10614,7 @@ operators:
       style: Toggle
       label: Direct Mocap Ingest (OSC)
       help: 'Enable direct OSC mocap ingest from a Gaia OPS node running mediapipe_node.py (face/hand/pose landmarks on UDP port 7000). Requires Devicestatus enabled too -- the OPS node discovers this TD instance''s IP via the device status heartbeat. Safe to toggle live: gates an OSC In CHOP, not a mqttclientDAT.'
+      value: true
     - name: Devicecontrol
       style: Toggle
       label: Device Fleet Control
@@ -10466,7 +10670,7 @@ operators:
       label: Last Message
       readOnly: true
       help: Topic and local time of the most recently received Gaia MQTT message.
-      value: gaia/brain/state @ 14:55:03
+      value: gaia/brain/state @ 15:55:37
     - name: Deviceagentstatus
       style: Str
       label: Device Agent Status
@@ -10480,17 +10684,73 @@ operators:
       default: not probed
       readOnly: true
       help: Outcome of the last broker auto-discovery probe (only active when Beacon Discovery is enabled).
-      value: 'auto: 192.168.1.142 (beacon @ core-node-0, 14:54:41)'
+      value: 'auto: 192.168.1.142 (beacon @ core-node-0, 15:55:36)'
     - name: Mocapstatus
       style: Str
       label: Mocap Status
       readOnly: true
       help: Direct Mocap Ingest (oscin_mocap) port-bind outcome, set by mocap_lifecycle.py's port guard. Blank when Mocapingest is off. 'listening on <port>' when the bind test passed and oscin_mocap is receiving. 'PORT <port> BUSY -- ...' when another listener already holds Mocapport (e.g. this project's own channel-1 OSC In) -- oscin_mocap is deliberately kept inactive rather than fail a bind silently; free the port or change Mocapport and it recovers on its own within ~10s.
+      value: listening on 7010
   flags:
   - viewer
   position: [425, 125]
   color: [0.67, 0.67, 0.67]
+  storage:
+    lastmsg_seconds: 3278.3
   children:
+  - name: soul
+    type: outCHOP
+    parameters:
+      label: 'Soul: mood_r/g/b, stress, calm, social, curiosity, energy, lifeindex'
+    position: [2800, 700]
+    color: [0.67, 0.67, 0.67]
+    inputs:
+    - out_soul
+  - name: word
+    type: outDAT
+    parameters:
+      label: 'Word: current rotating word'
+      connectorder: 4
+    position: [2800, 100]
+    inputs:
+    - dat_word_current
+    dat_read_only: true
+  - name: mocap
+    type: outCHOP
+    parameters:
+      label: 'Mocap: f* face, h* hand, p* pose, faces/hands/poses counts'
+      connectorder: 1
+    position: [2800, -1400]
+    color: [0.67, 0.67, 0.67]
+    inputs:
+    - merge_mocap
+  - name: words
+    type: outDAT
+    parameters:
+      label: 'Words: top lexicon table (word, count)'
+      connectorder: 3
+    position: [2800, 300]
+    inputs:
+    - dat_words
+    dat_read_only: true
+  - name: status
+    type: outCHOP
+    parameters:
+      label: 'Status: connected, agent_connected, mocap_active, msg_age (s, -1 = none)'
+      connectorder: 2
+    position: [2800, -2200]
+    color: [0.67, 0.67, 0.67]
+    inputs:
+    - constant_status
+  - name: thought
+    type: outDAT
+    parameters:
+      label: 'Thought: latest LLM thought'
+      connectorder: 5
+    position: [2800, -100]
+    inputs:
+    - dat_thought
+    dat_read_only: true
   - name: lag_soul
     type: lagCHOP
     parameters:
@@ -10546,6 +10806,14 @@ operators:
       callbacks: dat_thought_callbacks
     position: [800, -100]
     dat_read_only: true
+  - name: merge_mocap
+    type: mergeCHOP
+    position: [2400, -1400]
+    inputs:
+    - chop_face
+    - chop_hand
+    - chop_pose
+    - chop_meta
   - name: mqtt_device
     type: mqttclientDAT
     parameters:
@@ -10631,7 +10899,7 @@ operators:
     type: tableDAT
     parameters:
       file: gaia_client/devices_table.tsv
-      rows: 38
+      rows: 1
       cols: 7
     position: [800, -4200]
     tags:
@@ -10642,6 +10910,19 @@ operators:
       framestart: true
       file: gaia_client/agent_lifecycle.py
     position: [800, -3200]
+  - name: constant_status
+    type: constantCHOP
+    sequences:
+      const:
+      - name: connected
+        value: =1 if parent.GaiaClient.par.Connectionstatus.eval() == 'connected' else 0
+      - name: agent_connected
+        value: =1 if parent.GaiaClient.par.Deviceagentstatus.eval() == 'connected' else 0
+      - name: mocap_active
+        value: =1 if op('oscin_mocap').par.active.eval() else 0
+      - name: msg_age
+        value: =max(-1, absTime.seconds - parent.GaiaClient.fetch('lastmsg_seconds', 1e9))
+    position: [2400, -2200]
   - name: fleet_lifecycle
     type: executeDAT
     parameters:
@@ -10904,11 +11185,246 @@ operators:
     position: [-70, -5620]
     size: [270, 330]
     color: [0.45, 0.45, 0.45]
+  - name: annotate6
+    mode: annotate
+    title: Data Outputs (connettori del componente)
+    text: 'Contratto stabile verso il progetto ospite (sw_version 1.2.0). Ordine fisso tramite connectorder, i nuovi SOLO in coda: 0 soul (CHOP, mood_r/g/b stress calm social curiosity energy lifeindex), 1 mocap (CHOP: f* viso, h* mani, p* pose = indici posizionali, non landmark semantici; faces/hands/poses conteggi), 2 status (CHOP: connected, agent_connected, mocap_active, msg_age in s, -1 = nessun messaggio), 3 words (DAT word,count), 4 word (DAT parola corrente), 5 thought (DAT ultimo pensiero). Un Out non collegato non cucina: costo zero per chi non lo usa. Non rinominare questi Out: i progetti ci si collegano.'
+    position: [2330, -2270]
+    size: [670, 3230]
+    color: [0.35, 0.35, 0.55]
+- name: gaia_preview
+  type: baseCOMP
+  flags:
+  - viewer
+  position: [650, 125]
+  color: [0.325, 0.8, 0.3]
+  inputs:
+  - gaia_client
+  - source: gaia_client
+    out: 1
+  - source: gaia_client
+    out: 2
+  - source: gaia_client
+    out: 3
+  - source: gaia_client
+    out: 4
+  - source: gaia_client
+    out: 5
+  children:
+  - name: out1
+    type: outTOP
+    parameters:
+      label: =me.name
+    flags:
+    - display
+    position: [2000, 200]
+    size: [130, 90]
+    color: [0.67, 0.67, 0.67]
+    inputs:
+    - comp_over
+  - name: in_soul
+    type: inCHOP
+    parameters:
+      label: soul
+    position: [0, 600]
+  - name: in_word
+    type: inDAT
+    parameters:
+      label: word
+      connectorder: 4
+    position: [0, -200]
+    dat_read_only: true
+  - name: in_mocap
+    type: inCHOP
+    parameters:
+      label: mocap
+      connectorder: 1
+    position: [0, 400]
+  - name: in_words
+    type: inDAT
+    parameters:
+      label: words
+      connectorder: 3
+    dat_read_only: true
+  - name: comp_over
+    type: compositeTOP
+    parameters:
+      operand: over
+      swaporder: true
+    position: [1600, 200]
+    size: [130, 90]
+    color: [0.67, 0.67, 0.67]
+    inputs:
+    - glsl_panel
+    - text_labels
+    - text_word
+  - name: in_status
+    type: inCHOP
+    parameters:
+      label: status
+      connectorder: 2
+    position: [0, 200]
+  - name: spec_text
+    type: scriptDAT
+    parameters:
+      callbacks: spec_text_callbacks
+    custom_pars:
+      Custom:
+      - name: Valuea
+        style: Float
+        label: Value A
+      - name: Valueb
+        style: Float
+        label: Value B
+    position: [400, 0]
+    dat_read_only: true
+  - name: text_word
+    type: textTOP
+    parameters:
+      text: =op('in_word').text.strip()
+      bold: true
+      fontsizex: 56
+      fontsizexunit: pixels
+      fontsizeyunit: pixels
+      positionx: 40
+      positiony: 110
+      fontcolorr: 0.88
+      fontcolorg: 0.86
+      fontcolorb: 0.82
+      outputresolution: custom
+      resolutionw: 1280
+      resolutionh: 720
+      format: rgba8fixed
+    position: [800, -400]
+  - name: glsl_panel
+    type: glslTOP
+    parameters:
+      pixeldat: glsl_panel_pixel
+      computedat: glsl_panel_compute
+      outputresolution: custom
+      resolutionw: 1280
+      resolutionh: 720
+      resmult: false
+      format: rgba8fixed
+    sequences:
+      vec:
+      - name: uInfo
+        valuex: =int(op('select_face').numChans / 3)
+        valuey: =1 if op('in_mocap')['faces'] is not None and op('in_mocap')['faces'].eval() > 0 else 0
+    position: [1200, 600]
+    size: [130, 90]
+    color: [0.67, 0.67, 0.67]
+    inputs:
+    - chopto_soul
+    - chopto_face
+  - name: in_thought
+    type: inDAT
+    parameters:
+      label: thought
+      connectorder: 5
+    position: [0, -400]
+    dat_read_only: true
+  - name: merge_face
+    type: mergeCHOP
+    position: [600, 400]
+    inputs:
+    - select_face
+    - constant_facepad
+  - name: chopto_face
+    type: choptoTOP
+    parameters:
+      chop: merge_face
+    position: [800, 400]
+  - name: chopto_soul
+    type: choptoTOP
+    parameters:
+      chop: in_soul
+    position: [400, 600]
+  - name: select_face
+    type: selectCHOP
+    parameters:
+      channames: f[0-9]*
+    position: [400, 400]
+    color: [0.67, 0.67, 0.67]
+    inputs:
+    - in_mocap
+  - name: text_labels
+    type: textTOP
+    parameters:
+      specdat: spec_text
+      text: ''
+      fontsizex: 15
+      fontsizexunit: pixels
+      fontsizeyunit: pixels
+      alignx: left
+      aligny: bottom
+      fontcolorr: 0.88
+      fontcolorg: 0.86
+      fontcolorb: 0.82
+      outputresolution: custom
+      resolutionw: 1280
+      resolutionh: 720
+      format: rgba8fixed
+    position: [800, 0]
+  - name: glsl_panel_info
+    type: infoDAT
+    parameters:
+      op: glsl_panel
+    flags:
+    - viewer
+    position: [1275, 480]
+    size: [130, 90]
+    color: [0.67, 0.67, 0.67]
+    dock: glsl_panel
+    dat_read_only: true
+  - name: constant_facepad
+    type: constantCHOP
+    sequences:
+      const:
+      - name: fpad
+    position: [400, 200]
+  - name: glsl_panel_pixel
+    type: textDAT
+    parameters:
+      file: gaia_preview/glsl_panel_pixel.glsl
+      syncfile: true
+      language: glsl
+      extension: frag
+    flags:
+    - viewer
+    position: [1125, 480]
+    size: [130, 90]
+    color: [0.9, 0.3, 0.4]
+    tags:
+    - glsl
+    dock: glsl_panel
+  - name: spec_text_callbacks
+    type: textDAT
+    parameters:
+      file: gaia_preview/spec_text_callbacks.py
+      syncfile: true
+      language: python
+    flags:
+    - viewer
+    position: [400, -120]
+    size: [130, 90]
+    color: [0.9, 0.3, 0.4]
+    tags:
+    - py
+    dock: spec_text
+  annotations:
+  - name: annotate1
+    mode: annotate
+    title: 'Gaia Preview: monitor delle uscite di gaia_client'
+    text: 'Pannello opzionale 1280x720 per verificare che arrivi tutto quando si attiva una macchina. Gli ingressi in_* rispecchiano i 6 connettori di gaia_client, nello stesso ordine: soul, mocap, status, words, word, thought. glsl_panel disegna i riquadri, il disco del mood, le barre e i punti del viso; spec_text scrive le etichette in text_labels; text_word mostra la parola corrente. Si scollega o si elimina quando non serve. Il mocap del viso è mostrato nel frame della camera; i punti vecchi (oscin_mocap non li fa scadere) restano attenuati quando volti = 0.'
+    position: [-70, -470]
+    size: [2270, 1330]
+    color: [0.3, 0.4, 0.45]
 - name: externalizations
   type: tableDAT
   parameters:
     file: externalizations.tsv
-    rows: 271
+    rows: 274
     cols: 11
   position: [-200, 0]
   tags:

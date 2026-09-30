@@ -24,7 +24,7 @@ path	type	strategy	rel_file_path	timestamp	dirty	build	touch_build	node_x	node_y
 /gaia_client/beacon_probe_callbacks	text	py	gaia_client/beacon_probe_callbacks.py	2026-09-29 11:49:29 UTC				0	-4820	0.9000,0.3000,0.4000
 /gaia_client/beacon_discovery	text	py	gaia_client/beacon_discovery.py	2026-09-29 11:49:29 UTC				400	-4700	0.9000,0.3000,0.4000
 /gaia_client/agent_lifecycle	execute	py	gaia_client/agent_lifecycle.py	2026-09-29 11:49:29 UTC				800	-3200	0.9000,0.3000,0.4000
-/gaia_client	base	tox	gaia_client.tox	2026-09-30 13:36:38 UTC		46	2025.33230	425	125	0.6700,0.6700,0.6700
+/gaia_client	base	tox	gaia_client.tox	2026-09-30 13:55:36 UTC		53	2025.33230	425	125	0.6700,0.6700,0.6700
 /Embody/wizard/track/fill	container	tox	Embody/wizard/track/fill.tox	2026-09-29 11:49:29 UTC		1	2025.33230	0	0	0.3250,0.8000,0.3000
 /Embody/wizard/track	container	tox	Embody/wizard/track.tox	2026-09-29 11:49:29 UTC		1	2025.33230	0	-150	0.3250,0.8000,0.3000
 /Embody/wizard/topspacer	container	tox	Embody/wizard/topspacer.tox	2026-09-29 11:49:29 UTC		1	2025.33230	480	-450	0.3250,0.8000,0.3000
@@ -264,8 +264,11 @@ path	type	strategy	rel_file_path	timestamp	dirty	build	touch_build	node_x	node_y
 /Embody/Collection/CollectionExt	text	py	Embody/Collection/CollectionExt.py	2026-09-29 11:49:32 UTC				200	0	0.9000,0.3000,0.4000
 /Embody/Collection	base	tox	Embody/Collection.tox	2026-09-29 11:49:32 UTC		4	2025.33230	200	-550	0.3250,0.8000,0.3000
 /Embody/CatalogManagerExt	text	py	Embody/CatalogManagerExt.py	2026-09-29 11:49:32 UTC				-2500	700	0.9000,0.3000,0.4000
-/Embody	container	tox	Embody.tox	2026-09-30 12:55:07 UTC		1241	2025.33230	125	-125	0.3250,0.8000,0.3000
-/	base	tdxn	gaia_client_portable.tdxn	2026-09-30 12:55:04 UTC			099.2025.33230	0	0	0.6700,0.6700,0.6700
+/Embody	container	tox	Embody.tox	2026-09-30 13:55:36 UTC		1246	2025.33230	125	-125	0.3250,0.8000,0.3000
+/	base	tdxn	gaia_client_portable.tdxn	2026-09-30 13:55:39 UTC			099.2025.33230	0	0	0.6700,0.6700,0.6700
 /gaia_client/pre_release	text	py	gaia_client/pre_release.py	2026-09-29 12:15:51 UTC				0	-5500	0.9000,0.3000,0.4000
 /Embody/_defaults_workspace	base	tox	Embody/_defaults_workspace.tox	2026-09-30 09:37:39 UTC		1	2025.33230	0	0	0.3250,0.8000,0.3000
 /Embody/_defaults_workspace1	base	tox	Embody/_defaults_workspace1.tox	2026-09-30 12:55:01 UTC		1	2025.33230	0	0	0.3250,0.8000,0.3000
+/gaia_preview/glsl_panel_pixel	text	glsl	gaia_preview/glsl_panel_pixel.glsl	2026-09-30 13:51:41 UTC				1125	480	0.9000,0.3000,0.4000
+/gaia_preview/spec_text_callbacks	text	py	gaia_preview/spec_text_callbacks.py	2026-09-30 13:51:42 UTC				400	-120	0.9000,0.3000,0.4000
+/gaia_preview	base	tox	gaia_preview.tox	2026-09-30 13:55:26 UTC		4	2025.33230	650	125	0.3250,0.8000,0.3000
