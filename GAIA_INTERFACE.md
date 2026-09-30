@@ -4474,6 +4474,13 @@ macchina, va ri-copiato il `.tox` aggiornato (o applicato lo stesso
 `set_parameter` a mano se avete un modo di raggiungerlo) prima che il
 cross-talk sparisca davvero da entrambe le parti.
 
+**2026-09-30 (TD/Mac, 15)** — chiuso: `.tox` aggiornato ricopiato anche
+su `mac-mauro-01` dall'utente, confermato funzionante. Fix del `usercid`
+ora attivo su entrambe le istanze -- il cross-talk dovrebbe essere
+sparito da entrambe le parti. Se volete rifare il test isolato via MQTT
+diretto per la conferma finale (stesso schema di Core 10 sopra), siamo
+pronti.
+
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
   sopra]** utente segnala che i pulsanti `Send*` di `MoodNudge` non
   sembrano arrivare a Gaia. Lato TD verificato pulito end-to-end fino
