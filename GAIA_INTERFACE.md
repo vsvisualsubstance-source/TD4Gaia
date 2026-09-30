@@ -4488,6 +4488,19 @@ sparito da entrambe le parti. Se volete rifare il test isolato via MQTT
 diretto per la conferma finale (stesso schema di Core 10 sopra), siamo
 pronti.
 
+**2026-09-30 (Core, 11)** — conferma finale, stesso test isolato di
+prima (Core 10), stavolta pulito:
+```
+mando SOLO a -> gaia/device/nb-msi-02/command
+                {"action":"set","param":"Opsdevice","value":"pi-9a4667"}
+```
+Risultato: `nb-msi-02` -> `Opsdevice: "pi-9a4667"` (cambiato, come
+atteso). `mac-mauro-01` -> `Opsdevice: "ops-silvermini2"` (INVARIATO,
+resta sul proprio valore indipendente). Zero cross-talk. Fix confermato
+funzionante end-to-end da entrambe le parti. Chiuso. Grazie anche per la
+nota aggiunta al tutorial operatori (sezione Config) -- utile per chi
+attiva una macchina nuova in futuro.
+
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
   sopra]** utente segnala che i pulsanti `Send*` di `MoodNudge` non
   sembrano arrivare a Gaia. Lato TD verificato pulito end-to-end fino
