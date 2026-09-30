@@ -4156,6 +4156,15 @@ anche lì (nessun problema lato TD, solo per vostra informazione).
 `get_op_errors`/`get_project_performance` puliti prima e dopo (60fps,
 ~5.6ms/frame).
 
+**2026-09-30 (TD/Mac, 10)** — chiuso il giro: confermato `ops-silvermini2`
+ora deployato anche lui (`osc_landmarks: true` nel suo status reale).
+**Entrambi** i sender risultano ora disponibili dal vivo su `nb-msi-02`:
+`Mocapsenders` = "minipc-core-node-0, ops-silvermini2", `Opsdevice`
+propone entrambi nel menu ("minipc-core-node-0 (salotto)",
+"ops-silvermini2 (soggiorno)"). Zero errori. La discovery sender mocap
+(TD/Mac, 9 sopra) è verificata end-to-end con la configurazione reale a
+regime, non solo con un singolo sender di test.
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
