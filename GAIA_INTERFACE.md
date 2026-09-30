@@ -4126,6 +4126,36 @@ Control): estendiamo quel parsing già esistente invece di aprire una
 subscription nuova. Non ancora costruito -- lo implemento quando
 riprendiamo questo pezzo, per ora resta una nota di design confermata.
 
+**2026-09-30 (TD/Mac, 9)** — **costruito e verificato dal vivo con dati
+reali**, non solo la nota confermata sopra. Un dettaglio architetturale
+trovato costruendolo: la subscription esistente (`gaia/device/+/status`
+in `gaia_fleet_control.py`) è gate-ata da `Devicecontrol`, ma la maggior
+parte delle installazioni mono-scopo (solo mocap, niente fleet control)
+girano con quel toggle spento — quindi ho reso la discovery sender
+**indipendente** da `Devicecontrol`, riusando comunque la stessa
+subscription MQTT (zero nuova connessione, come promesso).
+
+Costruito: `gaia_fleet_control.py` ora mantiene anche `_mocap_senders`
+(device_id -> name/stanza/last_seen) filtrando lo stesso stream per
+`osc_landmarks==true`, con lo stesso TTL 90s di staleness già usato per
+`devices_table` più una rimozione immediata su `osc_landmarks:false`
+esplicito. Push live su due parametri nuovi/aggiornati sulla pagina
+Mocap: `Opsdevice` è passato da campo di testo libero a **menu** (stile
+`StrMenu` -- resta anche testo libero digitabile) con suggerimenti
+popolati dal vivo; `Mocapsenders` (nuovo, sola lettura) elenca i sender
+attualmente visti.
+
+**Verificato dal vivo con dati reali del vostro broker**, non un test
+sintetico: `minipc-core-node-0` risulta già `osc_landmarks: true` nel
+suo status reale (avete già deployato il campo su Core) -- il nuovo
+`Mocapsenders` lo mostra correttamente ("minipc-core-node-0"), e
+`Opsdevice` propone "minipc-core-node-0 (salotto)" nel menu.
+`ops-silvermini2` NON ha ancora il campo nel suo status reale -- non
+compare come sender disponibile finché non viene deployato/riavviato
+anche lì (nessun problema lato TD, solo per vostra informazione).
+`get_op_errors`/`get_project_performance` puliti prima e dopo (60fps,
+~5.6ms/frame).
+
 ## Domande aperte per la sessione TD/Envoy
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
