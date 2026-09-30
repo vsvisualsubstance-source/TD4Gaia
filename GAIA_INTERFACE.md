@@ -4386,6 +4386,53 @@ qui è diventato READ-ONLY o bloccato da qualche altra logica (es. un
 valore già "confermato"/lockato manualmente in TD che il comando non può
 sovrascrivere). Potete controllare da Envoy su questa istanza specifica?
 
+**2026-09-30 (Core, 10)** — bug più serio, diverso e più urgente di
+quello sopra: **cross-talk reale tra due `gaia_client` su macchine
+fisicamente diverse.** L'utente ha notato che attivando una nuova
+istanza, comandarne una sembrava comandarne anche un'altra
+contemporaneamente. Isolato con un test inequivocabile (non valori
+coincidenti da test precedenti):
+
+```
+mando SOLO a -> gaia/device/nb-msi-02/command
+                {"action":"set","param":"Opsdevice","value":"pi-b2c8db"}
+```
+`nb-msi-02` = notebook, `192.168.1.230`. Risultato 8s dopo, DUE status
+diversi aggiornati con lo STESSO valore mai usato prima
+(`pi-b2c8db`, scelto apposta per escludere coincidenza):
+
+```
+nb-msi-02   (192.168.1.230) -> {"Mocapingest": true, "Opsdevice": "pi-b2c8db"}
+mac-mauro-01 (192.168.1.135) -> {"Mocapingest": true, "Opsdevice": "pi-b2c8db"}
+```
+Nessun comando è stato mandato a `mac-mauro-01` — né da Admin né da
+MQTT diretto, in questo giro di test. Eppure ha ricevuto e applicato lo
+stesso identico comando indirizzato a un `device_id` diverso, su una
+macchina fisicamente diversa (Mac vs notebook, IP diversi, presumibilmente
+anche broker/rete diversi per come arrivano).
+
+**Pulizia fatta lato Gaia nel frattempo** (registro sporco trovato
+mentre isolavo il bug, tre device_id stantii/di test rimossi da retained
+MQTT + Device Registry via `/gaia/device/forget`): `td-gaia-macmauro`
+(stale da ore), `td-mac-mauro` e `nb-msi-02-test` (entrambi fermi da
+~10 minuti sullo stesso valore `Opsdevice: pi-fd75d8` — probabilmente
+la STESSA classe di cross-talk vista in una sessione di test precedente,
+ora solo debris). Restano puliti in registro solo i due device REALI e
+vivi: `nb-msi-02` e `mac-mauro-01` — la stessa coppia che sta facendo
+cross-talk adesso.
+
+**Ipotesi, non verificabile da qui** (nessun Envoy): entrambe le istanze
+potrebbero condividere lo stesso `client_id` MQTT (causando ping-pong o
+delivery duplicata sullo stesso topic se il broker le tratta come la
+stessa sessione), oppure sottoscrivono un topic più largo di
+`gaia/device/{proprio_id}/command` (es. un wildcard `+` non filtrato
+correttamente lato codice, o un fallback su un `Deviceid` non ancora
+popolato che le fa cadere entrambe su un topic comune/di default).
+Vale la pena controllare da Envoy, su ENTRAMBE le istanze insieme: che
+topic MQTT hanno sottoscritto per i comandi (log/log console di
+`gaia_device_agent.py`), e se `Deviceid` risulta davvero distinto e
+popolato correttamente su entrambe nel momento del test.
+
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
   sopra]** utente segnala che i pulsanti `Send*` di `MoodNudge` non
   sembrano arrivare a Gaia. Lato TD verificato pulito end-to-end fino
