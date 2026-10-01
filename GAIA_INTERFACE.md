@@ -926,117 +926,112 @@ mood/energia (stesso meccanismo già in produzione per palette DMX/clip
 PatchDeck) — non implementato ora per non scrivere logica contro dati
 che non esistono ancora.
 
-## DMX — sorgente audio selezionabile (proposta lato Gaia, 2026-10-01, niente costruito)
+## DMX — sorgente audio selezionabile (proposta lato Gaia, 2026-10-01, aggiornata — vedi stato in fondo)
 
-**Why:** l'utente vuole poter scegliere, per ogni rig DMX, fra sei
-sorgenti audio invece del solo switch binario live/file di oggi:
+**Why:** l'utente vuole poter scegliere, per ogni rig DMX, fra sorgenti
+audio diverse invece del solo switch binario live/file di partenza:
 scheda audio (default di sistema), file demo, flusso NDI, flusso OSC,
-flusso dal Controller, flusso dal PatchDeck.
+flusso dal Controller, flusso dal PatchDeck, più — aggiunta in questo
+giro — un trasporto LAN diretto TD-a-TD.
 
-**Stato attuale** (vedi sezione "TD/DMX" 2026-08-25 sopra):
-`dmx_audio_chase` ha un solo `register_service` booleano,
-`dmx_use_file_input` — scheda audio locale *oppure* file demo. Tutta
-l'analisi (kick, soglie, AGC) gira dentro al rig stesso, zero
-dipendenze da altri progetti TD. Target di questa proposta: **DMX V8
-standalone** (`td-dmx-win`, repo `TD4DMX`, vedi "TD/Win-PD, 4" sotto),
-che ha sostituito il vecchio `DMX-OPS`.
+**Stato reale, dopo "TD/Win-PD, 5" e "6" (vedi changelog)**: la parte 1
+di questa proposta è **già costruita**, con un design migliore
+dell'originale — un `audio_engine` condiviso con due sorgenti
+indipendenti (`source_a`/`source_b`), ciascun rig sceglie quale bus
+ascoltare (`Audiobus`/`dmx_{a,b}_audio_source`, enum `["a","b"]`).
+Target: **DMX V8 standalone** (`td-dmx-win`, repo `TD4DMX`).
 
-### Due famiglie di sorgente, non sei varianti dello stesso meccanismo
+### Due famiglie di sorgente — confermato dal lato TD
 
-Le sei opzioni si dividono in due famiglie tecnicamente diverse, e la
-distinzione conta per come si costruisce la rete TD:
+- **A. Audio grezzo** (scheda audio, file demo, NDI) — entra
+  nell'enum `audio_<x>_type` di ciascuna sorgente (`x` = `a`|`b`), oggi
+  `["scheda_audio","file_demo"]`. A valle l'analisi (bande bass/mid/
+  high, gain) resta identica qualunque sia il tipo.
+- **B. Valori già analizzati** (Controller, PatchDeck) — si innestano
+  **a valle** dell'analisi locale, nello stesso punto `bands_out`
+  (`bass`/`mid`/`high`/`level`) che i rig già leggono: i valori ricevuti
+  sostituiscono quelli calcolati localmente, i rig non cambiano.
 
-- **A. Audio grezzo** (scheda audio, file demo, NDI) — un segnale audio
-  che entra nella pipeline di analisi ESISTENTE di `dmx_audio_chase`
-  (kick detection, AGC, soglie — tutto quello che già gira oggi).
-  Cambia solo quale CHOP produce il segnale grezzo a monte.
-- **B. Valori già analizzati** (Controller, PatchDeck, in futuro OSC) —
-  bypassano la pipeline locale e alimentano DIRETTAMENTE l'uscita del
-  chase con valori reattivi già calcolati altrove (Low/Mid/High/Kick/
-  ecc.). Nessuna analisi locale da fare.
+### Prossimi passi sull'enum `audio_<x>_type` (famiglia A + B via MQTT)
 
-Chi implementa deve sapere dov'è il punto di innesto per la famiglia B
-dentro `dmx_audio_chase` (bypassare `dmx_kick_threshold`/`_boost`/
-`_decay`/`_cooldown`/`_smooth` e gli altri param di analisi, che per la
-famiglia B non si applicano) — non deducibile dal filesystem, serve
-Envoy sul progetto.
+Confermato lato TD come punto di innesto giusto — da costruire quando
+servono davvero:
 
-### Proposta concreta
+- `ndi` — NDI Audio In CHOP come terzo ingresso dello switch di
+  `audio_engine`. **Dipendenza aperta**: nessun publisher NDI audio
+  noto oggi nella flotta.
+- `controller` / `patchdeck` — sottoscrizione MQTT a
+  `gaia/device/{id}/audio_levels` (1Hz, schema già pronto da agosto),
+  i valori sostituiscono `bands_out`. **Dipendenza aperta**: nessun
+  Controller vivo sul registro oggi.
 
-**1 — Enum invece di bool (priorità più alta, abilita tutto il resto).**
-Trasformare `dmx_use_file_input` in un `register_param` enum,
-`dmx_audio_source`, validato contro i `menuNames` reali di un Select/
-Switch CHOP — stesso meccanismo già in produzione per `dmx_palette`/
-`dmx_fixture_profile` (range/opzioni letti per introspezione, non
-hardcodati). **Lato Gaia zero lavoro**: `web/dmx.html` è già
-completamente generico sulla matrice (kind/type/range/options), un
-nuovo enum in `dmx_matrix` si renderizza da solo, stesso pattern già
-verificato per gli enum esistenti.
+### Nuovo: trasporto LAN diretto, Touch Out CHOP → Touch In CHOP
 
-Le prime due opzioni dell'enum sono il ramo di oggi, senza modifiche:
-`scheda_audio` (ramo "live" attuale) e `file_demo` (ramo "file"
-attuale).
+Proposta aggiuntiva dell'utente, da affiancare a NDI/MQTT, non da
+sostituirli. Pensata per il link diretto Controller↔DMX (o
+PatchDeck↔DMX) quando entrambe le istanze sono TD sulla stessa LAN —
+caso comune qui, a differenza di NDI che ha senso soprattutto per
+interoperabilità con sistemi non-TD.
 
-**2 — Flusso dal Controller, modello PUSH (confermato dall'utente:
-"sarà il controller a inviare via MQTT").** Schema dati già pronto e
-verificato dal vivo ad agosto: `audio_levels` (MQTT, canale 4, 1Hz, NON
-retained) pubblica già `input_level` + 9 valori reattivi per canale
-(Low/Mid/High/Kickdetection/Snaredetection/Rythm/Spectralcentroid/Smp/
-Fmp), fino a 49 canali. Il Controller (ControllerV7 o chi lo sostituirà
-su Windows) resta il mittente attivo, come già fa oggi — DMX diventa
-solo un nuovo sottoscrittore dello stesso topic che già esiste.
-Implementazione lato DMX: un DAT MQTT-in dentro il progetto (stesso
-meccanismo già usato ovunque per i comandi) che sottoscrive
-`gaia/device/{controller_id}/audio_levels`, più uno Script CHOP che
-scrive i canali ricevuti — famiglia B, bypassa l'analisi locale.
-**Dipendenza aperta**: oggi nessun Controller è vivo sul registro
-(`td-controller-macmauro` fermo da ore, girava sul vecchio Mac,
-sessione dismessa il 30/9) — questa sorgente non ha dati reali finché
-non torna un Controller attivo da qualche parte (Windows o altrove).
+**Perché CHOP e non TOP**: Touch Out/In esiste in due varianti. La TOP
+trasporta immagini (frame compressi, quella sì pesante) — non serve
+qui. La **CHOP** trasporta solo canali float grezzi via TCP, stessa
+categoria di dato dei 9 valori reattivi già in `audio_levels` o delle
+bande di `audio_engine` — zero codec, overhead minimo, probabilmente il
+trasporto TD-nativo più leggero disponibile per questo caso, più
+leggero di NDI perché non porta dietro discovery mDNS né un formato
+pensato per interoperabilità cross-vendor che qui non serve.
 
-**Flusso dal PatchDeck** — stesso meccanismo del punto 2 (sottoscrizione
-`audio_levels` di un altro `device_id`), se/quando PatchDeck pubblica la
-propria analisi audio in autonomia. Storicamente PatchDeck non
-analizzava l'audio da sé, consumava i canali del Controller sullo
-stesso Mac — da verificare con chi ha Envoy su PatchDeck (`td-pd-win`)
-se oggi ha un proprio Audio Device In + analisi, o se questa opzione
-resta senza dati dietro finché non viene costruita lì.
+**Due usi possibili, uno per famiglia**:
+- **Famiglia A**: Touch Out CHOP (audio grezzo mono/stereo) dal
+  lato sorgente → Touch In CHOP dentro `audio_engine` come quarto tipo
+  in `audio_<x>_type` (`touch_lan` o nome simile), accanto a `ndi` —
+  utile quando manca sia scheda audio sia Dante sulla macchina DMX, ma
+  la macchina sorgente è un'altra TD raggiungibile in LAN.
+- **Famiglia B**: Touch Out CHOP delle bande già analizzate (le stesse
+  9 di `audio_levels`, o le 4 di `bands_out`) → Touch In CHOP che si
+  innesta nello stesso punto `bands_out` già usato per Controller/
+  PatchDeck via MQTT — ma a **frame-rate pieno** invece che throttlato
+  a 1Hz. Per pilotare davvero il chase in tempo reale è probabilmente
+  la scelta migliore delle due varianti MQTT/Touch-LAN; MQTT
+  `audio_levels` resta comunque utile com'è per il monitoraggio
+  leggero (Admin, telemetria, non deve essere frame-accurate).
 
-**3 — Flusso NDI (famiglia A, bypass scheda audio/Dante).** Scopo
-confermato dall'utente: NON è "precisione extra sopra MQTT", è un
-**fallback a bassa latenza per rig senza accesso audio locale** — niente
-scheda audio fisica, niente rete Dante disponibile su quella macchina.
-TD ha un NDI Audio In CHOP nativo (seleziona la sorgente per nome sulla
-rete) che sostituisce l'Audio Device In CHOP di oggi nello stesso punto
-della pipeline — stessa analisi locale (kick/soglie/AGC) a valle,
-cambia solo il CHOP sorgente. **Domande aperte, non deducibili da qui**:
-chi pubblica il flusso NDI (Core? un'altra TD con audio reale tipo
-PatchDeck/Controller)? Serve un publisher nuovo se oggi nessuno espone
-audio via NDI — il "Direct NDI Mode" visto su PatchDeck/POST_FX è video,
-non confermato porti anche audio.
+**Nodo da risolvere prima di costruire — indirizzamento**: a differenza
+di NDI (discovery mDNS automatica), Touch In/Touch Out vuole un IP:porta
+esplicito per link. Non va hardcodato: lo stesso schema già in
+produzione per il mocap diretto (`_MocapTargetRegistry`, IP del target
+letto dal suo `status` MQTT via LAN o Tailscale, mai scritto a mano)
+si applica identico qui — la macchina DMX legge l'IP del Controller/
+PatchDeck dal loro status già pubblicato su canale 4, non serve nessun
+nuovo meccanismo di discovery.
 
-**OSC** — lasciato fuori da questo giro di priorità (l'utente non lo ha
-richiesto esplicitamente in questa risposta). Resta valido quanto detto
-nella prima stesura: il canale 2 esistente non porta livelli audio
-oggi, e prima di costruire un nuovo publisher OSC va scelta la sorgente
-(Core/Dante o un'altra TD) per evitare due trasporti per lo stesso dato
-quando il punto 2 già copre il caso "un'altra TD".
+**Non deducibile da qui, serve chi ha Envoy sui progetti**: se Touch
+Out/In CHOP gestisce da solo la riconnessione quando il mittente
+riavvia (NDI in genere sì), o se serve logica esplicita — da verificare
+prima di contare sul link per uno show live.
 
-### Priorità, in ordine
+### Stato / priorità aggiornati
 
-1. Enum `dmx_audio_source` (bool→enum), base per tutto il resto
-2. Sottoscrizione `audio_levels` per Controller/PatchDeck (famiglia B) —
-   economico, schema già pronto, bloccato solo dalla disponibilità di
-   un mittente vivo
-3. NDI Audio In CHOP (famiglia A, fallback bassa latenza) — serve prima
-   sapere chi pubblica il flusso
-4. OSC — non prioritario in questo giro, riprendere solo dopo aver
-   deciso la sorgente
+1. ~~Enum famiglia A~~ — **fatto** (`audio_<x>_type`, vedi "TD/Win-PD,
+   5"/"6"), incluso il bonus non richiesto ma utile delle due sorgenti
+   indipendenti A/B.
+2. Controller/PatchDeck via MQTT `audio_levels` (famiglia B) —
+   economico, schema pronto, bloccato solo dalla disponibilità di un
+   mittente vivo.
+3. Touch Out/Touch In CHOP (famiglia A **e** B, nuovo) — da valutare
+   appena c'è un mittente TD raggiungibile in LAN da testare contro;
+   probabilmente la scelta giusta per la famiglia B quando serve
+   reattività vera, non solo monitoraggio.
+4. NDI (famiglia A, fallback universale/non-TD) — resta valido come
+   opzione per quando la sorgente non è garantita essere TD, o serve
+   portare anche video; non prioritario rispetto a Touch Out/In per il
+   caso TD-a-TD di oggi.
+5. OSC — non prioritario, riprendere solo dopo aver deciso la sorgente.
 
-**Nessun impatto su quanto già esiste**: additivo, `dmx_use_file_input`
-nella sua forma attuale copre già le prime due opzioni dell'enum — il
-rig continua a funzionare identico se questa proposta non viene
-implementata.
+**Nessun impatto su quanto già esiste**: additivo su tutta la linea —
+`audio_engine` di oggi continua a funzionare identico se nessuna di
+queste si costruisce.
 
 ## Changelog / interscambio
 
@@ -5284,3 +5279,31 @@ sorgente unica.** Costruito, verificato dal vivo via Envoy, salvato
   vivo e nessun publisher NDI audio noto.
 - **Per Core**: niente topic nuovi. Se `web/dmx.html` aveva già iniziato
   a leggere `audio.params`, va adattato a `audio.sources.{a,b}.params`.
+
+**2026-10-01 (Core, 15)** — letto "TD/Win-PD, 5" e "6": ottimo lavoro,
+`audio_engine` condiviso con bus A/B indipendenti è meglio di quanto
+proposto in "Core, 14" (io avevo in mente un solo enum, voi avete
+risolto anche il caso "due sorgenti diverse" che non avevo previsto).
+Nessuna domanda in sospeso da parte mia — l'unica aperta ("per rig o
+unico") risulta già chiusa direttamente con l'utente. `DMX-OPS`:
+**dimenticato** (registro + retained status/profile/config puliti via
+l'endpoint, più `dmx_matrix`/`announce` ripuliti a mano perché
+l'endpoint non li tocca — confermato sul registro, restano solo
+`td-pddmx-win` e `td-dmx-win`).
+
+Aggiornata la sezione "DMX — sorgente audio selezionabile" sopra con lo
+stato reale (enum famiglia A già costruito) e una proposta nuova
+dell'utente: **trasporto LAN diretto Touch Out CHOP → Touch In CHOP**
+fra Controller/PatchDeck e DMX, da affiancare a NDI/MQTT non da
+sostituirli — vedi la sezione per il dettaglio (perché CHOP e non TOP,
+i due usi per famiglia A/B, l'indirizzamento via status MQTT stesso
+schema del mocap diretto). Non costruito, nessuna urgenza: per family
+B resta comunque bloccato dalla stessa dipendenza già nota (nessun
+Controller vivo).
+
+**Per Core, noto qui per non perderlo**: `web/dmx.html` legge oggi
+`rigs` dalla `dmx_matrix` ma non ancora la chiave `audio` (passata da
+flat a `audio.sources.{a,b}` in "TD/Win-PD, 6") — serve un piccolo
+adattamento lato Gaia per mostrare i controlli delle due sorgenti
+audio in Admin/dmx.html. Non ancora fatto, segnalato per il prossimo
+giro.
