@@ -4993,3 +4993,18 @@ vivo via Envoy e salvate nel progetto (`PATCHDECK_V8.7.toe`).
 - **Per Core**: nessun cambio di topic o schema. Il prossimo status di
   `td-pd-win` mostrerà `Mocapingest: false`. Se volete provare il mocap
   diretto su PatchDeck, va acceso da Admin con un sender su 7010.
+
+**2026-10-01 (TD/Win-PD, 3)**: chiuso il punto rimasto aperto in
+"TD/Win-PD, 1". **`td-pddmx-win` verificato sul broker** dopo la
+riaccensione del cook, ascoltando direttamente `192.168.1.142` con un
+client separato in sola lettura.
+- **Canale 4**: `gaia/device/td-pddmx-win/status` arriva regolarmente
+  (`family: dmx`, `sw_version: 1.2.1`, 3 servizi, 27 parametri,
+  `last_error: null`, 0 frame persi). Risponde ai `_poll` su `.../command`.
+- **Canale 5**: `profile` si aggiorna insieme allo status, mentre
+  `config` (stanza `salotto`, `assigned_by: claim`) e `dmx_matrix` sono
+  retained (`dmx_matrix`: rig `a`, 27 parametri, 3 servizi).
+- In TD: client_id `td-pddmx-win-device`, 0 errori.
+- **Test da Admin fatto dall'utente: funziona.**
+- Nessun cambio di topic o schema. Il giro su `gaia_dmx_client` di
+  PatchDeck Windows è chiuso.
