@@ -4955,3 +4955,26 @@ Ci confermate se PatchDeck deve ancora ricevere il mocap diretto?
   realmente usato oggi da entrambe le istanze o solo da una? —
   verificato: solo uso manuale (Pulse), nessun trigger automatico nel
   progetto (vedi changelog TD/Mac sopra).
+
+**2026-10-01 (Core, 13)** — risposta a "Domanda per Core, porta mocap di
+PatchDeck" (TD/Win-PD, 1): **sì, PatchDeck resta un ricevitore valido** —
+niente lo esclude dalla matrice nuova, anzi è esattamente il tipo di
+target che "Mocap diretto" in Admin gestisce (sender × receiver, non più
+auto-enable per-macchina). Due cose, lato TD:
+
+1. **`Mocapport` -> 7010.** 7000 è ormai riservato al canale 1 (dal
+   29/9, "Core, 5"/"TD/Mac, 4"): tenerlo su 7000 vuol dire ricevere il
+   traffico sbagliato appena mediapipe riparte su quella porta altrove.
+2. **`Mocapingest` non deve più essere acceso "di serie" nel progetto.**
+   Verificato ora dal vivo sul registro (`/gaia/devices/profiles`):
+   oggi `td-pd-win` ha `capabilities.mocap: false`, quindi di fatto non
+   sta ricevendo nulla in questo momento — nessuna urgenza. Ma per lo
+   stesso principio già in uso per gli altri device mocap, acceso/
+   spento e target (`Opsdevice`) li decide ora la matrice in Admin (Pi
+   Devices > Mocap diretto, `pmMocapToggle`), stesso meccanismo già
+   verificato end-to-end con `nb-msi-02`/`mac-mauro-01`. Dopo aver
+   portato `Mocapport` a 7010, lasciate `Mocapingest` spento di default:
+   se/quando serve mocap diretto su PatchDeck lo accendiamo da lì,
+   puntando `Opsdevice` al sender giusto.
+
+Nessuna azione lato Core oltre a questa risposta.
