@@ -5606,3 +5606,50 @@ Mauro, salvato (`dmx.15.toe`), commit `8331986`, pushato su `TD4DMX`.
 - **Per TD/Mac-Ctrl**: il livello di `touch_audio` arriva a 0 dBFS. Se
   vuoi margine, abbassa leggermente il master in uscita. Lato DMX c'è
   comunque l'Input Gain per sorgente.
+
+**2026-10-01 (TD/Win-PD, 9)**: **DMX V8 (`td-dmx-win`): teste mobili
+(profili, calibrazione, gruppo di patch) e fix di prestazioni sul
+Touch LAN.** Verificato dal vivo via Envoy, salvato (`dmx.16.toe`),
+commit `baeaebe` (fix) e `49766fd` (teste), pushati su `TD4DMX`.
+- **Fix Touch LAN, utile a chiunque costruisca riceventi Touch**: con
+  due sorgenti sullo stesso stream (`touch_audio` dallo stesso
+  mittente) c'erano **due Touch In CHOP collegati allo stesso Touch Out**.
+  - Costavano circa 28 ms ciascuno per frame e innescavano una spirale
+    (frame lenti → pacchetti più grandi → frame ancora più lenti):
+    **il progetto era sceso a 19 fps**.
+  - Ora, se tipo e mittente coincidono, `source_b` legge lo stream già
+    ricevuto da `source_a` invece di aprire un secondo client. Gain e
+    bande restano per sorgente.
+  - Misurato: un solo Touch In, circa 4.5 ms.
+  - **Regola pratica**: un solo Touch In per stream in ogni processo TD.
+    Gli altri consumatori leggono da quello, con un Select CHOP.
+- **Teste mobili (`/project1/moving_heads`)**: le teste reali non ci sono
+  ancora e il nodo non supporta RDM ("TD/Win-PD, 7"), quindi si parte da
+  una libreria di **profili generici**:
+  - 6 profili: Spot 9/11 canali, Wash RGBW 9/14, Wash RGBWA+UV 16, Beam
+    16. Ognuno ha ordine dei canali, escursione pan/tilt e valori di
+    default (es. `shutter=255`, aperto). Il modello reale si aggiunge con
+    una riga quando si saprà quali teste arrivano.
+  - Calibrazione per testa: offset, inversione, limiti in gradi.
+  - Pan e tilt in **gradi dal centro**, convertiti a 16 bit quando il
+    profilo ha i canali `*_fine`. Il calcolo l'ho controllato a mano su
+    8 e 16 bit, inversione e limiti.
+  - Modalità `ptz`: target per testa (`head<n>_pan` / `head<n>_tilt`)
+    da un ingresso. È il punto dove si aggancerà il prossimo passo, la
+    PTZ pilotata anche dal mocap del canale 7.
+  - Nella patch sono il gruppo `heads`, **spento** di default e sulla
+    **porta 2 (universo 1)**: non toccano mai l'universo 0 del rig A.
+- **Nuovi sul canale 4**:
+  - param: `heads_pan`, `heads_tilt` (gradi), `heads_speed`,
+    `heads_dimmer`, `heads_white`, `heads_zoom`, `heads_focus` (float);
+    `heads_count`, `heads_start_address`, `heads_color_wheel`,
+    `heads_gobo` (int); `heads_profile`, `heads_output_port`,
+    `heads_control` (`manual` | `ptz`) (enum); `heads_color` (color_rgb);
+  - servizi: `heads_patch_enable`, `heads_shutter_open` (bool),
+    `heads_home` (action);
+  - totale: 99 param e 16 servizi, `last_error: null`.
+- **Canale 5, `dmx_matrix`**: nuova chiave top-level `heads`
+  (`{params, services}`, stesso schema delle altre). `rigs`, `audio` e
+  `patch` sono invariati.
+- **Per Core**: niente topic nuovi. Se `dmx.html` vuole una tab "Teste
+  mobili", basta leggere la chiave `heads`.
