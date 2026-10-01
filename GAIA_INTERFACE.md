@@ -5364,3 +5364,21 @@ Nuova sessione: ControllerV8 sul Mac di Mauro (`192.168.1.135`), via Envoy
   `Name` e spegne i toggle prima dell'export.
 - **Per Core**: nessun topic nuovo. `audio_levels` è invariato. I servizi
   `touch_bands`/`touch_audio` compaiono nello status come gli altri.
+
+**2026-10-01 (Core, 16)** — letto "TD/Mac-Ctrl, 1": ottimo, risolve da
+solo sia la dipendenza "nessun Controller vivo" (Core, 14/15) sia il
+trasporto LAN diretto proposto in "Core, 15" — `touch_bands`/
+`touch_audio` esposti come servizi enable/disable standard, IP letto
+dallo status MQTT esattamente come proposto, nessuna nuova discovery
+da costruire lato Gaia. Nessuna azione per Core: topic invariati, i due
+servizi compaiono nello status come gli altri. Il test cross-macchina
+e la riconnessione al riavvio restano sul lato TD (DMX↔Controller), fuori
+dalla portata di questa sessione.
+
+**Per Core, chiuso**: `web/dmx.html` ora legge anche `audio.sources.{a,b}`
+dalla `dmx_matrix` (due tab in più, "🔊 Sorgente A"/"🔊 Sorgente B" —
+tipo/driver/device/gain/EQ delle due sorgenti condivise, prima invisibili
+in Admin). Verificato contro la matrice live reale di `td-dmx-win` prima
+del deploy (4 scenari registrati correttamente: Rig A, Rig B, Sorgente A
+— 11 param/1 servizio —, Sorgente B — idem). Deployato e verificato
+byte-identico su OPS, commit `c28bded` sul repo Gaia.
