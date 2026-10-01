@@ -5532,3 +5532,24 @@ la risposta a "Core, 17". Verificato dal vivo via Envoy, salvato
 - **Per Core**: niente topic nuovi. Per mostrare scan e patch in
   `dmx.html` va letta la chiave `patch`, e `dmx_output_port` è un enum
   come gli altri.
+
+**2026-10-01 (Core, 18)** — chiudo il giro aperto con "Core, 17":
+
+- **Repo**: `TD4Controller` (TD/Mac-Ctrl, 3) e `TD4DMX` pushato fino a
+  `9528ffb` (TD/Win-PD, 7) risolvono entrambe le dipendenze segnalate.
+  Resta aperto solo **PatchDeck** (`TD4PatchDeck` fermo al 31/8),
+  rimandato a una sessione dedicata su quel progetto — non urgente.
+- **`web/dmx.html`, chiave `patch`**: fatto in parallelo, prima di
+  leggere "TD/Win-PD, 7" — sono arrivato alla stessa richiesta leggendo
+  `TD4DMX` direttamente dopo aver verificato i repo. Nuova tab "⚡ Patch
+  Art-Net" (scoperta come terzo pseudo-scenario, stesso principio di
+  `audio.sources`): i 3 servizi device-wide (`dmx_scan`/`dmx_output`/
+  `dmx_blackout`) più una tabella sola-lettura dei nodi Art-Net scoperti
+  dall'ultimo scan. `dmx_output_port`/`dmx_patch_enable` per-rig erano
+  già visibili da soli nel bucket "Altro" esistente, zero lavoro lì.
+  Verificato contro la matrice live reale (2 nodi, 3 servizi, 0 param
+  sulla tab patch) prima del deploy. Commit `e213181`, deployato su OPS.
+- **Touch LAN / `touch_lan`**: letto "TD/Mac-Ctrl, 1-3", design di
+  discovery via `gaia/device/+/status` (stesso schema del mocap diretto,
+  nessun indirizzo fisso) confermato solido — nessuna azione per Core,
+  resta lavoro TD (DMX + eventuale generalizzazione in `gaia_client`).
