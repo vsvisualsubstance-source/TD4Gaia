@@ -5420,3 +5420,47 @@ senza alcuna copia fuori dalla singola macchina fisica. Nessuna
 urgenza se le macchine restano accese e raggiungibili, ma un crash
 disco o un file sovrascritto per errore oggi perderebbero lavoro reale
 senza modo di recuperarlo.
+
+**2026-10-01 (TD/Mac-Ctrl, 2)**: **correzione a "TD/Mac-Ctrl, 1":
+nessun IP, porta o device_id fisso per il link Touch.** Nella voce
+precedente le porte erano fisse e lo status era citato per nome
+(`gaia/device/td-controller-macmauro/status`). Il ricevente deve invece
+**scoprire** il mittente dagli status Gaia, come fa già `gaia_client`
+1.2.1 per i mittenti mocap.
+- **Cosa pubblica ora il Controller**: nello status (`params`) ci sono
+  due param nuovi, `touch_bands_port` e `touch_audio_port`. Si leggono e
+  si cambiano da Admin come gli altri (`set` cambia la porta del Touch Out).
+  Lo status porta già `ip`, `tailscale_ip`, `family`, `stanza` e lo stato
+  dei servizi `touch_bands`/`touch_audio`. Commit `af9cacb` su `TD4Controller`.
+- **Regola di discovery**, per il DMX e per qualunque ricevente futuro:
+  1. Ascolta `gaia/device/+/status`. È lo stesso flusso che riceve già
+     `mqtt_control` del `gaia_client`, quindi nessun topic nuovo.
+  2. Un device è **mittente** del servizio `S` (`touch_audio` = famiglia
+     A, `touch_bands` = famiglia B) se `services[S] == "active"` e
+     `params[S + "_port"]` esiste.
+  3. L'indirizzo è `ip`, con `tailscale_ip` come ripiego se l'IP LAN non
+     risponde. La porta è `params[S + "_port"]`.
+  4. Il mittente scade dopo 90 s senza status (stesso TTL dei mocap
+     sender), oppure subito se `services[S]` diventa `inactive`.
+  5. Se `ip` o la porta cambiano, il Touch In si riallinea da solo: non
+     si ricopia niente a mano.
+- **Verificato dal broker** (11 status retained, nessun indirizzo noto in
+  anticipo): l'unico mittente trovato è `td-controller-macmauro`, con
+  `touch_bands` su `192.168.1.135:8000` e `touch_audio` su `:8001`, valori
+  letti dallo status. Sul Mac `tailscale_ip` è `null`, quindi per ora non
+  c'è il ripiego via Tailscale da questo device.
+- **Per TD/Win-PD (DMX V8)**: nel tipo `touch_lan` di
+  `audio_<x>_type` aggiungere un param `audio_<x>_sender` (StrMenu, come
+  `Opsdevice`) riempito con i mittenti scoperti; i param `address`/`port`
+  del Touch In vanno legati in espressione al mittente scelto.
+  Se c'è un solo mittente, sceglierlo da solo.
+- **Per TD/Win-client (proposta)**: invece di far reimplementare la regola
+  a ogni progetto, generalizzare in `gaia_client` la discovery già fatta
+  per il mocap. Per esempio `get_service_providers(service)` →
+  `{device_id: {ip, tailscale_ip, family, stanza, params}}`, sullo stesso
+  flusso di `mqtt_control`, con lo stesso TTL. Così il DMX, e ogni
+  progetto dopo, legge i mittenti da un'API del client, senza una seconda
+  connessione MQTT. Finché non esiste, il DMX può farlo nel proprio
+  `gaia_services`, con un MQTT client DAT dedicato (client_id
+  `{Deviceid}-discovery`).
+- **Per Core**: nessun topic nuovo, nessuna azione.
