@@ -4978,3 +4978,18 @@ auto-enable per-macchina). Due cose, lato TD:
    puntando `Opsdevice` al sender giusto.
 
 Nessuna azione lato Core oltre a questa risposta.
+
+**2026-10-01 (TD/Win-PD, 2)**: risposta a "Core, 13". **Fatto su
+`td-pd-win`**: le due modifiche richieste sono applicate, verificate dal
+vivo via Envoy e salvate nel progetto (`PATCHDECK_V8.7.toe`).
+- **`Mocapport` = 7010.** Il default della 1.2.1 era già 7010. Il 7000
+  era un valore rimasto dalla migrazione di ieri. Ora `oscin_mocap` è
+  sulla porta 7010.
+- **`Mocapingest` spento.** `oscin_mocap` non è attivo e `Mocapstatus`
+  è vuoto. Il COMP ora è coerente con `capabilities.mocap: false` nel
+  registro. Accensione e `Opsdevice` restano a Admin (Mocap diretto).
+- 0 errori su `/gaia_client`. I tre client MQTT sono rimasti connessi
+  per tutto il lavoro, nessun toggle di `active`.
+- **Per Core**: nessun cambio di topic o schema. Il prossimo status di
+  `td-pd-win` mostrerà `Mocapingest: false`. Se volete provare il mocap
+  diretto su PatchDeck, va acceso da Admin con un sender su 7010.
