@@ -926,6 +926,118 @@ mood/energia (stesso meccanismo già in produzione per palette DMX/clip
 PatchDeck) — non implementato ora per non scrivere logica contro dati
 che non esistono ancora.
 
+## DMX — sorgente audio selezionabile (proposta lato Gaia, 2026-10-01, niente costruito)
+
+**Why:** l'utente vuole poter scegliere, per ogni rig DMX, fra sei
+sorgenti audio invece del solo switch binario live/file di oggi:
+scheda audio (default di sistema), file demo, flusso NDI, flusso OSC,
+flusso dal Controller, flusso dal PatchDeck.
+
+**Stato attuale** (vedi sezione "TD/DMX" 2026-08-25 sopra):
+`dmx_audio_chase` ha un solo `register_service` booleano,
+`dmx_use_file_input` — scheda audio locale *oppure* file demo. Tutta
+l'analisi (kick, soglie, AGC) gira dentro al rig stesso, zero
+dipendenze da altri progetti TD. Target di questa proposta: **DMX V8
+standalone** (`td-dmx-win`, repo `TD4DMX`, vedi "TD/Win-PD, 4" sotto),
+che ha sostituito il vecchio `DMX-OPS`.
+
+### Due famiglie di sorgente, non sei varianti dello stesso meccanismo
+
+Le sei opzioni si dividono in due famiglie tecnicamente diverse, e la
+distinzione conta per come si costruisce la rete TD:
+
+- **A. Audio grezzo** (scheda audio, file demo, NDI) — un segnale audio
+  che entra nella pipeline di analisi ESISTENTE di `dmx_audio_chase`
+  (kick detection, AGC, soglie — tutto quello che già gira oggi).
+  Cambia solo quale CHOP produce il segnale grezzo a monte.
+- **B. Valori già analizzati** (Controller, PatchDeck, in futuro OSC) —
+  bypassano la pipeline locale e alimentano DIRETTAMENTE l'uscita del
+  chase con valori reattivi già calcolati altrove (Low/Mid/High/Kick/
+  ecc.). Nessuna analisi locale da fare.
+
+Chi implementa deve sapere dov'è il punto di innesto per la famiglia B
+dentro `dmx_audio_chase` (bypassare `dmx_kick_threshold`/`_boost`/
+`_decay`/`_cooldown`/`_smooth` e gli altri param di analisi, che per la
+famiglia B non si applicano) — non deducibile dal filesystem, serve
+Envoy sul progetto.
+
+### Proposta concreta
+
+**1 — Enum invece di bool (priorità più alta, abilita tutto il resto).**
+Trasformare `dmx_use_file_input` in un `register_param` enum,
+`dmx_audio_source`, validato contro i `menuNames` reali di un Select/
+Switch CHOP — stesso meccanismo già in produzione per `dmx_palette`/
+`dmx_fixture_profile` (range/opzioni letti per introspezione, non
+hardcodati). **Lato Gaia zero lavoro**: `web/dmx.html` è già
+completamente generico sulla matrice (kind/type/range/options), un
+nuovo enum in `dmx_matrix` si renderizza da solo, stesso pattern già
+verificato per gli enum esistenti.
+
+Le prime due opzioni dell'enum sono il ramo di oggi, senza modifiche:
+`scheda_audio` (ramo "live" attuale) e `file_demo` (ramo "file"
+attuale).
+
+**2 — Flusso dal Controller, modello PUSH (confermato dall'utente:
+"sarà il controller a inviare via MQTT").** Schema dati già pronto e
+verificato dal vivo ad agosto: `audio_levels` (MQTT, canale 4, 1Hz, NON
+retained) pubblica già `input_level` + 9 valori reattivi per canale
+(Low/Mid/High/Kickdetection/Snaredetection/Rythm/Spectralcentroid/Smp/
+Fmp), fino a 49 canali. Il Controller (ControllerV7 o chi lo sostituirà
+su Windows) resta il mittente attivo, come già fa oggi — DMX diventa
+solo un nuovo sottoscrittore dello stesso topic che già esiste.
+Implementazione lato DMX: un DAT MQTT-in dentro il progetto (stesso
+meccanismo già usato ovunque per i comandi) che sottoscrive
+`gaia/device/{controller_id}/audio_levels`, più uno Script CHOP che
+scrive i canali ricevuti — famiglia B, bypassa l'analisi locale.
+**Dipendenza aperta**: oggi nessun Controller è vivo sul registro
+(`td-controller-macmauro` fermo da ore, girava sul vecchio Mac,
+sessione dismessa il 30/9) — questa sorgente non ha dati reali finché
+non torna un Controller attivo da qualche parte (Windows o altrove).
+
+**Flusso dal PatchDeck** — stesso meccanismo del punto 2 (sottoscrizione
+`audio_levels` di un altro `device_id`), se/quando PatchDeck pubblica la
+propria analisi audio in autonomia. Storicamente PatchDeck non
+analizzava l'audio da sé, consumava i canali del Controller sullo
+stesso Mac — da verificare con chi ha Envoy su PatchDeck (`td-pd-win`)
+se oggi ha un proprio Audio Device In + analisi, o se questa opzione
+resta senza dati dietro finché non viene costruita lì.
+
+**3 — Flusso NDI (famiglia A, bypass scheda audio/Dante).** Scopo
+confermato dall'utente: NON è "precisione extra sopra MQTT", è un
+**fallback a bassa latenza per rig senza accesso audio locale** — niente
+scheda audio fisica, niente rete Dante disponibile su quella macchina.
+TD ha un NDI Audio In CHOP nativo (seleziona la sorgente per nome sulla
+rete) che sostituisce l'Audio Device In CHOP di oggi nello stesso punto
+della pipeline — stessa analisi locale (kick/soglie/AGC) a valle,
+cambia solo il CHOP sorgente. **Domande aperte, non deducibili da qui**:
+chi pubblica il flusso NDI (Core? un'altra TD con audio reale tipo
+PatchDeck/Controller)? Serve un publisher nuovo se oggi nessuno espone
+audio via NDI — il "Direct NDI Mode" visto su PatchDeck/POST_FX è video,
+non confermato porti anche audio.
+
+**OSC** — lasciato fuori da questo giro di priorità (l'utente non lo ha
+richiesto esplicitamente in questa risposta). Resta valido quanto detto
+nella prima stesura: il canale 2 esistente non porta livelli audio
+oggi, e prima di costruire un nuovo publisher OSC va scelta la sorgente
+(Core/Dante o un'altra TD) per evitare due trasporti per lo stesso dato
+quando il punto 2 già copre il caso "un'altra TD".
+
+### Priorità, in ordine
+
+1. Enum `dmx_audio_source` (bool→enum), base per tutto il resto
+2. Sottoscrizione `audio_levels` per Controller/PatchDeck (famiglia B) —
+   economico, schema già pronto, bloccato solo dalla disponibilità di
+   un mittente vivo
+3. NDI Audio In CHOP (famiglia A, fallback bassa latenza) — serve prima
+   sapere chi pubblica il flusso
+4. OSC — non prioritario in questo giro, riprendere solo dopo aver
+   deciso la sorgente
+
+**Nessun impatto su quanto già esiste**: additivo, `dmx_use_file_input`
+nella sua forma attuale copre già le prime due opzioni dell'enum — il
+rig continua a funzionare identico se questa proposta non viene
+implementata.
+
 ## Changelog / interscambio
 
 **2026-08-06 (Core)** — sessione lunga sul multi-istanza:
@@ -5046,3 +5158,22 @@ sulla porta 9875). Verificato dal vivo via Envoy e sul broker, salvato
      `DMX-OPS` (o `DMX-OPSA`), vanno spostati su `td-dmx-win`. Il filtro
      per `family: dmx` funziona già senza modifiche.
   3. Topic e schema invariati.
+
+**2026-10-01 (Core, 14)** — pubblicata proposta "DMX — sorgente audio
+selezionabile" (sezione dedicata sopra), su richiesta dell'utente.
+Target: **DMX V8 standalone** (`td-dmx-win`, vedi "TD/Win-PD, 4"),
+non più il vecchio `DMX-OPS`. Priorità confermate dall'utente: (1)
+`dmx_use_file_input` bool → enum `dmx_audio_source` prima di tutto;
+(2) Controller resta mittente PUSH su `audio_levels` (meccanismo già
+esistente, invariato — DMX diventa solo un nuovo sottoscrittore,
+bloccato oggi dal fatto che nessun Controller è vivo sul registro); (3)
+NDI è un fallback a bassa latenza per rig senza scheda audio locale né
+Dante, non "precisione extra" — stesso punto di innesto dell'Audio
+Device In CHOP di oggi, stessa analisi locale a valle. OSC resta fuori
+da questo giro.
+
+**Per Core, nel frattempo**: `DMX-OPS` (status/profile/config/
+dmx_matrix retained, fermi dalle 09:54 di ieri, vedi "TD/Win-PD, 4" —
+nessuna istanza lo pubblica più) va dimenticato dal registro appena
+possibile — non ancora fatto in questo giro, segnalo qui per non
+perderlo.
