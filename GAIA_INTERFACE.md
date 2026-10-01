@@ -14,7 +14,7 @@ i lati, va sempre **pushata** qui, non solo salvata localmente.
 | **TD/Win** | TD-Gaia (`TD-Gaia.toe`, root del repo), via Envoy | PC `MSI`, `C:/Users/nicol/Desktop/Gaia` | `Nicol` |
 | **TD/Win-client** | Portabile `gaia_client_portable` in `client/`, via Envoy (porta 1980) | PC `MSI`, `C:/Users/nicol/Desktop/Gaia/client` | `Nicol` |
 | **TD/DMX** | Device DMX V7 (inattiva dal 25/8) | Mac di Mauro | `Mauro` |
-| **TD/Win-PD** | PatchDeck V8, copia Windows (`gaia_client` + `gaia_dmx_client`), via Envoy (porta 1982) | PC `MSI`, `C:/Users/nicol/Desktop/release/PatchDeck V8 - EXPORT WIN` (non è un repo git) | `Nicol` |
+| **TD/Win-PD** | PatchDeck V8, copia Windows (`gaia_client` + `gaia_dmx_client`), via Envoy (porta 1982), e DMX V8 standalone (`td-dmx-win`), via Envoy (porta 9875) | PC `MSI`, `C:/Users/nicol/Desktop/release/PatchDeck V8 - EXPORT WIN` (non è un repo git) e `C:/Users/nicol/Desktop/DMX V8` (repo `TD4DMX`) | `Nicol` |
 
 **Regole per le etichette**:
 - Ogni voce del changelog porta la propria etichetta: `**AAAA-MM-GG (Etichetta, n)**`.
@@ -5008,3 +5008,41 @@ client separato in sola lettura.
 - **Test da Admin fatto dall'utente: funziona.**
 - Nessun cambio di topic o schema. Il giro su `gaia_dmx_client` di
   PatchDeck Windows è chiuso.
+
+**2026-10-01 (TD/Win-PD, 4)**: **DMX V8 standalone passa a `gaia_client`
+1.2.1, con il nuovo device_id `td-dmx-win`** (prima `DMX-OPS`). Il progetto
+gira sul PC `MSI` (`C:/Users/nicol/Desktop/DMX V8`, repo `TD4DMX`, Envoy
+sulla porta 9875). Verificato dal vivo via Envoy e sul broker, salvato
+(`dmx.9.toe`). **Test da Admin fatto dall'utente: funziona.**
+- **Perché**: il client era la versione 1.0 (`sw_version: "1.0"`). Aveva
+  `usercid` = `me.id` (il bug del cross-talk di "TD/Mac, 14"), mocap
+  acceso su 7000 e un `Deviceid` copiato da OPS (`DMX-OPS`, maiuscolo)
+  mentre girava su questa macchina (`192.168.1.230`).
+- **Cosa cambia in TD**:
+  - `gaia_client` ora è il `.tox` 1.2.1 senza modifiche, cioè
+    `client/gaia_client.tox` del commit `09af2a3`. I DAT sono in
+    `syncfile` su `DMX V8/gaia_client/*.py`, copiati da `client/gaia_client/`.
+  - `dmx_services` e il suo lifecycle sono usciti da `gaia_client` e ora
+    stanno in `/project1/gaia_services`, come
+    `/PATCHDECK/gaia_services` in PatchDeck. Si agganciano al client
+    con `op.Gaia`. La logica di registrazione è invariata. I prossimi
+    aggiornamenti del client sono quindi una sostituzione del solo
+    `.tox`, più la copia dei file.
+  - Il backup del client 1.0 è in `DMX V8/Backup/gaia_client_v1.0_DMX-OPS_20261001.tox`.
+- **Identità e config**: `Deviceid` `td-dmx-win`, family `dmx`, stanza
+  `ConsolleDmx`, nome `DMXRIG`. Client_id `td-dmx-win-ingest`,
+  `-device` e `-control`. `Mocapport` 7010 e `Mocapingest` spento, come
+  chiesto in "Core, 13" per `td-pd-win`.
+- **Sul broker**: status e profile con `sw_version: 1.2.1`, 6 servizi
+  (`dmx_a_*`/`dmx_b_*`), 56 parametri (54 dei due rig più i 2 built-in
+  del mocap), `last_error: null`. `dmx_matrix` è retained, con i rig
+  `a`/`b` e per ognuno 27 parametri e 3 servizi. Schema della matrice
+  invariato.
+- **Per Core**:
+  1. **Va fatto `forget` di `DMX-OPS`**: restano retained status,
+     profile, config e `dmx_matrix` fermi alle 09:54 di oggi. Nessuna
+     istanza li pubblica più.
+  2. Se in Admin c'erano configurazioni, automazioni o filtri legati a
+     `DMX-OPS` (o `DMX-OPSA`), vanno spostati su `td-dmx-win`. Il filtro
+     per `family: dmx` funziona già senza modifiche.
+  3. Topic e schema invariati.
