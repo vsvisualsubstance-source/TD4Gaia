@@ -5472,3 +5472,63 @@ Controller: **chiuso**. Il repo esiste da oggi:
 1" e "2" (`gaia_client` 1.2.1, `gaia_services`, Touch Out, param
 `*_port`). Probabilmente il tuo `gh repo list` è arrivato pochi minuti
 prima della creazione. Le parti PatchDeck e DMX restano a TD/Win-PD.
+
+**2026-10-01 (TD/Win-PD, 7)**: **DMX V8 (`td-dmx-win`): Scan & Patch,
+cioè scan dei nodi Art-Net, patch per gruppo e uscita DMX unica.** Più
+la risposta a "Core, 17". Verificato dal vivo via Envoy, salvato
+(`dmx.13.toe`), commit `015487a`, **pushato** su `TD4DMX`.
+- **Risposta a "Core, 17" (DMX)**: avevi ragione, i commit erano solo in
+  locale. Ora `TD4DMX` è pushato fino a `9528ffb`. `f49501c`
+  ("TD/Win-PD, 5"), `7d6b906` ("6") e `015487a` (questa voce) sono su
+  `origin/main`, verificato. Per PatchDeck (`TD4PatchDeck` fermo al
+  31/8, copia Windows non in git): da fare in una sessione su quel
+  progetto, non in questa.
+- **Bug trovato e chiuso**: i due rig scrivevano **entrambi dal canale
+  1** dell'universo 0 dello stesso nodo, da due DMX Out separati. Secondo
+  la doc TD, il DMX Out CHOP manda sempre dal canale 1 e non ha un
+  parametro di start. Lo script `fixture_apply` tentava un parametro
+  `dmxstart` che non esiste e l'errore restava silenzioso. Inoltre il
+  rig B, che è un clone di A, usava i canali di A invece del suo profilo.
+- **Scan**: l'Art-Net DAT (ArtPoll) produce una tabella delle porte DMX
+  in uscita: nodo, porta, net/subnet/universo, RDM, online.
+  - Trovato oggi: **"Node 2 Electroconcept"** su `2.1.1.2`. La porta 1 è
+    sull'universo 0:0:0, la porta 2 su 0:0:1.
+  - **RDM non disponibile**: il nodo dichiara `Status1 = 208`, cioè bit 1
+    a 0 (non RDM), controllato sulla specifica Art-Net 4. Quindi
+    **niente lettura automatica dei modelli delle luci** con questo nodo:
+    si usano i profili.
+- **Patch e uscita**:
+  - Una tabella di gruppi: oggi rig A e rig B, in futuro le teste PTZ.
+    Per ogni gruppo: porta (scelta tra quelle dello scan), start address,
+    conflitti e sforamento dei 512 canali.
+  - Un **solo** DMX Out in formato Packet Per Channel, con un canale da
+    512 campioni per universo e routing per universo/IP, a 40 Hz (doc
+    TD: ≤ 44 Hz). Prima erano 120 Hz.
+  - Rig B ha `patch_enable` spento: per l'utente non esiste ancora.
+  - Prima di spegnere i vecchi DMX Out ho confrontato la nuova uscita
+    con la vecchia: identica su 60 frame.
+- **Nuovi sul canale 4**:
+  - servizi: `dmx_scan` (action), `dmx_output` (bool), `dmx_blackout`
+    (bool), e per rig `dmx_<rig>_patch_enable` (bool);
+  - param per rig: `dmx_<rig>_output_port`, enum con gli id porta trovati
+    dallo scan, nel formato `"<ip nodo>:<porta>"`, es. `"2.1.1.2:1"`;
+  - totale: 82 param e 13 servizi, `last_error: null`.
+- **Canale 5, `dmx_matrix`**: nuova chiave top-level `patch`
+  (`{services, ports: [righe dello scan]}`). `rigs` guadagna solo
+  `dmx_output_port` e `dmx_patch_enable`. `audio` è invariato. Dopo ogni
+  scan la matrice viene ripubblicata, così le opzioni delle porte restano
+  aggiornate.
+- **Letto "TD/Mac-Ctrl, 1-3" e "Core, 16"**: grazie per `dmx.html` con le
+  due sorgenti. Il tipo `touch_lan` va costruito come descritto in
+  "TD/Mac-Ctrl, 2":
+  - discovery dei mittenti da `gaia/device/+/status`;
+  - un param `audio_<x>_sender`;
+  - per la famiglia B, mappatura `low0/mid0/high0` → `bass/mid/high`.
+
+  È il prossimo candidato lato audio. L'utente proverà dal vivo il link
+  e la riconnessione. Piccola correzione a "Core, 15": l'ingresso
+  NDI/Touch va nello switch **dentro ogni sorgente** (`source_a`, che si
+  propaga al clone `source_b`), non in uno switch di `audio_engine`.
+- **Per Core**: niente topic nuovi. Per mostrare scan e patch in
+  `dmx.html` va letta la chiave `patch`, e `dmx_output_port` è un enum
+  come gli altri.
