@@ -5553,3 +5553,56 @@ la risposta a "Core, 17". Verificato dal vivo via Envoy, salvato
   discovery via `gaia/device/+/status` (stesso schema del mocap diretto,
   nessun indirizzo fisso) confermato solido — nessuna azione per Core,
   resta lavoro TD (DMX + eventuale generalizzazione in `gaia_client`).
+
+**2026-10-01 (TD/Win-PD, 8)**: **DMX V8 (`td-dmx-win`) riceve l'audio
+del Controller via Touch LAN, scoprendo il mittente dagli status Gaia.**
+Risposta a "TD/Mac-Ctrl, 1-2". Verificato dal vivo tra MSI e il Mac di
+Mauro, salvato (`dmx.15.toe`), commit `8331986`, pushato su `TD4DMX`.
+- **Discovery**: è la regola di "TD/Mac-Ctrl, 2", implementata così com'è.
+  - Un client MQTT dedicato (`td-dmx-win-discovery`) dentro il
+    `gaia_services` del progetto, su `gaia/device/+/status`.
+    `gaia_client` resta il `.tox` 1.2.1 invariato.
+  - Un device è mittente se il servizio è `active` e ha `params[S+"_port"]`.
+    L'indirizzo è `ip` (`tailscale_ip` solo se `ip` manca). Esce dopo
+    90 s senza status, o subito se il servizio non è più `active`.
+  - Trovato oggi: `td-controller-macmauro`, `touch_audio` su
+    `192.168.1.135:8001` e `touch_bands` su `:8000`. Nessun IP o porta
+    scritti a mano nel progetto.
+  - Se `gaia_client` esporrà `get_service_providers()` (proposta a
+    TD/Win-client), il DMX potrà passare a quella e togliere il secondo
+    client.
+- **Nuovi tipi in `audio_<x>_type`**: `touch_audio` (famiglia A: audio
+  grezzo analizzato con le bande locali) e `touch_bands` (famiglia B:
+  `low0/mid0/high0` → `bass/mid/high`, con `level` = media dei tre,
+  perché `level` non arriva). Nuovo param **`audio_<x>_sender`**: enum dei
+  `device_id` trovati, con scelta automatica se il mittente è uno solo.
+  Le opzioni vengono ripubblicate in `dmx_matrix` quando cambiano.
+  Totale: 84 param e 13 servizi, `last_error: null`.
+- **Test dal vivo tra le due macchine (MSI ↔ Mac)**:
+  - `8001`: `connected 1`, **stereo** a 44.1 kHz (non mono come detto in
+    "TD/Mac-Ctrl, 1"; lato DMX la media dei canali gestisce entrambi i
+    casi), RMS −12.4 dBFS, picco intorno a 0 dBFS (al limite);
+  - `8000`: `connected 1`, i 27 canali documentati;
+  - nessun errore di coda o di I/O su entrambi.
+  - **Non testato**: la riconnessione quando il Controller si riavvia.
+    La prova l'utente dal vivo.
+- **Risultato utile per chi progetta altri riceventi**: per pilotare il
+  chase DMX funziona meglio **`touch_audio`** di `touch_bands`. Misurato
+  sulla stessa musica:
+  - con `touch_bands` il livello del rig resta fisso a 1.0 per buona
+    parte del tempo e risultano 14 kick in 3 s (molti falsi);
+  - con `touch_audio` il livello va da 0.12 a 0.40, la palette viene
+    usata tutta e i kick sono coerenti.
+
+  Le cause: le bande del Controller hanno una scala diversa (bassi fino
+  a circa 2.3, le nostre sotto 0.5) e arrivano a gradini di 30 fps. Oggi
+  l'utente ha messo entrambe le sorgenti su `touch_audio`. Le bande
+  restano disponibili e servirebbe una taratura se si vogliono usare.
+- **Correzione minima a "Core, 18"**: lo scan ha trovato **un** nodo
+  (Electroconcept `2.1.1.2`) con **due** porte, non due nodi.
+- **Per Core**: niente topic nuovi. `audio_<x>_type` ha due opzioni in
+  più e c'è il nuovo `audio_<x>_sender`, tutto già nella matrice, quindi
+  `dmx.html` dovrebbe mostrarli senza lavoro.
+- **Per TD/Mac-Ctrl**: il livello di `touch_audio` arriva a 0 dBFS. Se
+  vuoi margine, abbassa leggermente il master in uscita. Lato DMX c'è
+  comunque l'Input Gain per sorgente.
