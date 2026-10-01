@@ -15,6 +15,7 @@ i lati, va sempre **pushata** qui, non solo salvata localmente.
 | **TD/Win-client** | Portabile `gaia_client_portable` in `client/`, via Envoy (porta 1980) | PC `MSI`, `C:/Users/nicol/Desktop/Gaia/client` | `Nicol` |
 | **TD/DMX** | Device DMX V7 (inattiva dal 25/8) | Mac di Mauro | `Mauro` |
 | **TD/Win-PD** | PatchDeck V8, copia Windows (`gaia_client` + `gaia_dmx_client`), via Envoy (porta 1982), e DMX V8 standalone (`td-dmx-win`), via Envoy (porta 9875) | PC `MSI`, `C:/Users/nicol/Desktop/release/PatchDeck V8 - EXPORT WIN` (non è un repo git) e `C:/Users/nicol/Desktop/DMX V8` (repo `TD4DMX`) | `Nicol` |
+| **TD/Mac-Ctrl** | ControllerV8 (`td-controller-macmauro`, family `mixeraudio`), via Envoy (porta 9871) | Mac di Mauro (`192.168.1.135`), `~/Documents/TD/release/ControllerV8` | `Mauro` |
 
 **Regole per le etichette**:
 - Ogni voce del changelog porta la propria etichetta: `**AAAA-MM-GG (Etichetta, n)**`.
@@ -5307,3 +5308,59 @@ flat a `audio.sources.{a,b}` in "TD/Win-PD, 6") — serve un piccolo
 adattamento lato Gaia per mostrare i controlli delle due sorgenti
 audio in Admin/dmx.html. Non ancora fatto, segnalato per il prossimo
 giro.
+
+**2026-10-01 (TD/Mac-Ctrl, 1)**: **ControllerV8 (`td-controller-macmauro`)
+passa a `gaia_client` 1.2.1 ed espone l'audio master via Touch Out CHOP.**
+Nuova sessione: ControllerV8 sul Mac di Mauro (`192.168.1.135`), via Envoy
+(porta 9871). Verificato dal vivo via Envoy e sul broker.
+
+- **Controller di nuovo vivo sul registro**: risolve la dipendenza aperta in
+  "Core, 14"/"Core, 15" ("nessun Controller vivo"). Status/profile con
+  `sw_version: 1.2.1`, family `mixeraudio`, `ip: 192.168.1.135`, stanza
+  `salotto`, 5 servizi, 590 parametri, `last_error: null`. `audio_levels`
+  (1Hz) pubblica come prima, schema invariato.
+- **Client**: `.tox` 1.2.1 senza modifiche (`client/gaia_client.tox`, LFS
+  `8b24cd07…`), file in `ControllerV8/gaia_client/`, `opshortcut = Gaia`.
+  Client_id `td-controller-macmauro-{ingest,device,control}`: chiuso anche
+  qui il bug cross-talk `usercid = me.id` ("TD/Mac, 14"), che sulla 1.0
+  era ancora attivo. `Mocapport` 7010, mocap/canvas/fleet spenti.
+  Backup 1.0: `ControllerV8/Backup/gaia_client_v1.0_td-controller-macmauro_20261001.tox`.
+- **Servizi di progetto fuori dal client**: `audio_services` e il suo
+  lifecycle ora stanno in `/gaia_services` e si agganciano con `op.Gaia`,
+  come DMX V8 e PatchDeck. Il prossimo aggiornamento del client sarà quindi
+  solo una sostituzione del `.tox` più la copia dei file.
+- **Trasporto LAN Touch Out → Touch In** (proposta "Core, 15"), lato
+  Controller fatto. Il Touch Out è il server TCP (doc TD: "Multiple Touch In
+  CHOPs (clients) can receive data from a single Touch Out CHOP (server)").
+  Il ricevente punta il proprio Touch In all'`ip` dello status MQTT:
+  | Porta | Servizio Gaia | Contenuto | Famiglia |
+  |---|---|---|---|
+  | `8000` | `touch_bands` | 27 canali a frame-rate (30 fps): `low/mid/high/kick/snare/rythm/smsd/fmsd/spectralCentroid` + suffisso `0` (Master), `17`, `23` | B |
+  | `8001` | `touch_audio` | audio master grezzo (uscita dello switch live/file), mono, 44.1 kHz | A |
+  Entrambi si accendono e spengono da Admin con `enable`/`disable`, come
+  ogni servizio (verificato: `disable` chiude la porta, `enable` la riapre).
+  Il `touchout1` su 8000 esisteva già, oggi probabilmente letto da un Touch
+  In locale. Ora è solo esposto come servizio, non è cambiato.
+- **Test fatto**: Touch In verso `192.168.1.135:8001` sulla stessa
+  macchina. In ~90 frame: `connected 1`, 1470 campioni a frame a 44.1 kHz,
+  `io_errors 0`, `queue_advanced/retarded_total 0`. **Non testato**: un
+  link vero tra due macchine e la riconnessione quando il mittente riavvia.
+  Vanno provati dal lato DMX.
+- **Per TD/Win-PD (DMX V8)**: nuovo tipo in `audio_<x>_type` (es.
+  `touch_lan`). Famiglia A: Touch In verso `ip:8001` come terzo ingresso
+  della sorgente. Famiglia B: Touch In verso `ip:8000`, con i canali `*0`
+  mappati su `bands_out`. Va mappato `low0/mid0/high0` → `bass/mid/high`,
+  mentre `level` non c'è (si può usare `input_level` da `audio_levels`, o
+  derivarlo dall'audio grezzo). L'`ip` si legge da
+  `gaia/device/td-controller-macmauro/status`.
+- **Per chi rilascia `gaia_client`**: il `.tox` 1.2.1 esce con la config di
+  sviluppo di MSI (`Deviceid = nb-msi-02`, `Canvasingest`/`Mocapingest`/
+  `Devicecontrol` accesi). Va contro la sezione 1 ("Deviceid vuoto di
+  default"). Caricato a freddo, si collega subito al broker come
+  `nb-msi-02` con lo stesso client_id della macchina vera. Qui è successo
+  per ~1 minuto, poi ho corretto la config. Lo status retained di
+  `nb-msi-02` sul broker è più vecchio, quindi nessuna sovrascrittura
+  osservata. Proposta: `pre_release` svuota `Deviceid`/`Family`/`Stanza`/
+  `Name` e spegne i toggle prima dell'export.
+- **Per Core**: nessun topic nuovo. `audio_levels` è invariato. I servizi
+  `touch_bands`/`touch_audio` compaiono nello status come gli altri.
