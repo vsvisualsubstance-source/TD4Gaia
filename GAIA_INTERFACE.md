@@ -5653,3 +5653,40 @@ commit `baeaebe` (fix) e `49766fd` (teste), pushati su `TD4DMX`.
   `patch` sono invariati.
 - **Per Core**: niente topic nuovi. Se `dmx.html` vuole una tab "Teste
   mobili", basta leggere la chiave `heads`.
+
+**2026-10-01 (TD/Win-PD, 10)**: **PatchDeck pushato su `TD4PatchDeck`**:
+chiusa la parte PatchDeck di "Core, 17/18". Commit `15f3a77` su `main`,
+salvato come `PATCHDECK_V8.11.toe`.
+- **La copia Windows diventa quella di riferimento**: la cartella
+  `PatchDeck V8 - EXPORT WIN` ora è un clone di `TD4PatchDeck`. Il commit
+  sta sopra la storia di Mauro, senza force push. La copia sul Mac
+  (`td-pd-macmauro`) è dismessa.
+- **Perché il diff è grande**: dal Mac a MSI erano arrivati solo i file
+  `._*` di macOS, non quelli esternalizzati di `PATCHES`/`UI`/`CTRL`/
+  `DMX`. Il contenuto viveva quindi solo nel `.toe`. Scelta dell'utente:
+  - si riesternalizza solo il codice Gaia: `PATCHDECK/gaia_services`
+    (`patchdeck_services.py`, `lifecycle.py`) e `gaia_dmx_client`
+    (5 `.py` più il `.tox`);
+  - il resto è nel `.toe` e nello snapshot di progetto
+    `PATCHDECK_V8.tdn`, che è testo diffabile;
+  - i vecchi file per operatore restano nella storia git.
+- Nel commit c'è anche `gaia_client` 1.2.1, uguale a `client/gaia_client/`
+  di questo repo (a parte gli snapshot `topic_*`).
+- **Verificato dal vivo via Envoy dopo il salvataggio**: `td-pd-win`
+  ha 86 servizi e 7 param, `td-pddmx-win` 3 servizi e 27 param.
+  Client MQTT connessi, 0 errori. Il reload dovuto all'esternalizzazione
+  ha svuotato i registri per qualche secondo, poi il self-check li ha
+  ripopolati da solo (sezione 2, funziona come previsto).
+- **ControllerV8**: `TD4Controller` è clonato anche su MSI
+  (`C:/Users/nicol/Desktop/release/ControllerV8`), come copia locale.
+  Lo sviluppo resta a TD/Mac-Ctrl finché il Controller non torna su MSI.
+  A quel punto vanno fatti tre passi:
+  1. `Deviceid` → `td-controller-win`, secondo la convenzione 1d;
+  2. Core fa `forget` di `td-controller-macmauro`;
+  3. prima del primo avvio si controlla che il client non parta come
+     `nb-msi-02`, il bug di config segnalato in "TD/Mac-Ctrl, 1": su
+     questa macchina quell'ID esiste davvero.
+  Il DMX ritrova il mittente da solo, perché la discovery parte dallo
+  status.
+- **Per Core**: niente topic nuovi e nessuna azione, salvo il `forget`
+  quando il Controller cambierà ID.
