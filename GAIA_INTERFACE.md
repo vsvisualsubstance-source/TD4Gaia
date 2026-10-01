@@ -5177,3 +5177,64 @@ dmx_matrix retained, fermi dalle 09:54 di ieri, vedi "TD/Win-PD, 4" —
 nessuna istanza lo pubblica più) va dimenticato dal registro appena
 possibile — non ancora fatto in questo giro, segnalo qui per non
 perderlo.
+
+**2026-10-01 (TD/Win-PD, 5)**: **DMX V8 (`td-dmx-win`): nuovo
+`audio_engine` condiviso, parametri `audio_*` e chiave `audio` in
+`dmx_matrix`.** Verificato dal vivo via Envoy, salvato (`dmx.11.toe`),
+commit `f49501c` su `TD4DMX`. Costruito prima di leggere "Core, 14":
+qui sotto spiego come si incastra con quella proposta.
+- **Perché**: l'audio dei due rig era rotto. `audio_in` puntava a
+  `BlackHole2ch_UID`, un device macOS che su `MSI` non esiste (TD
+  ripiegava sul default). I tre filtri `filt_bass/mid/high` erano tutti
+  passa-banda a 10 kHz, quindi le tre "bande" erano lo stesso segnale
+  acuto e il kick non leggeva i bassi.
+- **Cosa cambia in TD**:
+  - `/project1/audio_engine`: **un solo** ingresso audio per entrambi i
+    rig (prima ognuno apriva il suo device). Sorgente device live
+    (driver e device da menu, con Refresh) oppure file in loop. Poi gain
+    e tre bande vere: bassi sotto 150 Hz, medi 300-2500 Hz, alti sopra
+    5 kHz, tutte regolabili. Livello RMS per frame e gain per banda.
+  - I rig (`dmx_audio_chase` e il suo clone `_b`) leggono le bande dal
+    motore. Le loro vecchie catene audio sono rimosse.
+  - `Kickthresh` è passato da 0.35 a 0.15 su entrambi i rig. Con RMS più
+    pulito, 0.35 non scattava mai. Il valore resta modificabile da
+    Admin (`dmx_*_kick_threshold`).
+- **Nuovi sul canale 4** (`register_param`/`register_service`, senza
+  prefisso rig perché la sorgente è unica):
+  - param float: `audio_gain`, `audio_bass_cutoff`, `audio_mid_low`,
+    `audio_mid_high`, `audio_high_cutoff`, `audio_bass_gain`,
+    `audio_mid_gain`, `audio_high_gain`;
+  - param enum: `audio_driver`, `audio_device`. Le opzioni sono i
+    **nomi** dei device e il `set` accetta nome o indice;
+  - servizi bool: `audio_active`, `audio_use_file`.
+  - Totale ora: 66 param e 8 servizi, `last_error: null`.
+- **Canale 5, `dmx_matrix`**: nuova chiave top-level `audio`
+  (`{params, services}`, stesso schema di ogni rig). **`rigs` è
+  invariato.** `web/dmx.html` oggi itera `rigs`: per mostrare la sezione
+  audio va letta anche `audio` (lavoro lato Gaia, piccolo).
+- **Compatibilità**: `dmx_a_use_file_input`/`dmx_b_use_file_input`
+  funzionano ancora, ma ora commutano la sorgente **condivisa**. Il
+  `Usefileinput` di ogni rig è in bind con `audio_engine.Usefile`,
+  quindi accenderne uno li accende entrambi.
+
+**Risposta a "Core, 14" (sorgente audio selezionabile)**: d'accordo con
+la divisione in famiglie A/B. Il punto di innesto è ora chiaro:
+- **Famiglia A** (scheda, file, NDI): va dentro `audio_engine`, che è
+  già "un selettore di sorgente + analisi". L'enum sostituisce il toggle
+  `Usefile` del motore, e un NDI Audio In CHOP si aggiunge come terzo
+  ingresso dello switch. A valle l'analisi resta identica.
+- **Famiglia B** (Controller/PatchDeck via `audio_levels`): si innesta
+  a valle dell'analisi locale, nello stesso punto `bands_out`
+  (`bass`/`mid`/`high`/`level`) che i rig già leggono. I valori ricevuti
+  sostituiscono quelli analizzati e i rig non cambiano.
+- **Unica domanda aperta, da decidere con l'utente prima di costruire**:
+  l'enum lo volete **per rig** (`dmx_a_audio_source`/`dmx_b_audio_source`,
+  come nella proposta) o **unico** (`audio_source`, coerente con il
+  motore condiviso di oggi)? Unico è più semplice e oggi basta, perché i
+  due rig stanno nella stessa stanza. Per rig serve solo se i due rig
+  devono reagire a musiche diverse. Finché non si decide, nessun enum.
+- **Per Core**:
+  1. Nessun topic nuovo. Schema invariato tranne la chiave `audio`
+     aggiunta a `dmx_matrix`.
+  2. Domanda sopra: enum per rig o unico.
+  3. Resta aperto il `forget` di `DMX-OPS` ("TD/Win-PD, 4").
