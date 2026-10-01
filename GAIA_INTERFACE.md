@@ -5,7 +5,7 @@ l'una all'altra. Git (`github.com/vsvisualsubstance-source/TD4Gaia`) è
 l'UNICO canale di sync fra loro: se una modifica tocca il confine tra
 i lati, va sempre **pushata** qui, non solo salvata localmente.
 
-### Sessioni attive (aggiornato 2026-09-30)
+### Sessioni attive (aggiornato 2026-10-01)
 
 | Etichetta | Ruolo | Macchina / clone | Autore git |
 |---|---|---|---|
@@ -14,6 +14,7 @@ i lati, va sempre **pushata** qui, non solo salvata localmente.
 | **TD/Win** | TD-Gaia (`TD-Gaia.toe`, root del repo), via Envoy | PC `MSI`, `C:/Users/nicol/Desktop/Gaia` | `Nicol` |
 | **TD/Win-client** | Portabile `gaia_client_portable` in `client/`, via Envoy (porta 1980) | PC `MSI`, `C:/Users/nicol/Desktop/Gaia/client` | `Nicol` |
 | **TD/DMX** | Device DMX V7 (inattiva dal 25/8) | Mac di Mauro | `Mauro` |
+| **TD/Win-PD** | PatchDeck V8, copia Windows (`gaia_client` + `gaia_dmx_client`), via Envoy (porta 1982) | PC `MSI`, `C:/Users/nicol/Desktop/release/PatchDeck V8 - EXPORT WIN` (non è un repo git) | `Nicol` |
 
 **Regole per le etichette**:
 - Ogni voce del changelog porta la propria etichetta: `**AAAA-MM-GG (Etichetta, n)**`.
@@ -4783,6 +4784,46 @@ errori.
   altrimenti TD ricarica i file vecchi. `opshortcut` (`Gaia`) va
   reimpostato a mano: il `.tox` portabile non lo porta.
 - Prossimo passo: `gaia_dmx_client` dentro PatchDeck, stesso schema.
+
+**2026-10-01 (TD/Win-PD, 1)**: **`gaia_dmx_client` di PatchDeck allineato
+allo schema di `gaia_client` 1.2.1** (copia Windows, `td-pddmx-win`).
+Verificato dal vivo via Envoy, progetto salvato (`PATCHDECK_V8.6.toe`).
+- **Già allineato, nessuna modifica**: il motore (`gaia_device_agent`,
+  `agent_lifecycle`, `mqtt_device_callbacks`) è identico alla 1.2.1
+  (`SW_VERSION = "1.2.1"`). Identità corretta: `td-pddmx-win`, family
+  `dmx`, stanza `salotto`. `dmx_services.py` registra 3 servizi e 27
+  parametri, e tutti i 40 parametri che legge esistono su
+  `/PATCHDECK/DMX/dmx_audio_chase`.
+- **Fix 1, `client_id` MQTT**: `mqtt_device.usercid` era ancora `me.id`
+  (valeva `9344`), cioè lo stesso bug del cross-talk tra cloni chiuso in
+  "TD/Mac, 14" su `gaia_client`. Ora usa la stessa espressione:
+  `(Deviceid or 'td-'+me.id) + '-device'`, cioè `td-pddmx-win-device`.
+- **Fix 2, broker**: `Brokerhost` era fisso sull'IP Tailscale di Core
+  (`100.94.220.65`), che da `MSI` non risponde (`TCP connect timeout`).
+  **Il device DMX di questa macchina non era mai online.** Ora
+  `Brokerhost` segue `op.Gaia.par.Brokerhost`, cioè il `gaia_client`
+  dello stesso progetto, che lo tiene aggiornato col beacon (oggi
+  `192.168.1.142`). Dopo il fix `mqtt_device` è connesso, con 0 errori.
+- **Non ancora verificato sul broker**: durante il lavoro i due client
+  erano in cook off, quindi `td-pddmx-win` non ha ancora pubblicato
+  status e `dmx_matrix` col nuovo client_id. Va controllato alla
+  riaccensione.
+- **Limite noto, non toccato**: in `gaia_dmx_client` il codice del motore
+  è incorporato nel `.toe`, non sincronizzato su `gaia_client/*.py` come
+  in `gaia_client`. Al prossimo rilascio del client va riallineato a mano.
+- **Per Core**: nessun cambio di topic o schema. Cambia solo il
+  `client_id` MQTT di `td-pddmx-win` (ora `td-pddmx-win-device`).
+
+**Domanda per Core, porta mocap di PatchDeck**: il `gaia_client` di
+PatchDeck (`td-pd-win`) ha ancora `Mocapport = 7000`, con `Mocapingest`
+acceso ("listening on 7000"). Dopo "Core, 5" / "TD/Mac, 4" (29/9) il
+mocap diretto va su **7010**, e 7000 è la porta del canale 1. Era il
+mocap diretto per PatchDeck: con la matrice nuova forse non serve più.
+Ci confermate se PatchDeck deve ancora ricevere il mocap diretto?
+- **Se serve**: portiamo `Mocapport` a 7010, allineato a `OSC_PORT` di
+  `mediapipe_node.py`.
+- **Se non serve**: spegniamo `Mocapingest` su `td-pd-win` e la porta
+  resta libera.
 
 - **[RISOLTO 2026-09-04, Core — vedi changelog "2026-09-04 (Core, 2)"
   sopra]** utente segnala che i pulsanti `Send*` di `MoodNudge` non
