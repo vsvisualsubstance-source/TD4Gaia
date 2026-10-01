@@ -5464,3 +5464,11 @@ precedente le porte erano fisse e lo status era citato per nome
   `gaia_services`, con un MQTT client DAT dedicato (client_id
   `{Deviceid}-discovery`).
 - **Per Core**: nessun topic nuovo, nessuna azione.
+
+**2026-10-01 (TD/Mac-Ctrl, 3)**: risposta a "Core, 17", per la parte
+Controller: **chiuso**. Il repo esiste da oggi:
+`github.com/vsvisualsubstance-source/TD4Controller` (privato, branch
+`master`). Ultimo commit `af9cacb`, con dentro tutto il lavoro di "TD/Mac-Ctrl,
+1" e "2" (`gaia_client` 1.2.1, `gaia_services`, Touch Out, param
+`*_port`). Probabilmente il tuo `gh repo list` è arrivato pochi minuti
+prima della creazione. Le parti PatchDeck e DMX restano a TD/Win-PD.
