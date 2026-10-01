@@ -5238,3 +5238,49 @@ la divisione in famiglie A/B. Il punto di innesto è ora chiaro:
      aggiunta a `dmx_matrix`.
   2. Domanda sopra: enum per rig o unico.
   3. Resta aperto il `forget` di `DMX-OPS` ("TD/Win-PD, 4").
+
+**2026-10-01 (TD/Win-PD, 6)**: **risolta la domanda di "TD/Win-PD, 5":
+l'utente vuole entrambe le modalità, due sorgenti diverse oppure una
+sorgente unica.** Costruito, verificato dal vivo via Envoy, salvato
+(`dmx.12.toe`), commit `7d6b906` su `TD4DMX`. **Sostituisce i nomi
+`audio_*` annunciati in "TD/Win-PD, 5"**, che non vanno usati.
+- **In TD**:
+  - `audio_engine` ha due sorgenti indipendenti, `source_a` e
+    `source_b`. `source_b` è un clone di `source_a`: stessa logica,
+    valori propri. Ognuna ha tipo, driver, device, file, gain, bande e
+    meter.
+  - Ogni rig sceglie da quale leggere con il nuovo parametro
+    `Audiobus` (A o B). Entrambi su A = sorgente unica; A + B = due
+    sorgenti. **Default: entrambi su A**, cioè il comportamento di prima.
+  - `Usefileinput` è stato rimosso dai rig. La sua funzione ora la fa il
+    `Type` della sorgente.
+- **Canale 4, nomi definitivi**:
+  - per rig: `dmx_a_audio_source`, `dmx_b_audio_source`, enum
+    `["a","b"]`. Il `set` accetta anche l'indice;
+  - per sorgente (`<x>` = `a` | `b`): `audio_<x>_type` enum
+    `["scheda_audio","file_demo"]`, cioè i nomi proposti in "Core, 14"
+    punto 1; `audio_<x>_driver` e `audio_<x>_device`, enum con i nomi
+    dei device; e 8 param float `audio_<x>_gain`, `_bass_cutoff`,
+    `_mid_low`, `_mid_high`, `_high_cutoff`, `_bass_gain`, `_mid_gain`,
+    `_high_gain`;
+  - servizi: `audio_a_active`, `audio_b_active`;
+  - `dmx_a_use_file_input`/`dmx_b_use_file_input` funzionano ancora:
+    commutano il `type` della sorgente che **quel** rig sta ascoltando;
+  - totale: 80 param e 8 servizi, `last_error: null`.
+- **Canale 5, `dmx_matrix`**: `audio` ora è `{"sources": {"a": {params,
+  services}, "b": {params, services}}}`. In `rigs` si aggiunge solo
+  `dmx_audio_source` (enum) per ogni rig.
+- **Verificato dal vivo**:
+  - due sorgenti: A sul file demo e B sul device muto, rig B su B. Rig A
+    riceve i bassi (media 0.23) e rig B legge 0;
+  - sorgente unica: rig B su A via `set` per indice. I due rig sono
+    identici in 60 frame su 60.
+- **Nota su "Core, 14"**: l'enum `audio_<x>_type` è il punto dove
+  aggiungere le prossime sorgenti:
+  - `ndi`, famiglia A, dentro la sorgente;
+  - `controller` e `patchdeck`, famiglia B, che sostituiscono le bande
+    a valle con i valori di `audio_levels`.
+  Restano aperte le dipendenze già indicate da Core: nessun Controller
+  vivo e nessun publisher NDI audio noto.
+- **Per Core**: niente topic nuovi. Se `web/dmx.html` aveva già iniziato
+  a leggere `audio.params`, va adattato a `audio.sources.{a,b}.params`.
