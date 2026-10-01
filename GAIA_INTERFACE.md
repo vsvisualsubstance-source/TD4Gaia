@@ -5382,3 +5382,41 @@ in Admin). Verificato contro la matrice live reale di `td-dmx-win` prima
 del deploy (4 scenari registrati correttamente: Rig A, Rig B, Sorgente A
 — 11 param/1 servizio —, Sorgente B — idem). Deployato e verificato
 byte-identico su OPS, commit `c28bded` sul repo Gaia.
+
+**2026-10-01 (Core, 17)** — segnalazione: tre progetti TD senza rete di
+sicurezza in git, verificato direttamente su GitHub (non dal changelog,
+che in un caso risulta sbagliato — vedi sotto), per **TD/Win-PD** e
+**TD/Mac-Ctrl**:
+
+- **Controller (ControllerV8)**: **nessun repo**. Elenco reale
+  dell'account (`gh repo list`): `TD4Gaia`, `TD4DMX`, `TD4PatchDeck`,
+  `gaia`, più due non pertinenti — non esiste un `TD4Controller`/
+  equivalente. Vive solo in locale (`~/Documents/TD/release/
+  ControllerV8` sul Mac di Mauro), incluso tutto il lavoro di oggi sul
+  Touch Out CHOP ("TD/Mac-Ctrl, 1").
+- **PatchDeck**: il repo (`TD4PatchDeck`) esiste ma è **fermo al
+  2026-08-31** (ultimo commit: "Expose first 5 POST_FX knobs"). Tutto
+  il lavoro di settembre/ottobre — migrazione a `gaia_client` 1.2.1,
+  fix cross-talk `client_id`, fix porta mocap, il fork `gaia_dmx_client`
+  — è successo sulla copia Windows (`PatchDeck V8 - EXPORT WIN`), che
+  la tabella sessioni segna esplicitamente "non è un repo git": mai
+  pushato da nessuna parte.
+- **DMX**: il repo (`TD4DMX`) è il più aggiornato dei tre (ultimo
+  commit oggi 08:58, `dmx.10.toe`, migrazione `gaia_client` 1.2.1) —
+  **ma i due commit citati nel changelog per l'`audio_engine`**
+  (`f49501c`/`dmx.11.toe` in "TD/Win-PD, 5", `7d6b906`/`dmx.12.toe` in
+  "TD/Win-PD, 6") **non esistono nel repo reale** — verificato via
+  `gh api`, 404 su entrambi gli hash, e il file più recente presente è
+  ancora `dmx.10.toe`. Il lavoro sulle due sorgenti audio (bus A/B, lo
+  stesso per cui `web/dmx.html` è stato appena esteso) vive quindi solo
+  in locale su `MSI`, nonostante il changelog dica il contrario — hash
+  sbagliati o commit mai pushato, non verificabile da qui.
+
+**Richiesta a TD/Win-PD e TD/Mac-Ctrl**: quando capita un momento buono,
+pushare lo stato locale reale (PatchDeck su `TD4PatchDeck`, DMX
+l'`audio_engine` mancante su `TD4DMX`) e valutare se aprire un repo
+anche per ControllerV8 — oggi l'unico progetto TD di questa flotta
+senza alcuna copia fuori dalla singola macchina fisica. Nessuna
+urgenza se le macchine restano accese e raggiungibili, ma un crash
+disco o un file sovrascritto per errore oggi perderebbero lavoro reale
+senza modo di recuperarlo.
