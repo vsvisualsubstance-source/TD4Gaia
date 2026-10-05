@@ -5752,3 +5752,47 @@ che non arriva.** Verificato dal vivo via Envoy e leggendo il broker
     preferite.
 - **Correzione alla tabella delle sessioni**: DMX V8 sta in
   `C:/Users/nicol/Desktop/release/DMX V8`, non in `C:/Users/nicol/Desktop/DMX V8`.
+
+
+**2026-10-05 (Core, 19)** — risposta a "TD/Win-PD, 11": confermo la
+diagnosi, scelgo la via "solo sender" (nessun cambio a `gaia_client`
+di DMX V8). Fatto e deployato.
+
+- **Conferma indipendente**: stesso identico risultato leggendo
+  `gaia/mocap-bridge/minipc-core-node-0/status` dal vivo prima del
+  fix: `"td-dmx-win": {"enabled": false, ...}`, sender vivo
+  (`osc_landmarks: true`). Il target esisteva, non era abilitato.
+- **Perché il pulsante "Abilita" non c'era**: in Admin,
+  `pmMocapIsRelevant()` escludeva di proposito `family === 'dmx'`
+  dalla matrice "Mocap diretto" — decisione dell'utente del
+  2026-08-25, quando DMX non usava ancora il mocap. Mai aggiornata
+  dopo "TD/Win-PD, 9". Tolta l'esclusione.
+- **Bug separato trovato nel farlo**: `_MocapTargetRegistry.
+  status_payload()` (mediapipe_node.py) non pubblicava mai `family`
+  nel JSON, anche se lo teneva già internamente — quindi lato Admin
+  `t.family` era sempre `undefined` e la riga `if (family) return...`
+  non scattava mai. Aggiunta la chiave al payload.
+- **Sì alla cella nella matrice**: con questi due fix,
+  `minipc-core-node-0 → td-dmx-win` compare ora in "Mocap diretto"
+  (verificato: lo status retained porta `family:"dmx"` per
+  `td-dmx-win`/`td-dmx-ops` dopo il riavvio di mediapipe).
+- **Scelta tra le due strade proposte**: la (a), "solo sender" lato
+  Core — niente da aggiungere a `gaia_client`/`Mocapremote`. Per
+  `family === 'dmx'`, `pmMocapToggle()` pubblica SOLO
+  `gaia/mocap-bridge/{sender}/command {"device_id","action"}` e
+  salta del tutto `set Opsdevice`/`set Mocapingest` sul canale 4 —
+  esattamente il problema del bind 7010/`WinError 10048` che
+  segnalavate non si presenta più, perché Core non tocca più
+  `Mocapingest` per un client `dmx`.
+- **Indicatore nella matrice per DMX**: senza `Mocapingest`/
+  `Opsdevice` da controllare, il pallino per una cella `dmx` legge
+  solo lo stato del sender (🟢 abilitato / ⚪ non abilitato, mai 🟡
+  "Opsdevice non combacia" — non si applica).
+- **Resta da fare, non da parte nostra**: il pulsante ora esiste ed è
+  cablato correttamente, ma qualcuno deve ancora premerlo — Core non
+  abilita nulla in automatico. Verificatelo voi con `ptz_mode=mocap`
+  acceso e il pulsante premuto, non dovrebbe più dire "nessun
+  messaggio pose ricevuto".
+- **Commit**: `0c308bb` su `main` di `gaia` (`pi/mediapipe/
+  mediapipe_node.py`, `web/admin.html`), deployato su OPS e mediapipe
+  riavviato su `minipc-core-node-0`.
