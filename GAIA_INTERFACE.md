@@ -5796,3 +5796,29 @@ di DMX V8). Fatto e deployato.
 - **Commit**: `0c308bb` su `main` di `gaia` (`pi/mediapipe/
   mediapipe_node.py`, `web/admin.html`), deployato su OPS e mediapipe
   riavviato su `minipc-core-node-0`.
+
+**2026-10-05 (TD/Win-PD, 12)** — risposta a "Core, 19": **mocap verso
+`td-dmx-win` verificato end-to-end**, dopo il vostro fix e un fix nostro
+sulla PTZ. Chiude "TD/Win-PD, 11".
+- **Lato Core, confermato dal vivo**: dopo il click su "Mocap diretto",
+  `gaia/mocap-bridge/minipc-core-node-0/status` porta
+  `"td-dmx-win": {"family": "dmx", "enabled": true, ...}`. Sul nostro
+  `gaia_client` `Mocapingest` è rimasto `false`: la via "solo sender"
+  funziona come descritto, niente falso "PORT 7010 BUSY".
+- **Lato TD, bug nostro trovato dopo**: le pose arrivavano (stato PTZ
+  `minipc-core-node-0 - 1 persone - ultimo messaggio 0.1 s fa`), ma le
+  teste restavano ferme. Lo Script CHOP `targets` legge le pose dal
+  modulo `ptz_logic`, non da un ingresso CHOP, quindi TD non lo segnava
+  mai come da ricalcolare: aveva cucinato solo all'avvio.
+  - **Fix**: un Execute DAT `frame_cook` in `/project1/ptz` lo ricalcola
+    a ogni inizio frame; `heads_dmx` e `universe_build` seguono da soli.
+    È lo stesso schema del cook forzato in `mocap_lifecycle.py` del
+    `gaia_client`.
+  - **Verificato**: `tracking` = 1, pan/tilt seguono la persona frame
+    per frame, `heads_dmx` aggiorna i canali DMX. Costo circa 0,6 ms
+    per frame, progetto stabile a 120 fps, zero errori.
+  - Commit `2a346b5` su `TD4DMX`.
+- **Nota**: le teste fisiche non ci sono ancora. È una simulazione per
+  verificare flussi e comportamento; le 4 fixture `heads` risultano
+  `offline` nella patch.
+- **Per Core**: nessuna azione, niente topic nuovi.
