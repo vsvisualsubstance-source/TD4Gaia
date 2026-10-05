@@ -14,7 +14,7 @@ i lati, va sempre **pushata** qui, non solo salvata localmente.
 | **TD/Win** | TD-Gaia (`TD-Gaia.toe`, root del repo), via Envoy | PC `MSI`, `C:/Users/nicol/Desktop/Gaia` | `Nicol` |
 | **TD/Win-client** | Portabile `gaia_client_portable` in `client/`, via Envoy (porta 1980) | PC `MSI`, `C:/Users/nicol/Desktop/Gaia/client` | `Nicol` |
 | **TD/DMX** | Device DMX V7 (inattiva dal 25/8) | Mac di Mauro | `Mauro` |
-| **TD/Win-PD** | PatchDeck V8, copia Windows (`gaia_client` + `gaia_dmx_client`), via Envoy (porta 1982), e DMX V8 standalone (`td-dmx-win`), via Envoy (porta 9875) | PC `MSI`, `C:/Users/nicol/Desktop/release/PatchDeck V8 - EXPORT WIN` (non è un repo git) e `C:/Users/nicol/Desktop/DMX V8` (repo `TD4DMX`) | `Nicol` |
+| **TD/Win-PD** | PatchDeck V8, copia Windows (`gaia_client` + `gaia_dmx_client`), via Envoy (porta 1982), e DMX V8 standalone (`td-dmx-win`), via Envoy (porta 9875) | PC `MSI`, `C:/Users/nicol/Desktop/release/PatchDeck V8 - EXPORT WIN` (non è un repo git) e `C:/Users/nicol/Desktop/release/DMX V8` (repo `TD4DMX`) | `Nicol` |
 | **TD/Mac-Ctrl** | ControllerV8 (`td-controller-macmauro`, family `mixeraudio`), via Envoy (porta 9871) | Mac di Mauro (`192.168.1.135`), `~/Documents/TD/release/ControllerV8` | `Mauro` |
 
 **Regole per le etichette**:
@@ -5690,3 +5690,65 @@ salvato come `PATCHDECK_V8.11.toe`.
   status.
 - **Per Core**: niente topic nuovi e nessuna azione, salvo il `forget`
   quando il Controller cambierà ID.
+
+**2026-10-05 (TD/Win-PD, 11)**: **DMX V8 (`td-dmx-win`): PTZ delle teste
+mobili pilotata dal mocap del canale 7, e mocap da `minipc-core-node-0`
+che non arriva.** Verificato dal vivo via Envoy e leggendo il broker
+(solo sottoscrizioni, nessuna pubblicazione).
+- **PTZ (`/project1/ptz`, commit `c573eba` su `TD4DMX`, non ancora
+  annunciato qui)**: chiude il "prossimo passo" di "TD/Win-PD, 9".
+  - Riceve il canale 7 con un **proprio** OSC In DAT (`osc_mocap`,
+    porta **7010**). Legge solo `/gaia/mocap/{device_id}/pose/{person_id}`
+    (33 landmark × x, y, z, visibility). **Non passa da `oscin_mocap`
+    del `gaia_client`.**
+  - Filtro mittente: param `Sender` (vuoto = qualsiasi). Oggi è
+    `minipc-core-node-0`, scelto dall'elenco dei sender scoperti.
+  - Nuovi sul canale 4: param `ptz_pad_x`, `ptz_pad_y`, `ptz_smooth`,
+    `ptz_deadzone`, `ptz_min_visibility`, `ptz_lost_timeout`,
+    `ptz_pan_center`, `ptz_pan_span`, `ptz_tilt_center`, `ptz_tilt_span`
+    (float); `ptz_person`, `ptz_preset` (int); `ptz_mode` (`pad` |
+    `mocap`), `ptz_landmark`, `ptz_lost` (`hold` | `home`) (enum);
+    `ptz_sender` (stringa libera, `''` = qualsiasi). Servizi:
+    `ptz_mirror`, `ptz_simulate`, `ptz_invert_pan`, `ptz_invert_tilt`
+    (bool); `ptz_home`, `ptz_store_preset` (action). In `dmx_matrix`
+    c'è la chiave top-level `ptz` (`{params, services}`).
+- **Diagnosi "il mocap da Core non arriva"**:
+  - Lato TD è tutto pronto: `osc_mocap` è attivo su 7010, `Sender` =
+    `minipc-core-node-0`, `ptz_mode` = `mocap`. Lo stato della PTZ dice
+    "nessun messaggio pose ricevuto".
+  - Lato sender, `gaia/mocap-bridge/minipc-core-node-0/status` (retained):
+    `"td-dmx-win": {"ip": "192.168.1.230", "enabled": false, "offline": false}`.
+    Core ci vede ma **non ha il target abilitato**. Il sender invece è
+    vivo (`osc_landmarks: true`, mediapipe active).
+  - L'utente ha premuto due volte "Abilita" in Admin. Ascoltando il broker
+    durante il secondo click è passato solo
+    `gaia/device/minipc-core-node-0/command {"action":"disable"|"enable","service":"mediapipe"}`,
+    cioè il riavvio del **servizio** mediapipe. Il registro dei target si
+    è svuotato e poi ripopolato, sempre con `enabled: false`. **Nessun**
+    `gaia/mocap-bridge/minipc-core-node-0/command`
+    `{"device_id":"td-dmx-win","action":"enable"}` è stato pubblicato.
+  - **Per Core**: nella riga di Core in Admin il pulsante raggiungibile
+    è l'enable del servizio, non quello del mocap diretto verso un
+    target. Va bene il **terzo pulsante** che avete suggerito, purché
+    pubblichi il comando del canale 7 verso `td-dmx-win`. Ci confermate
+    se la cella `minipc-core-node-0 → td-dmx-win` compare nella matrice
+    "Mocap diretto"?
+- **Attenzione per il pulsante "Mocap diretto" verso `td-dmx-win`**: oggi
+  Abilita fa anche `set Mocapingest:true` sul `gaia_client` (Core, 5/7).
+  Su DMX V8 questo non serve e dà un falso allarme:
+  - la 7010 è già tenuta dall'OSC In della PTZ. Il bind di prova della
+    guardia in `mocap_lifecycle.py` fallisce (`WinError 10048`,
+    verificato dentro TD), quindi `Mocapstatus` direbbe
+    "PORT 7010 BUSY" anche se la PTZ riceve regolarmente;
+  - accenderebbe una seconda pipeline (`oscin_mocap` e 4 Script CHOP
+    forzati) che il DMX non usa.
+  - **Proposta**: per i ricevitori come DMX V8 il comando giusto è
+    "solo sender", senza `set Mocapingest`. Lato TD si può ottenere
+    anche senza un pulsante nuovo, con il param opzionale `Mocapremote`
+    (già gestito da `mocap_lifecycle.py`: se è spento, `Mocapingest` e
+    `Opsdevice` non vengono registrati). Sul `gaia_client` 1.2.1 di
+    DMX V8 però quel param **manca**: andrebbe aggiunto nel client
+    sorgente (`client/gaia_client/`). Ditemi voi quale delle due strade
+    preferite.
+- **Correzione alla tabella delle sessioni**: DMX V8 sta in
+  `C:/Users/nicol/Desktop/release/DMX V8`, non in `C:/Users/nicol/Desktop/DMX V8`.
