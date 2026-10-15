@@ -5880,3 +5880,42 @@ Verificato dal vivo, PTZ che segue la persona.
     per `dmx` va ricontrollata.
   - Il parametro PTZ `Sender` ora è `ops-silvermini2`: Core non è più
     il mittente mocap per `td-dmx-win`.
+
+**2026-10-15 (TD/Win-PD, 15)**: **PatchDeck `v8` sul PC MSI allineato a
+`gaia_client` 1.2.3, `td-pd-win` dimenticato.** Per Core c'è un punto da
+correggere in `DeviceForget`.
+- **PatchDeck aperto oggi**: `C:/Users/nicol/Desktop/release/v8/PatchDeckV8.toe`.
+  È una copia diversa da `release/PatchDeck V8` (repo `TD4PatchDeck`), senza
+  Embody/Envoy: i client sono dentro il `.toe`. Aggiornato a mano:
+  - `td-pd-pc-win` (family `patchdeck`): 1.2.3, `ip 192.168.1.73`,
+    `mocap_port 7012`, 86 servizi, 7 param.
+  - `td-pddmx-win` (family `dmx`): era 1.2.1 con `ip 192.168.86.249`
+    (Wi-Fi), ora 1.2.3 con `192.168.1.73`, 3 servizi, 27 param.
+  - Verificato sul broker e su `/gaia/devices` (Node-RED, porta 1881).
+  - Nello stesso giro aggiornati anche `release/PatchDeck V8`
+    (`TD4PatchDeck` `a477adb`, `f7c22a8`) e il `.tox` portabile
+    `release/gaia_client.tox` (1.2.3, servizi opt-in spenti).
+- **`td-pd-win` dimenticato**: è il vecchio ID del PatchDeck, fermo dalle
+  15:57 con 1.2.1 e `ip 192.168.86.249`. `patchdeck.html` restava
+  agganciata a lui perché lo ricorda in `localStorage`
+  (`gaiaPatchdeckDeviceId`) e lo considera vivo per 30 min: mostrava l'IP
+  Wi-Fi anche se il PatchDeck reale pubblicava già quello LAN.
+  - Fatto `POST /gaia/device/forget {"device_id":"td-pd-win"}` (porta
+    1881): pulito `config`, `profile`, `status`.
+  - **Pulito a mano** `gaia/devices/td-pd-win/patchdeck_matrix` (retained
+    vuoto), perché `DeviceForget` non lo tocca.
+  - Verificato: nessun topic retained rimasto per `td-pd-win`.
+- **Per Core**:
+  1. **`DeviceForget` dovrebbe pulire anche `gaia/devices/{id}/patchdeck_matrix`**
+     (e in generale gli altri retained per-device del canale 5, es.
+     `dmx_matrix`). Senza, un PatchDeck dimenticato resta candidato in
+     `patchdeck.html` grazie alla sola matrice.
+  2. **`patchdeck.html`**: un `PD_DEVICE_ID` ricordato in `localStorage`
+     vince su un PatchDeck vivo per 30 minuti. Proposta: se lo status del
+     device ricordato è più vecchio dell'ultimo heartbeat di un altro
+     PatchDeck con matrice, adottare quello vivo. In alternativa, un
+     selettore del device nella pagina. Oggi l'utente deve fare
+     `localStorage.removeItem('gaiaPatchdeckDeviceId')` su ogni browser.
+  3. **`td-controller-macmauro`** è ancora a 1.2.1 (pubblica comunque
+     `192.168.1.73` perché gira sullo stesso PC): da aggiornare quando
+     TD/Mac-Ctrl ripassa dal progetto.
