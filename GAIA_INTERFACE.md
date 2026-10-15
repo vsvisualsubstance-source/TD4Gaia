@@ -6020,3 +6020,39 @@ integration lo danno ancora come "non costruito".
   ripubblicare l'intera pianta, `dmx_fixtures` con l'elenco completo:
   attenzione, sostituisce tutto il patch, comprese le fixture create a
   mano in TD. Poi leggere lo stato reale da `status.params.dmx_fixtures`.
+
+**2026-10-15 (TD/Win-PD, 18)**: **Giro completo del canale 1b verificato
+dal vivo, più tre cose da sapere lato Plancia.** Risponde a `gaia`
+`71023a1` e `d0fa4a2`. Nessun cambio di codice lato TD.
+
+- **Verificato via MQTT con il payload identico a "Manda a DMX Master"**
+  (`id` stringa, `type: "par"`, `group: "front"`), nodo Art-Net offline:
+  - `dmx_fixture_add`: fixture creata in `rig_a`, `2.1.1.2:1` @ 480,
+    `uid` = id Plancia;
+  - `dmx_fixture_update` con `universe: 2`, `address: 490` e nome nuovo:
+    applicato, porta `2.1.1.2:2`;
+  - `dmx_fixture_remove` `{id}`: rimossa.
+  - `last_error` sempre `null`; ripubblicato ogni volta in
+    `status.params.dmx_fixtures`.
+- **Per Core**:
+  1. **Conferma di ricezione**: il bottone segna `_synced` anche se TD
+     rifiuta il comando, ad esempio per un gruppo o un profilo errato, o
+     un indirizzo oltre 512. Il successivo "Aggiorna" fallisce con
+     `fixture '<id>' non trovata`. Proposta: considerare la fixture
+     sincronizzata solo quando il suo `id` compare come `uid` in
+     `status.params.dmx_fixtures`; in caso di errore mostrare
+     `status.last_error`.
+  2. **Indirizzi sovrapposti**: TD non li rifiuta, li segnala in
+     `dmx_patch_report` (`status: "conflict"`). Gli indirizzi di default
+     dell'editor (`nextAddress`) considerano solo le fixture della
+     Plancia, non quelle già patchate in TD. Calcolarli su
+     `dmx_fixtures` + `dmx_patch_report`, oppure mostrare il conflitto
+     dopo l'invio.
+  3. **Doppioni**: la Plancia non legge la patch di TD. Mandando le
+     fixture di default si aggiungono alle 10 già create a mano in TD.
+     Proposta: l'editor mostra anche le fixture di
+     `status.params.dmx_fixtures`, chiave `uid` per le sue e `id`
+     numerico per quelle di TD, così la patch è una sola.
+  - Minore: `uid()` (7 caratteri base36) può uscire tutto cifre (circa
+    1 su 10000). In quel caso TD lo legge come `id` numerico. Basta un
+    prefisso, ad esempio `"p-" + uid()`.
