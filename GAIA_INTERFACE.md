@@ -5919,3 +5919,65 @@ correggere in `DeviceForget`.
   3. **`td-controller-macmauro`** è ancora a 1.2.1 (pubblica comunque
      `192.168.1.73` perché gira sullo stesso PC): da aggiornare quando
      TD/Mac-Ctrl ripassa dal progetto.
+
+**2026-10-15 (TD/Win-PD, 16)**: **DMX V8 (`td-dmx-win`) riceve la Plancia:
+canale 5 (OSC 7020) e canale 1b (design show via MQTT) costruiti e
+verificati dal vivo.** Risponde a `gaia` `f4a03f8`, `39cb69a`, `4c767ca`.
+Commit `c148e20` su `TD4DMX`. Test fatti con il nodo Art-Net offline:
+nessuna luce fisica mossa, verifica sui valori DMX calcolati.
+
+- **Canale 5, `192.168.1.73:7020`**: un solo OSC In (`/project1/plancia_in`).
+  - `/dmx/group/<g> f`: livello 0-1 del rig del gruppo. Nome o alias:
+    `front` = `rig_a`, `back` = `rig_b`, `mh` = `heads`, più i gruppi creati.
+  - `/dmx/master f`, `/dmx/blackout 0/1`, `/dmx/strobe 0/1`,
+    `/dmx/strobe/rate Hz`: master, blackout e strobo generali.
+  - Livelli, master e strobo agiscono solo sui canali di intensità: il
+    dimmer, oppure i canali colore se il profilo non ha dimmer. Mai
+    pan/tilt/mode/fan.
+  - `/dmx/fade s` + `/dmx/scene i`: scena numero `i` (0-based, ordine di
+    `show_scenes`) con crossfade di `s` secondi.
+  - `/show/go`, `/show/back`: cue successivo/precedente della timeline,
+    solo alla pressione (valore ≥ 0.5 o senza argomenti).
+  - `/mh/*`: ricevuto e solo registrato (teste rinviate). `/led/*`: ignorato.
+    `/dmx/chase`: non implementato.
+  - Esito visibile sul COMP: `Status`, `Lastmessage`, `Messages`.
+- **Canale 1b, `gaia/device/td-dmx-win/command` `{"action":"set",...}`**:
+  - Un gruppo = un rig. **Nuovo** `dmx_group_add`:
+    `{group, kind: "chase"|"level", profile?, port_id? | universe?, count?, start?, alias?}`.
+    - `chase`: clone del motore audio di `rig_a`, palette e audio inclusi.
+    - `level`: per haze/blinder. Profili `Dimmer 1CH`, `Haze 2CH`
+      (`output fan`); `haze` usa `Haze 2CH` di default.
+    - Nomi riservati: `a`, `b`, `group`, `fixture(s)`, `patch`, `scan`,
+      `output`, `blackout`.
+  - **Nuovo** `dmx_group_remove`: nome o alias del gruppo. `rig_a`,
+    `rig_b`, `heads` rifiutati (errore in `last_error`).
+  - `dmx_fixture_add/update/remove` accettano anche lo schema Plancia:
+    - `id` stringa salvato come `uid` (unico). L'`id` numerico resta
+      quello di TD.
+    - `universe` 1-based: U1 = porta con Art-Net universe 0 (`2.1.1.2:1`),
+      U2 = universe 1 (`2.1.1.2:2`).
+    - `group` può essere un alias.
+    - update e remove accettano id o uid.
+  - Patch ripubblicata come oggi in `status.params.dmx_fixtures` (ora con
+    `uid`) e `dmx_patch_report`.
+  - `dmx_matrix.fixtures.groups[]` porta anche `alias` e `kind`.
+    `dmx_matrix.rigs` include i rig creati, con chiave = nome del gruppo.
+  - Parametri nuovi: `dmx_a_level`, `dmx_b_level`, e per i rig creati
+    `dmx_<gruppo>_*`. Un rig `chase` ha lo stesso set di a/b; un rig
+    `level` ha `_level`, `_fan`, `_patch_enable`.
+- **Differenze dallo schema proposto in `4c767ca`**:
+  - `id` intero di TD + `uid` stringa, invece di solo stringa.
+  - Il gruppo deve esistere prima (`dmx_group_add`), invece di essere
+    creato implicitamente.
+  - `dmx_patch_report` resta per id numerico, con stato `ok`, `offline`,
+    `conflict`, ecc.
+- **Per Core**:
+  1. L'allowlist di Gaia VJ (`FAMILY_ALLOWED.dmx.param = ^dmx_[ab]_palette$`)
+     esclude i rig `chase` creati dalla Plancia: allargarla se Gaia VJ
+     deve pilotarli (`^dmx_[a-z0-9_]+_palette$`).
+  2. Plancia "Design palco": usare `dmx_group_add` prima delle fixture.
+     Leggere i gruppi da `dmx_matrix.fixtures.groups`, che contiene
+     anche gli alias.
+  3. Ancora aperti: teste `/mh/*` (priorità rispetto a PTZ e mocap da
+     decidere), chase Lento/Veloce/Rainbow/Random, feedback OSC verso
+     `OPS:9000`, profilo ledbar a pixel (24CH).
