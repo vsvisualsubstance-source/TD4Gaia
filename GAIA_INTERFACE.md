@@ -5981,3 +5981,42 @@ nessuna luce fisica mossa, verifica sui valori DMX calcolati.
   3. Ancora aperti: teste `/mh/*` (priorità rispetto a PTZ e mocap da
      decidere), chase Lento/Veloce/Rainbow/Random, feedback OSC verso
      `OPS:9000`, profilo ledbar a pixel (24CH).
+
+**2026-10-15 (TD/Win-PD, 17)**: **Risposta alla domanda A/B sul canale 1b:
+tutte e due, la (B) è già attiva da oggi.** Risponde a `gaia` `fd0b21b` e
+`806a787`. Commit `3c69e21` su `TD4DMX`. Verificato dal vivo via MQTT,
+nodo Art-Net offline. Nota: il canale 1b c'è già (nota 16): le due
+integration lo danno ancora come "non costruito".
+
+- **(B) Plancia resta semplice.** `dmx_fixture_add` e `dmx_fixtures`
+  accettano la fixture così come la produce l'editor "Pianta e patch":
+  `{id, type, name, group, universe, address, x, y, enabled}`.
+  - `id` stringa → `uid`; `universe` 1-based → `port_id`;
+    `enabled` true/false → 1/0; `type` e `ch` scartati.
+  - Gruppo mancante: creato da TD dal `type`, con il profilo di default.
+    - `par` → `front` (= `rig_a`, esiste già).
+    - `bar` → `ledbar`, rig `chase`. Profilo `D+RGB 4CH`: il 24CH a
+      pixel non c'è ancora.
+    - `blinder` → rig `level`, `Dimmer 1CH`.
+    - `haze` → rig `level`, `Haze 2CH`.
+    - `mh` → `heads` (esiste già, mai creato da qui).
+  - `wall` e `speaker` (0 canali): `dmx_fixtures` li salta in silenzio;
+    `dmx_fixture_add` li rifiuta con un errore in `last_error`.
+  - Se qualcosa fallisce, i gruppi appena creati vengono rimossi.
+  - `dmx_group_add` resta disponibile per chi vuole scegliere `kind` o profilo.
+- **(A) già pubblicato**, per quando Plancia vorrà i campi veri:
+  - profili per gruppo: `dmx_matrix.fixtures.groups[] = {group, alias,
+    kind, profiles: [{name, channels}]}`;
+  - nodi Art-Net: `dmx_matrix.patch.ports[]` (`port_id`, `universe`,
+    `net`, `subnet`, `label`, ...).
+  - Non servono campi nuovi `dmx_available_profiles/ports`.
+- **Vocabolario gruppi**: non è più diverso dal canale 3. `front`, `back`
+  e `mh` sono alias di `rig_a`, `rig_b` e `heads`; `/dmx/group/<g>` e
+  `dmx_fixture_add` accettano entrambi i nomi. Lo status pubblica il nome
+  TD in `group`; l'alias è in `fixtures.groups[].alias`.
+- **Per Core**: in Plancia basta pubblicare la fixture su
+  `gaia/device/td-dmx-win/command` con
+  `{"action":"set","param":"dmx_fixture_add","value":<fixture>}`. Per
+  ripubblicare l'intera pianta, `dmx_fixtures` con l'elenco completo:
+  attenzione, sostituisce tutto il patch, comprese le fixture create a
+  mano in TD. Poi leggere lo stato reale da `status.params.dmx_fixtures`.
