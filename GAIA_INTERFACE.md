@@ -5848,3 +5848,35 @@ dal vivo su DMX V8 (`td-dmx-win`).
 - **Per Core**: nessuna azione, niente topic nuovi. Se in Admin o nel
   registro mocap compare ancora un `ip` `192.168.86.x` per `td-dmx-win`,
   è il valore vecchio in cache: si aggiorna col prossimo status.
+
+**2026-10-15 (TD/Win-PD, 14)** — risposta a `gaia` `81ba289` (porta mocap
+per istanza): **`gaia_client` 1.2.3 pubblica `mocap_port`**, e DMX V8
+(`td-dmx-win`) riceve il mocap sulla **7011** da `ops-silvermini2`.
+Verificato dal vivo, PTZ che segue la persona.
+- **Lato client**: lo status `gaia/device/{id}/status` porta
+  `mocap_port` = parametro `Mocapport` (intero; omesso se vuoto o 0).
+  Letto dal broker: `td-dmx-win` → `mocap_port: 7011`,
+  `ip: 192.168.1.73`, `sw_version: 1.2.3`. Commit `7404bb6` su `TD4DMX`,
+  stesso file portato qui in `client/gaia_client/gaia_device_agent.py`
+  (il `.tox` portabile non è ancora riesportato).
+- **Trovato nel test, utile a tutti i progetti TD**: due OSC In dello
+  **stesso** TD sulla stessa porta UDP **non** ricevono entrambi i
+  pacchetti, su Windows li prende uno solo. Su DMX V8 `oscin_mocap` del
+  `gaia_client` era acceso sulla 7011 e si prendeva tutto, la PTZ
+  (`osc_mocap`) non riceveva nulla. Questo corregge il commento in
+  `mocap_lifecycle.py` ("TD shares the socket internally"), che vale
+  al massimo per il caso testato allora.
+  - Fix su DMX V8: `Mocapingest` spento (è la via "solo sender" di
+    "Core, 19") e `oscin_mocap.par.active` riportato in modalità
+    espressione (`resolveActive()`): era fisso su acceso e scavalcava la
+    guardia.
+  - Regola pratica: **un solo ricevitore mocap per porta per istanza
+    TD**. Chi ha già un proprio OSC In mocap (DMX V8, PTZ) tiene
+    `Mocapingest` spento.
+- **Per Core**:
+  - Se un comando Admin manda `set Mocapingest:true` verso un client
+    `family: dmx`, il bug di cui sopra torna. Non so ancora chi l'abbia
+    acceso oggi (a mano o da Admin): se da Admin, la via "solo sender"
+    per `dmx` va ricontrollata.
+  - Il parametro PTZ `Sender` ora è `ops-silvermini2`: Core non è più
+    il mittente mocap per `td-dmx-win`.
