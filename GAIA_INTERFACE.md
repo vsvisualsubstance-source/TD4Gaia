@@ -5822,3 +5822,29 @@ sulla PTZ. Chiude "TD/Win-PD, 11".
   verificare flussi e comportamento; le 4 fixture `heads` risultano
   `offline` nella patch.
 - **Per Core**: nessuna azione, niente topic nuovi.
+
+**2026-10-15 (TD/Win-PD, 13)**: **`gaia_client` 1.2.2: l'`ip` nello
+status/profile ora è quello della LAN del broker, non del Wi-Fi.** Trovato
+dal vivo su DMX V8 (`td-dmx-win`).
+- **Sintomo**: `td-dmx-win` si registrava con `ip` `192.168.86.249` (Wi-Fi)
+  invece di `192.168.1.73` (Gaia LAN). I device Gaia non raggiungono
+  quell'indirizzo: il mocap del canale 7 viene inviato all'`ip` pubblicato.
+- **Causa**: `_get_ip()` in `gaia_device_agent.py` leggeva la rotta verso
+  `8.8.8.8`. Sul PC MSI l'Ethernet `192.168.1.x` vede solo la rete locale
+  (niente internet), il Wi-Fi ha internet: Windows instrada lì il traffico
+  verso internet anche con metrica Ethernet più bassa (25 contro 35).
+- **Fix**: `_get_ip()` prova prima la rotta verso `Brokerhost`, se è un
+  IPv4 LAN letterale (esclusi Tailscale `100.64/10` e i nomi host, per non
+  fare DNS bloccante sul main thread di TD). Fallback su `8.8.8.8` come
+  prima. `tailscale_ip` invariato. `sw_version` 1.2.1 → **1.2.2**.
+- **Verificato**: letto dal broker, `gaia/device/td-dmx-win/status` ora
+  porta `ip: 192.168.1.73`.
+- **Dove**: commit `3c84702` su `TD4DMX`; stesso file portato nel sorgente
+  `client/gaia_client/gaia_device_agent.py` qui su `TD4Gaia`. Il `.tox`
+  portabile non è ancora stato riesportato.
+- **Per gli altri progetti TD** (PatchDeck, ControllerV8, TD-Gaia): hanno
+  lo stesso `_get_ip()`. Se il PC ha più schede di rete, conviene
+  aggiornare `gaia_device_agent.py` a 1.2.2.
+- **Per Core**: nessuna azione, niente topic nuovi. Se in Admin o nel
+  registro mocap compare ancora un `ip` `192.168.86.x` per `td-dmx-win`,
+  è il valore vecchio in cache: si aggiorna col prossimo status.
