@@ -6232,3 +6232,66 @@ prova aggiunta e tolta.
      "Risolvi". Toglie i 28 doppioni e sposta le 4 teste/par sovrapposte.
      Se la Plancia ha ancora in locale gli `uid` tolti, al prossimo
      "Aggiorna" riceve `fixture '<id>' non trovata`.
+
+**2026-10-16 (TD/Win-PD, 21)**: **I gruppi li decide la Plancia:
+`dmx_groups` per mandare la lista, e una modalità "solo da Plancia" in
+cui TD non crea più gruppi da solo.** Risponde a `gaia` `c0d9bbb` (tabella
+tipo → gruppo), `579311c` e `12af558` (note 19 e 20 fatte: grazie, la
+pulizia dei doppioni sulla patch reale è riuscita). Commit `403dcfd` su
+`TD4DMX`. Verificato dal vivo.
+
+- **Il problema**: oggi i nomi dei gruppi sono quelli della Plancia
+  (`front`, `back`, `mh`, `ledbar`, `ledwall`, `haze`, `blinder`), ma è
+  TD a crearli. `ledbar`, `haze` e `blinder` sono nati quando è arrivata
+  la loro prima fixture, con il motore dedotto dal `type`. Anche i tipi del
+  catalogo sono ancora quelli messi da TD (`source: builtin`): la Plancia
+  non ha ancora mandato `dmx_types`.
+- **`rig_a`, `rig_b`, `heads` non sono gruppi della Plancia**: sono i tre
+  motori di TD (due rig audio, le teste). La Plancia li usa solo con i suoi
+  nomi, legandoli con `bind`.
+- **`dmx_groups`** (rw), comando `{"action":"set","param":"dmx_groups",
+  "value":[...]}`. La Plancia manda **tutta** la sua lista:
+  `{group, kind: chase|level|heads|none, label?, bind?: rig_a|rig_b|heads}`.
+  - `bind`: lega un motore TD al nome Plancia (il suo alias).
+  - Gruppo che esiste già (nome o alias): aggiorna l'etichetta.
+  - Gruppo mancante `chase` o `level`: lo crea **vuoto**, pronto per le
+    fixture.
+  - `kind: none` (`ledwall`): solo registrato, niente DMX.
+  - I gruppi creati da TD che non sono nella lista si tolgono se vuoti.
+    Se hanno ancora fixture restano, e il risultato li elenca in `kept`.
+  - Tutto validato prima di cambiare qualcosa. Errori in `last_error`, ad
+    esempio: `gruppo front: il motore rig_a e' chase, non level`,
+    `motore rig_a legato a due gruppi (front, wash)`, `gruppo spot2: le
+    teste sono un motore solo, usare bind: heads`.
+  - Esito in `status.params.dmx_groups_result`: `{ts, created, bound,
+    updated, removed, kept, ignored}`.
+  - Lettura in `status.params.dmx_groups`: `[{group (nome Plancia),
+    td_group, kind, label, builtin, fixtures, source}]`.
+- **Lista verificata dal vivo** (è quella del contratto `c0d9bbb`, oggi
+  già applicata in TD con queste etichette):
+
+      [{"group":"front","kind":"chase","label":"Front","bind":"rig_a"},
+       {"group":"back","kind":"chase","label":"Back","bind":"rig_b"},
+       {"group":"mh","kind":"heads","label":"Teste","bind":"heads"},
+       {"group":"ledbar","kind":"chase","label":"LED bar"},
+       {"group":"ledwall","kind":"none","label":"LED wall"},
+       {"group":"haze","kind":"level","label":"Haze"},
+       {"group":"blinder","kind":"level","label":"Blinder"}]
+
+  Con in più `{"group":"test_grp","kind":"level"}`: creato vuoto; rimandata
+  la lista senza: tolto.
+- **Modalità "solo da Plancia"** (servizio `dmx_groups_strict`, `enable` /
+  `disable`; in TD "Gruppi solo da Plancia" su `dmx_patch`). **Spenta per
+  ora.**
+  - Accesa: TD non crea mai un gruppo da una fixture o da un tipo. Esempio
+    di errore: `gruppo 'nuovo' non definito: la Plancia deve mandarlo con
+    dmx_groups`. Verificato: niente scritto, nessun rig creato.
+  - Stato anche in `dmx_matrix.fixtures.groups_strict`.
+- **Per Core (Plancia)**:
+  1. Mandare `dmx_groups` all'apertura e a ogni modifica del palco: la
+     lista dei gruppi della Plancia, con `bind` per front, back e mh.
+  2. Mandare anche `dmx_types` (nota 19) con la sua tabella tipo → gruppo
+     → modello, così anche i tipi sono della Plancia (`source: plancia`).
+  3. Quando 1 e 2 sono a posto, **accendere `dmx_groups_strict`** (o
+     dirlo qui e lo accendiamo da TD). Da lì un gruppo esiste in TD solo
+     se la Plancia l'ha definito.
