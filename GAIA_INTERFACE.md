@@ -6056,3 +6056,90 @@ dal vivo, più tre cose da sapere lato Plancia.** Risponde a `gaia`
   - Minore: `uid()` (7 caratteri base36) può uscire tutto cifre (circa
     1 su 10000). In quel caso TD lo legge come `id` numerico. Basta un
     prefisso, ad esempio `"p-" + uid()`.
+
+**2026-10-16 (TD/Win-PD, 19)**: **Catalogo fixture condiviso: modelli,
+canali e tipi in un posto solo, la Plancia definisce la tassonomia del
+palco.** Risponde a `gaia` `3beca89` e `a486595`. Commit `0876a7d` su
+`TD4DMX`. Verificato dal vivo: un giro via MQTT, il resto con lo stesso
+dispatcher dei comandi; nodo Art-Net offline, patch reale invariata a fine
+test.
+
+- **Perché**: oggi la Plancia ha i canali fissi in `FIX_TYPES.ch` (par 8,
+  bar 24, mh 16, blinder 4), mentre TD usa i suoi profili (`D+RGB 4CH`,
+  `Generic Spot 11ch 16bit`, `Dimmer 1CH`). La stessa luce occupa
+  indirizzi diversi nei due lati. Ora la fonte è una sola: il catalogo di
+  DMX V8, che la Plancia legge e scrive.
+- **Modello** (cos'è una luce): `{model, kind, channels, footprint,
+  complete, manufacturer, source, notes}`; per le teste anche
+  `pan_range`, `tilt_range`, `defaults`.
+  - `kind`: il motore che la pilota. `chase` (rig audio a colori: front,
+    back, gruppi chase creati), `level` (haze, blinder), `heads` (teste).
+  - `channels`: i ruoli DMX in ordine di indirizzo, `footprint` = quanti.
+  - Si può dare **solo il numero di canali** (`"channels": 8` o
+    `"footprint": 8`): i ruoli diventano `ch1..ch8` e `complete: false`.
+    Gli indirizzi sono già giusti, il motore manda 0 su quei canali finché
+    i ruoli non vengono compilati.
+  - Ruoli che ogni motore pilota davvero:
+    `dmx_matrix.catalog.kinds.<kind>.roles`. Gli altri escono a 0.
+  - `source`: `builtin` (i profili di oggi), `manual` (TD), `plancia`,
+    `scan` (riservato, vedi sotto).
+- **Tipo** (la tassonomia del palco, decisa dalla Plancia): `{type, label,
+  group, kind, model, source}`.
+  - `group`: nome o alias del gruppo dove vanno le luci del tipo.
+  - `kind`: `chase` o `level` per creare il gruppo se manca; `heads` solo
+    per `mh`; `none` = senza DMX (LED wall, casse: fixture saltate).
+  - `model`: modello di default delle luci del tipo.
+  - Valori di partenza = i `FIX_TYPES` della Plancia, mappati come prima:
+    `mh` → mh, `Generic Spot 11ch 16bit`; `par` → front, `D+RGB 4CH`;
+    `bar` → ledbar, `D+RGB 4CH`; `blinder` → `Dimmer 1CH`; `haze` →
+    `Haze 2CH`; `wall`, `speaker` → none.
+- **Comandi** su `gaia/device/td-dmx-win/command`,
+  `{"action":"set","param":<nome>,"value":<valore>}`:
+  - `dmx_model_add` `{model, kind, channels: [ruoli] | "r g b" | N,
+    footprint?, manufacturer?, notes?}`; `dmx_model_update` `{model,
+    <campi>}`, il kind non cambia se il modello è in uso;
+    `dmx_model_remove` `"<model>"`, rifiutato se usato da fixture, tipi o
+    dal profilo di default di un gruppo.
+  - `dmx_types` `[<tipo>, ...]`: **sostituisce tutta la tassonomia**.
+    Un tipo che nomina un modello assente lo crea se porta `channels` o
+    `footprint`. `dmx_type_set` `<tipo>` (aggiunge o sostituisce),
+    `dmx_type_remove` `"<type>"`.
+  - Lettura: `status.params.dmx_models`, `status.params.dmx_types`, e
+    `dmx_matrix.catalog` (`models`, `types`, `kinds`, `params`).
+  - Errori in `status.last_error`, ad esempio: `tipo wrong: il gruppo
+    front e' chase, non level`, `modello Test Wash 8CH in uso: fixture 21
+    (W1), tipo wash`, `ruoli non validi: green!`.
+- **Fixture**: `dmx_fixture_add` / `dmx_fixture_update` / `dmx_fixtures`
+  accettano il campo `model` (= profilo TD). Senza `model`, la fixture
+  prende il modello del suo `type`. Verificato: tipo `wash` (front,
+  modello 8CH creato con solo `"channels": 8`) → fixture a 400..407;
+  `model: "RGB 3CH"` esplicito → 410..412; `bar` con modello `footprint:
+  24` → gruppo `ledbar` creato, 24 canali a 0; `blinder` con 4 canali →
+  rig level creato, 4 canali a 0.
+- **Inserimento manuale in TD**: pagina **Catalog** di `dmx_patch` (Model,
+  Kind, Channels, Load/Save/Remove), oppure le tabelle
+  `dmx_patch/fixture_models` e `fixture_types`. Ogni modifica riallinea i
+  profili dei gruppi e ripubblica `dmx_matrix`: la Plancia la vede senza
+  fare niente.
+- **Riempimento automatico dallo scan: non ancora possibile.** L'Art-Net
+  DAT di TD fa solo ArtPoll (nodi e porte, già in `dmx_matrix.patch.ports`).
+  Modello e footprint richiedono RDM: TD non lo implementa e il nodo
+  Electroconcept di oggi non lo supporta (`rdm: 0`). `source: "scan"`
+  resta riservato per quando ci sarà un nodo RDM.
+- **Per Core (Plancia)**:
+  1. **Costruzione del palco**: mandare `dmx_types` con la tassonomia
+     vera della Plancia. Esempio: `par` e `wash` separati, un tipo per
+     `back`, `bar` col modello reale delle barre. Con `channels`/`footprint`
+     i modelli che mancano vengono creati insieme.
+  2. **Togliere `FIX_TYPES.ch` fisso**: il numero di canali di una fixture
+     = `footprint` del suo modello in `dmx_matrix.catalog.models` (quello
+     della fixture, altrimenti quello del tipo). Usarlo anche in
+     `nextAddress()` e nella pianta.
+  3. **Editor fixture**: menu "Modello" con i modelli del `kind` del
+     gruppo, e campo `model` nella fixture mandata a TD.
+  4. **Modello nuovo dall'editor**: `dmx_model_add` con i ruoli se noti
+     (vocabolario `catalog.kinds.<kind>.roles`), altrimenti solo il numero
+     di canali, da completare dopo da TD o dalla Plancia.
+  5. Conferma come per le fixture (nota 18): modello o tipo sincronizzato
+     solo quando compare in `status.params.dmx_models` / `dmx_types`;
+     altrimenti mostrare `last_error`.
