@@ -6295,3 +6295,64 @@ pulizia dei doppioni sulla patch reale è riuscita). Commit `403dcfd` su
   3. Quando 1 e 2 sono a posto, **accendere `dmx_groups_strict`** (o
      dirlo qui e lo accendiamo da TD). Da lì un gruppo esiste in TD solo
      se la Plancia l'ha definito.
+
+**2026-10-16 (TD/Win-PD, 22)**: **Analisi della tabella DMX e
+ottimizzazione degli spazi vuoti, proposta in automatico dopo che la
+Plancia manda il palco.** Commit `c995ad2` su `TD4DMX`. Verificato dal
+vivo in sola anteprima: patch reale invariata.
+
+- **Chiarimento "unit"**: nella pianta di TD si leggeva `U11 @177`, dove
+  `U` era la **unit** (la posizione della luce nel gruppo, l'uscita del
+  motore: `head11`), non l'universo. Sembravano tanti universi. Ora la
+  pianta scrive `U<universo>@<indirizzo> #<unit>`, con `U` = universo
+  come nella Plancia. Gli universi reali sono 2: U1 = `2.1.1.2:1`, U2 =
+  `2.1.1.2:2`, le due uscite del nodo Electroconcept.
+- **La patch di oggi** (39 fixture della Plancia, nessun conflitto):
+  - U1: 28 luci in 186 canali, ma sparse fino al canale 271, con 19 buchi
+    (85 canali).
+  - U2: 11 barre, 44 canali usati ma fino al 268, con 10 buchi (224
+    canali).
+  - Canali persi per spaziatura dentro i gruppi: `ledbar` 224 (barre ogni
+    24 canali, ne hanno 4), `heads` 66 (teste ogni 16, ne hanno 11),
+    `rig_a` 43 (PAR ogni 8, ne hanno 4), `blinder` 13.
+  - Causa: i default della Plancia usano ancora i canali fissi di
+    `FIX_TYPES` invece del footprint del modello (nota 19), e mettono le
+    barre su U2.
+- **Ottimizzazione**: impacca senza buchi, gruppi nell'ordine della
+  tabella gruppi, dentro il gruppo per unit, ogni luce con il suo
+  footprint reale. Le lampade `shared` restano condivise.
+  - `mode: "keep"` (default): ogni luce resta nell'universo scelto dalla
+    Plancia e passa al successivo solo se il suo è pieno. Oggi: U1 1-186,
+    U2 1-44, 38 spostamenti.
+  - `mode: "fill"`: ignora gli universi, riempie U1 e poi U2. Oggi: tutte
+    le 39 luci in U1 (230/512), **U2 resta libero**.
+  - `align: 10`: ogni gruppo comincia a un indirizzo tondo (1, 11,
+    21...). Qualche canale perso, indirizzi più leggibili sui display.
+- **Comando**: `dmx_patch_optimize` `{request_id?, apply: false|true,
+  mode?: "keep"|"fill", align?: N}` → `status.params.
+  dmx_patch_optimize_result`: `{request_id, ts, applied, mode, align,
+  moves: [{id, uid, name, group, from: {universe, port_id, address}, to:
+  {...}}], unresolved, before, after, spacing_waste}`. `before` e
+  `after` sono per universo: `{universe, fixtures, used, last, gaps,
+  gap_channels, largest_free, free}`.
+- **Automatico**: ogni volta che la Plancia manda il palco intero
+  (`dmx_fixtures`), TD calcola l'anteprima (`mode: "keep"`, `request_id:
+  "auto"`). La proposta è già nello status quando la Plancia lo rilegge.
+- **In TD**: tab Fixture della Config, "Ottimizza universi" (keep/fill),
+  "Allinea gruppi a", "Anteprima ottimizza" / "Ottimizza".
+- **Attenzione**: ottimizzare cambia gli indirizzi. Con le luci già
+  cablate vanno reindirizzate a mano sui display. Va fatto in fase di
+  progetto, prima di indirizzare le luci vere.
+- **Per Core (Plancia)**:
+  1. Dopo aver mandato il palco, leggere `dmx_patch_optimize_result`
+     (`request_id: "auto"`) e mostrare la proposta: prima/dopo per
+     universo e la lista degli spostamenti, con un bottone "Applica" che
+     manda `dmx_patch_optimize` con `apply: true` (stesso `mode`/`align`).
+     Poi ricaricare il palco da `dmx_fixtures`, come già fa.
+  2. Universo di default: **U1**, e U2 solo quando U1 è pieno.
+     Equivalente a mandare `"universe": "auto"` (nota 20), oppure a
+     `mode: "fill"`. Le barre oggi vanno su U2 per default
+     (`defaultFixtures()`).
+  3. Spaziare le luci nuove con il `footprint` del modello
+     (`dmx_matrix.catalog.models`), non con `FIX_TYPES.ch`: oggi si
+     perdono 346 canali.
