@@ -6143,3 +6143,92 @@ test.
   5. Conferma come per le fixture (nota 18): modello o tipo sincronizzato
      solo quando compare in `status.params.dmx_models` / `dmx_types`;
      altrimenti mostrare `last_error`.
+
+**2026-10-16 (TD/Win-PD, 20)**: **Doppioni dalla Plancia (probabilmente
+più dispositivi) e gestione completa di universi, indirizzi e conflitti,
+con suggerimenti per completare.** Risponde a `gaia` `1ae2b37` e
+`871ae59`. Commit `bb37b82` su `TD4DMX`. Verificato dal vivo sulla patch
+reale, in sola lettura (check e anteprima del resolve); una fixture di
+prova aggiunta e tolta.
+
+- **Cosa arriva oggi in TD**: 58 fixture dalla Plancia (id TD 21-78), i
+  gruppi `ledbar`, `haze`, `blinder` creati dai tipi. Fra queste, **19
+  gruppi di doppioni**: stesso nome, gruppo, universo e indirizzo, `uid`
+  diverso (es. `MH1` = `p-vn5zkqh`, `p-slcg939`, `p-zzkn998`).
+- **Ipotesi: più dispositivi.** Ogni browser con la Plancia aperta (tablet,
+  PC, kiosk) tiene la sua copia del palco in localStorage, con `uid`
+  generati in locale. Lo stesso palco mandato da due dispositivi, o
+  rigenerato da `defaultFixtures()` dopo una migrazione, arriva a TD come
+  luci diverse. TD non può capirlo dall'`uid`: lo riconosce solo come
+  `duplicate` (vedi sotto).
+- **Conflitti**, contando ogni fixture abilitata, anche di gruppi spenti:
+  - `duplicate`: stesso range e stesso gruppo = la stessa luce due volte;
+  - `shared`: stesso range, gruppi diversi = una lampada pilotata da due
+    gruppi (voluto, es. le barre di prova rig_a/rig_b);
+  - `overlap`: canali sovrapposti in parte o footprint diversi: errore.
+  - Oggi: `duplicate 19, overlap 4, shared 1`.
+- **Nuovi parametri** (comandi su `gaia/device/td-dmx-win/command`):
+  - `dmx_universe_map` (r): `{universes: [{port_id, universe, label,
+    online, used: [{id, uid, name, group, profile, start, end,
+    conflict}], free: [[da, a]], free_channels, conflicts}], unassigned}`.
+    `universe` è 1-based come nella Plancia; ci sono solo le porte vere
+    (oggi U1 e U2).
+  - `dmx_patch_conflicts` (r): `[{port_id, universe, kind, start, end,
+    fixtures}]`.
+  - `dmx_patch_check` (w): `[fixture, ...]` o `{request_id, fixtures}`,
+    **senza scrivere niente** → `dmx_patch_check_result` (r, nello status
+    subito dopo): `{request_id, ts, results: [{index, ref, status, group,
+    profile, footprint, port_id, universe, start, end, conflicts,
+    suggestion: {universe, port_id, address, end}, update_of, message}]}`.
+    `status`: `ok`, `conflict`, `auto`, `overflow`, `no_port`,
+    `no_profile`, `no_dmx`, `full`, `error`. Le fixture si valutano in
+    ordine: ognuna vede le precedenti del lotto (al loro posto se ok, al
+    suggerimento se no), quindi un palco intero si completa in un colpo.
+  - `dmx_patch_resolve` (w): `{request_id, apply: false|true,
+    include_shared?, remove_duplicates? (default true)}` →
+    `dmx_patch_resolve_result` (r): `{applied, actions: [{action: remove
+    |move, id, uid, name, group, from, to?, duplicate_of?}], unresolved}`.
+    Toglie i doppioni (resta quella creata in TD, poi la più vecchia) e
+    sposta per prima la fixture che ne copre di più. Le `shared` restano,
+    salvo `include_shared`.
+- **Fixture**: in `dmx_fixture_add` / `dmx_fixture_update`,
+  `"universe": "auto"` e/o `"address": "auto"` = primo posto libero per
+  il footprint del modello. Nuovo `on_conflict`:
+  - `accept` (default, come prima: scritta e segnata in
+    `dmx_patch_report`);
+  - `reject`: non scrive, `last_error` dice con chi e il libero, es. `U1@3-6
+    in conflitto con 12 (Bar 1 1-4), ..., p-vn5zkqh (MH1 1-11); libero:
+    U1@28`;
+  - `auto`: scrive al posto suggerito.
+  - `dmx_fixtures` (tutta la patch) accetta `"auto"`, piazzato sulla
+    nuova lista.
+- **Verificato**: check di 5 proposte → `par` @U1:3 `conflict`
+  (suggerito U1@28), `bar` address `auto` → U2@5, `haze` tutto `auto` →
+  U1@44 (il buco da 5 canali), `mh` @U1:500 `ok`, `wall` `no_dmx`; add con
+  `reject` → errore e niente scritto; add con `auto` → U1@28; update
+  `address: "auto"` su U2 → U2@5; anteprima resolve: **28 doppioni da
+  togliere, 4 da spostare** (MH1 U1@1→207, MH2 U1@17→218, MH5 U1@65→229,
+  PAR7 U1@177→179), nessuna senza spazio.
+- **In TD**: tab Fixture della Config: Status dice con chi è in conflitto
+  e l'indirizzo libero; **Primo libero**, **Conflitti**, **Anteprima
+  risoluzione / Risolvi**.
+- **Per Core (Plancia)**:
+  1. **Una fonte sola per il palco**: la patch di TD. All'apertura la
+     Plancia ricostruisce le sue fixture da `status.params.dmx_fixtures`
+     (quelle con `uid` `p-…`), non dalla copia locale né da
+     `defaultFixtures()`. Così due dispositivi vedono lo stesso palco e
+     un `uid` resta lo stesso. Mandare i default solo se TD non ha
+     fixture della Plancia.
+  2. **Prima di mandare**, `dmx_patch_check` con le fixture nuove o
+     cambiate: mostrare i conflitti e proporre `suggestion` come
+     completamento (universo + indirizzo).
+  3. **Editor**: universo da `dmx_universe_map.universes` (solo le porte
+     vere), indirizzo libero da `free` col footprint del modello (nota
+     19). Al posto di `nextAddress()`, oppure `"address": "auto"`.
+  4. **Invio**: `on_conflict: "reject"` dall'editor, per avere un errore
+     leggibile con il suggerimento; `"auto"` per gli inserimenti rapidi.
+  5. **Pulizia di oggi**: non l'ho applicata. Proposta: dopo il punto 1,
+     `dmx_patch_resolve` con `apply: true` dalla Plancia, oppure da TD con
+     "Risolvi". Toglie i 28 doppioni e sposta le 4 teste/par sovrapposte.
+     Se la Plancia ha ancora in locale gli `uid` tolti, al prossimo
+     "Aggiorna" riceve `fixture '<id>' non trovata`.
