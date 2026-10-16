@@ -6356,3 +6356,105 @@ vivo in sola anteprima: patch reale invariata.
   3. Spaziare le luci nuove con il `footprint` del modello
      (`dmx_matrix.catalog.models`), non con `FIX_TYPES.ch`: oggi si
      perdono 346 canali.
+
+**2026-10-16 (TD/Win-PD, 23)**: **Teste mobili selettive: TD esegue
+`/mh/*` sulle teste selezionate, con selezioni con nome, posizioni per
+testa e preset; più la proposta per scene, feedback e chase.** Commit
+`c71bb8b` su `TD4DMX`. Verificato dal vivo; a fine prova tutte le teste
+sono tornate al look globale.
+
+- **Prima**: TD scartava ogni `/mh/*` ("teste rinviate") e aveva un solo
+  look per tutte le teste.
+- **Ora ogni testa ha un modo**:
+  - `global`: il look comune di TD, come prima;
+  - `manual`: valori suoi, e un campo vuoto segue il globale;
+  - `follow`: pan/tilt dal suo target PTZ (mocap o pad), anche se le altre
+    teste sono a mano.
+- **Identità della testa** = l'`uid` della Plancia (`p-…`), o `id:<n>` per
+  le fixture create in TD. Accettati anche il nome (`MH3`) e la unit
+  (`u3`).
+- **OSC canale 5 (7020)**: tutti i comandi agiscono sulla **selezione**.
+  - Selezione:
+    - `/mh/select 1 0 1 …`: maschera nell'ordine delle teste pubblicato
+      da TD (vedi sotto), non più 8 fisse;
+    - `/mh/select/heads <uid> …`, `/mh/select/add …`,
+      `/mh/select/remove …`;
+    - `/mh/select/set <nome>`: una selezione salvata (`mh_sx`, …);
+    - `/mh/select/all`, `/mh/select/clear`.
+  - Look:
+    - `/mh/pantilt x y` (-1..1 = escursione intera del modello, tilt = -y
+      come nell'anteprima della Plancia);
+    - `/mh/pan` e `/mh/tilt` in gradi;
+    - `/mh/color r g b`, `/mh/dimmer`, `/mh/zoom`, `/mh/focus`,
+      `/mh/white` (0-1);
+    - `/mh/strobe 0/1`: strobo sullo shutter, alla velocità di
+      `/dmx/strobe/rate`.
+  - Ruote: `/mh/gobo i` e `/mh/colorwheel i` = slot `i` della ruota del
+    modello (nuovi campi `gobos`/`colors` del catalogo, `"Open=0
+    Dots=16 …"`). Senza slot vale `i × 32`, approssimato.
+  - `/mh/position i`: posizione **per testa** (vedi sotto).
+    `/mh/position/store i [nome]` la ricalibra dalle teste selezionate.
+  - `/mh/preset/store i [nome]` e `/mh/preset/recall i`: il look completo
+    delle teste selezionate.
+  - `/mh/home`, `/mh/follow 0/1`, `/mh/release` (le selezionate tornano
+    al globale).
+- **Posizioni**: in TD sono **pan/tilt in gradi per ogni testa**
+  (`moving_heads/head_positions`). Le ho seminate con le 6 della Plancia
+  (Centro, Pubblico, Palco, Cielo, Croce, Ventaglio) usando la sua
+  formula `posOf`, e vanno calibrate sul palco vero. Una testa senza la
+  sua riga usa la riga `*`.
+- **Gaia (MQTT)**, stessi comandi:
+  - lettura: `heads_list` (per testa: `unit`, `key`, `uid`, `name`,
+    `profile`, `selected`, `mode` e i valori effettivi);
+  - comandi: `heads_select`, `heads_program` (`{campi…, mode?, heads?}`),
+    `heads_mode` (`{mode, heads?}`);
+  - selezioni: `heads_selections` (rw, set = sostituisce: `[{selection,
+    label, heads: [uid…]}]`);
+  - posizioni: `heads_positions` (rw), `heads_position_recall`,
+    `heads_position_store`;
+  - preset: `heads_presets` (r), `heads_preset_store`,
+    `heads_preset_recall`, `heads_preset_remove`.
+  - In `dmx_matrix.heads.programmer`: `order` (l'ordine per la maschera
+    di `/mh/select`), `modes`, `fields`, `selections`, `positions`,
+    `presets`.
+- **Verificato**:
+  - maschera `1 1 0…` → MH1 e MH2 a pan 135°/tilt 67.5°, rosso, dimmer
+    0.7, gobo 64, strobo; MH3 invariata;
+  - `heads_selections` `mh_sx` / `mh_dx` + `/mh/select/set mh_dx` +
+    `/mh/position 5` → Ventaglio su 3 teste;
+  - preset store/recall; `heads_mode follow` → la testa segue il pad PTZ
+    (35.9°) con Control manuale; errori chiari per selezione, testa o
+    posizione inesistenti.
+- **Per Core (Plancia) — teste**:
+  1. La selezione dalle teste vere (`heads_list` o `dmx_matrix.heads.
+     programmer.order`) invece di "MH 1..8". Meglio
+     `/mh/select/heads <uid>…`, che non dipende dall'ordine.
+  2. Le **selezioni con nome** (sottogruppi di teste) le definisce la
+     Plancia nel disegno del palco: mandarle con `heads_selections`, poi
+     bottoni `/mh/select/set <nome>`.
+  3. Posizioni e preset dalla lista di TD (`heads_positions`,
+     `heads_presets`), con un "salva" che manda `/mh/position/store` e
+     `/mh/preset/store`.
+  4. Bottone "Segui" (`/mh/follow 1`) per le teste selezionate, e
+     "Rilascia" (`/mh/release`).
+- **Proposta per le prossime fasi** (da concordare):
+  - **Scene, una lista sola, quella di TD**: la Plancia usa
+    `show_scenes` (già pubblicata) invece dei suoi 12 look, e richiama per
+    indice o per nome (`/dmx/scene/name <nome>`). Le scene di TD si
+    estendono per gruppo (front, back, mh, ledbar, haze, blinder) e allo
+    stato per testa del programmer. I 12 look della Plancia si possono
+    importare una volta come scene di TD.
+  - **Feedback verso `OPS:9000`**: TD rimanda gli stessi indirizzi quando
+    cambiano (gruppi, master, blackout, scena, selezione e stato teste,
+    tempo della timeline), così più tablet restano sincronizzati.
+  - **Chase per rig**: Off, Lento, Veloce, Rainbow, Random, Sound;
+    `/dmx/chase i` per tutti, `/dmx/chase/<gruppo> i` per uno solo.
+  - **Timeline**: orologio principale in TD, la Plancia telecomanda
+    (`/show/play`, `/show/cue n`) e mostra `/show/time` dal feedback.
+  - **Idee**: "identifica fixture" (flash di una luce dall'editor);
+    puntamento su un punto del palco usando x/y delle teste (posizioni
+    come punti invece che angoli, anche per il mocap); limiti pan/tilt
+    per testa (zone vietate, occhi del pubblico) dalla Plancia;
+    `/meter/l` e `/meter/r` veri dall'audio engine di TD; colore reale
+    per fixture nel Render della Plancia; contenuti del LED wall generati
+    da TD in NDI verso il gateway `444e40e`.
