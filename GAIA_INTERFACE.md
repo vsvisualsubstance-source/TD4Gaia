@@ -7072,3 +7072,75 @@ per vedere lo show come esce da DMX Master.** Verificato sul codice
   `rig_b`). Il Render deve mostrare gli stessi colori del pannello
   Patch/Programmer di TD, e muoversi con l'audio sui rig audio-reattivi.
   Il blackout da un altro tablet deve spegnere tutto.
+
+**2026-10-19 (TD/Win-PD, 34)**: **Catalogo: come ogni modello fa colore
+(RGB, CMY, ruota colori, lampada fissa) e colore reale per ogni
+fixture.** Commit `5fb48cf` su `TD4DMX`. Completa la nota 33. Verificato
+dal vivo.
+
+- **Slot della ruota colori con il loro colore** (`colors` dei modelli
+  `heads`, nota 19):
+  - forma testo `"White=0 Red=16#ff0000 CTO=144"`, cioè `nome=valore DMX`
+    più un `#rrggbb` facoltativo;
+  - forma lista `[{name, value, rgb: [r,g,b] 0–1 | hex}]`.
+  
+  Senza `#rrggbb` il colore si ricava dal nome: Red/Rosso, Orange,
+  Amber, Yellow, Lime, Green, Cyan, LightBlue/Azzurro, Blue, Magenta,
+  Pink, Purple/Viola, Lavender, Congo, UV, CTO/Warm, CTB/Cold,
+  Open/White/Bianco. Varianti come "Red2" o "CTO_3200" valgono come
+  "Red" e "CTO". Se il nome non è riconosciuto, `rgb` è `null`. Nel
+  catalogo pubblicato (`dmx_models`, `dmx_matrix`) ogni slot colore ha
+  sempre il campo `rgb`.
+- **Nuova colonna `beam`**: il colore della lampada in hex (es.
+  `"ffd8a0"` per una luce alogena; vuoto = bianco). Serve ai modelli
+  senza miscelazione colore (solo dimmer o solo white) ed è anche la luce
+  che CMY e la ruota filtrano. Si scrive come gli altri campi
+  (`dmx_model_set` / `_update`, `beam: "ffd8a0"` o `[r, g, b]`).
+- **Nuovo campo derivato `color_mix`** (non si scrive): dice come il
+  modello fa colore, ricavato dai ruoli:
+  - `rgb`: `red green blue`, più eventuali `white`/`amber`/`lime`/`uv`;
+  - `cmy`: `cyan magenta yellow`;
+  - `wheel`: `color`, cioè la ruota;
+  - `lamp`: nessuna miscelazione, si usa il colore `beam`;
+  - `[]`: non emette luce (haze).
+  
+  CMY e ruota si possono combinare. Per le teste nuovi ruoli
+  `cyan`, `magenta`, `yellow`.
+- **`dmx_output` (note 28 e 33)**:
+  - `rgb_out` è il colore reale per **ogni** tipo: RGB con white, amber
+    e uv aggiunti; CMY come filtri sottrattivi; ruota con il colore dello
+    slot; lampada con `beam`; sempre moltiplicato per il dimmer.
+  - Nuovo campo `color_source` per ogni fixture: `rgb` | `cmy` | `wheel`
+    | `cmy+wheel` | `lamp` | `unknown` (ruota con slot senza colore:
+    bianco) | `null` (haze: `rgb_out` null, `intensity` = output).
+  - Il Render della Plancia deve usare solo `rgb_out`. Con `unknown`
+    può mostrare un indicatore "colore da verificare".
+- **Pad colore su tutte le teste** (`/mh/color`, `heads_color`):
+  - testa RGB: invariato;
+  - testa CMY: TD manda cyan = 255 − red, e lo stesso per magenta e
+    yellow;
+  - testa a ruota: TD sceglie lo slot di colore più vicino (tinta, non
+    luminosità);
+  - viceversa `/mh/colorwheel i` imposta anche il colore del programmer
+    al colore dello slot, quindi il feedback `/mh/color` mostra quello
+    che esce davvero.
+  
+  Scene e preset che salvano sia colore sia ruota li richiamano così
+  come sono.
+- **Valori del catalogo oggi** (generici: **da verificare sul manuale**
+  delle teste vere, correggibili dalla Plancia o da TD):
+  - ruota colori `White=0 Red=16 Orange=32 Yellow=48 Green=64 Blue=80
+    LightBlue=96 Magenta=112 Pink=128` su "Generic Spot 9ch", "Generic
+    Spot 11ch 16bit" e "Generic Beam 16ch 16bit";
+  - `beam` `ffd8a0` su "Dimmer 1CH" (blinder).
+  
+  I modelli RGB e RGBW non cambiano.
+- **Verificato**: `/mh/color 1 0 0` sulle due teste (Spot 11ch) →
+  ruota a 16 (Red), `dmx_output` `rgb_out` [0.281, 0, 0] con `color_source:
+  "wheel"`; `/mh/colorwheel 6` → colore del programmer azzurro [0.45,
+  0.75, 1]; blinder `lamp` [0.231, 0.196, 0.145]; haze `null`; PAR e
+  barre `rgb` come prima; prova CMY sul calcolo (ciano pieno → [0, 1,
+  1]). Stato delle teste ripristinato.
+- **Per la Plancia**: nell'editor dei modelli servono il colore di ogni
+  slot (un selettore colore accanto a `nome=valore`) e il campo `beam`.
+  Nel Render: `rgb_out` e, se serve, `color_source`.
