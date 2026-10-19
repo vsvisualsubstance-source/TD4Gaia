@@ -7003,3 +7003,72 @@ su `TD4DMX`. Verificato dal vivo.
   → `"mqtt"` e stop; con `dmx_output` spento la sorgente passa da sola a
   `"osc"`; strobo, rate e fade nel giro di refresh; feedback riportato su
   `OPS:9000`.
+
+**2026-10-19 (TD/Win-PD, 33)**: **Verifica: il Render del Palco della
+Plancia non usa lo stato reale delle fixture. Cosa cambiare in Plancia
+per vedere lo show come esce da DMX Master.** Verificato sul codice
+`gaia` `main` (`28ed5e9`), sull'`app.js` servito ora da OPS e sul bridge
+(collegato come un tablet). Lato TD: commit `91a59d6` su `TD4DMX`.
+
+- **Cosa succede oggi**:
+  1. `drawRender` (`src/60-stage-rendering.js`) disegna una simulazione
+     locale (`SH`): un colore per gruppo (`SH.wash`, `SH.back`,
+     `SH.bar`), moltiplicato per `/dmx/group/*`, master e blackout.
+     **Nessuno legge `dmx_output` né `/dmx/fixture/*`.** Palette per
+     fixture, effetti audio-reattivi, automazioni della timeline
+     (`keys`) e scene di TD non si vedono.
+  2. **Scena sbagliata**: TD rimanda `/dmx/scene <indice della scena
+     attiva di TD>` (nota 28), ma `model()` lo passa a `goScene(i)`, che
+     applica `LOOKS[i]`, cioè i 12 look locali. Oggi TD manda
+     `/dmx/scene 0` (= `TestScene1`) e la Plancia disegna `Walk-in`.
+     Siccome il feedback viene ripetuto ogni 5 s, il crossfade verso il
+     look sbagliato riparte ogni 5 s.
+  3. **Timeline**: con l'orologio di TD (`showClock.authority`) la
+     Plancia segue bene la posizione e non lancia le sue cue: corretto.
+     Le cue arrivano da `show_cues`, ma le cue di TD hanno `label` vuota
+     e compaiono come "Cue 1", "Cue 2". Mostrare `label || scene`.
+- **Corrispondenza fixture: già a posto.** Le 10 fixture DMX del layout
+  condiviso (`rev 675`) hanno `f.id` = `uid` di TD, una per una. LED wall
+  e casse non sono in TD: restano solo render.
+- **Come disegnare dallo stato reale** (proposta per `drawRender`):
+  - **Fonte**: `gaia/devices/td-dmx-win/dmx_output` (MQTT, retained), e
+    se manca da 6 s la riserva OSC `/dmx/fixture/*` (nota 32). Fixture
+    per `uid` = `f.id`.
+  - **Valori già finali**: `rgb_out` e `intensity` contengono già
+    master, `Level` di gruppo, blackout e strobo. **Non moltiplicarli di
+    nuovo** per `SH.master`, `SH.g[...]` o il gate dello strobo: sarebbe
+    applicare tutto due volte.
+  - Per tipo:
+
+    | Tipo Plancia | Da `dmx_output` |
+    |---|---|
+    | `par`, `bar` | colore = `rgb_out` (la barra: stesso colore su tutti i pixel) |
+    | `mh` | colore = `rgb_out`; `pan`, `tilt` in gradi → `p[0] = pan / (pan_range/2)`, `p[1] = tilt / (tilt_range/2)` (escursioni dal catalogo `dmx_models`, 540/270; stesso verso della nota 30); `zoom` → `p[6]`, `focus` → `p[7]`; `gobo` grezzo 0–255 |
+    | `blinder` | `intensity` |
+    | `haze` | `intensity` al posto di `SH.g.haze` per la nebbia |
+    | `wall`, `speaker`, `laser` | invariati (non sono DMX) |
+
+  - **Teste a ruota colori**: il profilo "Generic Spot 11ch 16bit" non
+    ha canali RGB e il catalogo non ha i colori degli slot. Ora TD manda
+    `rgb_out` = bianco × intensità con `color_source: "unknown"`. Quando
+    il catalogo avrà gli slot con `rgb`, arriverà il colore vero
+    (`"wheel"`). Le teste RGB hanno `"rgb"`. Il colore scelto sul pad
+    (`/mh/color`) è l'intenzione dell'operatore, non quello che esce.
+  - **Strobo**: `dmx_output` è campionato a 10/s, quindi `strobe: true`
+    significa "sta lampeggiando". Per un lampeggio fluido, disegnare
+    l'ultimo valore acceso con il gate locale a `/dmx/strobe/rate`.
+  - **Fixture con `sent: false`** (non patchata o porta spenta): buia,
+    oppure in grigio.
+  - **Senza dati** (niente MQTT da 6 s e niente OSC): tornare alla
+    simulazione locale di oggi e scriverlo nel Render ("simulazione").
+- **`/dmx/scene` dal feedback**: quando arriva da TD (`receive`, non da
+  un tocco locale) non deve chiamare `goScene`. Deve solo evidenziare il
+  pulsante, e il nome della scena viene da `show_scene_catalog`. I
+  `LOOKS` restano solo per la simulazione offline. In generale, con
+  `dmx_output` attivo, `model()` non deve più cambiare i colori del
+  Render: cambia solo i widget.
+- **Prova consigliata**: in TD play della timeline (cue `TestScene1` a
+  0 s e 10 s, automazioni su gobo teste, palette `rig_a` e `Mindimmer`
+  `rig_b`). Il Render deve mostrare gli stessi colori del pannello
+  Patch/Programmer di TD, e muoversi con l'audio sui rig audio-reattivi.
+  Il blackout da un altro tablet deve spegnere tutto.
