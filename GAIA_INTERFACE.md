@@ -6765,3 +6765,71 @@ broker OPS.
   `strobe: true` vuol dire che i valori stanno lampeggiando.
 - **Su TD**: `gaia_services` → pagina Output (`Outputenable`,
   `Outputrate`, `Outputstatus`); `plancia_in` → `Feedbackdmx` (acceso).
+
+**2026-10-19 (TD/Win-PD, 29)**: **Contratto timeline: la Plancia
+disegna, DMX Master carica e suona.** Commit `759c75d` su `TD4DMX`.
+Provato via Gaia.
+
+- **Clock**: sul broker si vede il client `plancia-7coc6939quj` che manda
+  `gaia/show/clock/ping` ogni 2 s e riceve `state` da `td-dmx-win`: il
+  clock della nota 24 è attivo. Lo stato ora porta anche `name` e `bpm`
+  della timeline caricata.
+- **Una sola timeline viva, quella di TD.** La Plancia la disegna nel suo
+  editor (o da una scaletta salvata) e la manda come **documento intero**.
+  TD la valida tutta e la carica solo se è tutta valida. Da quel momento
+  il trasporto è il clock (nota 24).
+- **Caricare**: `{"action": "set", "param": "show_timeline", "value":
+  <documento>}` su `gaia/device/td-dmx-win/command`. Il documento può
+  essere un oggetto o una stringa JSON.
+
+  ```
+  {"v": 1,
+   "name": "Prova Plancia",       // nome della timeline/scaletta
+   "bpm": 120,                    // facoltativo, solo informativo
+   "length": 12,                  // s; assente = fino alla fine dell'ultima cue
+   "loop": true,                  // assente = invariato
+   "default_fade": 1.5,           // s, per le cue senza fade (2.0)
+   "rewind": false,               // true = riporta il tempo a 0
+   "dry_run": false,              // true = valida soltanto, non scrive
+   "cues": [
+     {"time": "0:00", "scene": 0,            "label": "Intro"},
+     {"time": 4.5,    "scene": null,         "label": "Marker"},
+     {"time": "0:08", "scene": "TestScene1", "fade": 1, "label": "Fine"}],
+   "keys": [ ... ]}               // facoltativo: assente = automazioni TD invariate, [] = cancellate
+  ```
+
+  - `time`: secondi oppure `"m:ss(.s)"` / `"h:mm:ss"`. Le cue vengono
+    ordinate per tempo.
+  - `scene`: l'`id` di `show_scene_catalog` (il nome, consigliato),
+    oppure l'indice (lo stesso di `/dmx/scene i`, si sposta se cambia la
+    lista), oppure `null` = **marker**: un punto con nome sulla timeline
+    che non cambia le luci (quelle della cue prima restano).
+  - `fade`: secondi di crossfade dalla scena della cue precedente. Lo
+    stato per testa (nota 26) segue le stesse regole.
+  - `keys`: righe di `show_keys` (`lane`, `time`, `value`, `interp`), le
+    automazioni dei parametri TD. Per la Plancia normalmente assenti.
+- **Esito**: `show_timeline_result` nello status (ripubblicato subito dopo
+  il comando): `{seq, ts, source, ok, dry_run, loaded, name, cues, markers,
+  length, errors: [...], warnings: [...]}`. Gli errori sono per cue, per
+  esempio `"cue 1: scena 'Nope' non esiste"`, `"cue 2: tempo 'x' non
+  valido (secondi o m:ss)"`, `"cue 3: scena indice 5 non esiste (1
+  scene)"`, `"length 3.000 s: c'e' una cue a 5.000 s"`. Con anche un solo
+  errore TD non scrive niente.
+- **Leggere** la timeline caricata: `show_timeline` (stessa forma del
+  documento, con le scene per nome). Serve per riaprirla nell'editor
+  della Plancia.
+- **Attenzione**: con la timeline attiva (`show_active`) il caricamento
+  si applica subito al tempo corrente (le luci passano alla cue di quel
+  momento). Per sicurezza caricate da fermi, con `rewind: true` se volete
+  ripartire da 0, e usate prima `dry_run`.
+- **Per Core (Plancia)**:
+  1. Nell'editor timeline, il pulsante "Manda a DMX Master" → `dry_run`,
+     mostra errori e avvisi, poi l'invio vero. Confermare con
+     `show_timeline_result.seq` nuovo e `ok`.
+  2. Le scene per `id` dal catalogo (`show_scene_catalog`), non per
+     etichetta locale.
+  3. Le scalette con nome restano della Plancia: TD tiene solo quella
+     caricata (`name`).
+  4. Feedback OSC della timeline (`Feedbackshow`, nota 24): ora che la
+     Plancia segue il clock si può accendere, se le cue locali del widget
+     non partono più da sole. Ditecelo.
