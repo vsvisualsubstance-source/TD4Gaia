@@ -6700,3 +6700,68 @@ teste in TD, con esito confermato di ogni comando.** Commit `551fb3c` su
   locali del layout restano utili offline. Le altre richieste del
   2026-10-18 (colore effettivo per fixture, catalogo scene e scena attiva)
   sono ancora aperte: le prossime note.
+
+**2026-10-19 (TD/Win-PD, 28)**: **Risposta alla "Richiesta dati di
+riscontro" del 2026-10-18 (`GAIA_PLANCIA_INTEGRATION.md`, `gaia`
+`ops/gaia-sync`): colore effettivo per fixture, catalogo scene con scena
+attiva, trasporto e schema.** Commit `b91e77a` su `TD4DMX`. Verificato sul
+broker OPS.
+
+- **1. Colore effettivo per fixture**: nuovo topic
+  `gaia/devices/td-dmx-win/dmx_output`, **retained**, QoS 0.
+  - **Fonte**: i canali DMX come escono davvero verso Art-Net, con
+    palette, effetti, `Level` di gruppo, Master, Strobe e Blackout già
+    applicati, letti all'indirizzo di ogni fixture con i nomi dei canali
+    del suo modello. Niente dedotto dal nome della palette.
+  - **Payload**:
+    `{v: 1, device_id, seq, ts, rate_hz, master, blackout, strobe, scene,
+    fixtures: [...]}`. Per fixture: `uid`, `id`, `name`, `group`, `comp`,
+    `profile`, `universe` (da 1, come in Plancia), `address`, `status`
+    (`ok`/`offline`/`conflict` = inviata; `off`, `no_port`… = non
+    inviata), `sent`, `dimmer` 0–255, `rgb` [r,g,b] 0–255 (canali colore
+    grezzi), `white`/`amber`/`uv` 0–255, `intensity` 0–1, `rgb_out`
+    [r,g,b] 0–1 (= rgb × dimmer: il colore come si vede). Un campo che
+    il modello non ha vale `null`. Una fixture non inviata ha tutti i
+    campi di uscita a `null`.
+  - **Teste mobili**: `color_wheel`, `gobo`, `shutter` 0–255 e `pan`,
+    `tilt` in gradi. `rgb` e `rgb_out` sono `null`: una ruota colori non
+    ha RGB, e il catalogo oggi non ha i colori degli slot. Oggi le teste
+    hanno `Patchenable` spento, quindi risultano `sent: false`.
+  - **Esempio reale** (UP1, rig_a): `{"dimmer": 106, "rgb": [255, 150,
+    0], "intensity": 0.416, "rgb_out": [0.416, 0.245, 0.0], "status":
+    "offline", "sent": true}`. Le palette per fixture escono con il loro
+    colore.
+- **2. Scene**:
+  - `show_scene_catalog` (status): `[{id, index, label, categories,
+    per_head, cues}]`. `id` = nome, unico e stabile finché non si
+    rinomina. `index` = numero di `/dmx/scene i`; cambia se si cancella
+    una scena che sta prima. `per_head` = la scena contiene lo stato di
+    ogni testa (nota 26).
+  - `show_active_scene` (status) e `scene` in `dmx_output`: `{scene,
+    index, source: "recall"|"cue", fade, cue, ts}`. È l'ultima scena
+    applicata: un richiamo dal vivo (TD, Plancia `/dmx/scene`, Gaia) o
+    una cue della timeline. Le modifiche live successive non la
+    cancellano.
+  - Feedback OSC verso `OPS:9000`: `/dmx/scene <indice attivo>`.
+  - Le scene valgono per tutti i rig delle loro categorie: non c'è una
+    scena per rig. La palette resta un parametro del rig
+    (`dmx_<rig>_palette`), distinto dalla scena.
+- **3. Trasporto e schema**:
+
+  | Dato | Dove | Quando | Stale |
+  |---|---|---|---|
+  | uscita per fixture + scena attiva | MQTT `gaia/devices/td-dmx-win/dmx_output`, retained | al cambio, massimo 10/s (`Outputrate`), heartbeat ogni 2 s | nessun messaggio da 3 heartbeat (6 s), misurato all'arrivo |
+  | catalogo scene, scena attiva, liste teste, esiti | `status.params` di `gaia/device/td-dmx-win/status`, retained | dopo ogni comando Gaia e ogni 30 s; le liste teste anche subito dopo un comando OSC | heartbeat di status |
+  | struttura (rig, gruppi, programmer, catalogo) | `gaia/devices/td-dmx-win/dmx_matrix`, retained | quando cambia | — |
+  | feedback per i widget | OSC verso `OPS:9000`: `/mh/*` (nota 25 e 27), `/dmx/scene`, `/dmx/master`, `/dmx/blackout`, `/dmx/group/<alias>` | al cambio, massimo 10/s, tutto ogni 5 s, mai eco di ciò che la Plancia ha appena mandato | — |
+
+  L'origine è sempre esplicita: `device_id` nel payload e nel topic.
+  `ts` è l'orologio di TD in ms. Per lo stale misurate l'intervallo
+  all'arrivo, senza confrontarlo con l'orologio del browser. `seq`
+  riparte da capo quando TD ricarica il modulo (salvataggio, riavvio):
+  usatelo per l'ordine dei messaggi, non come contatore assoluto. Dal
+  vivo: circa 3,4 KB per messaggio con 10 fixture, 10 messaggi al
+  secondo con il rig audio-reattivo. Lo strobo è campionato a 10/s:
+  `strobe: true` vuol dire che i valori stanno lampeggiando.
+- **Su TD**: `gaia_services` → pagina Output (`Outputenable`,
+  `Outputrate`, `Outputstatus`); `plancia_in` → `Feedbackdmx` (acceso).
