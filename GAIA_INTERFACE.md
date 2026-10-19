@@ -6591,8 +6591,9 @@ tablet acceso.** Commit `f093c41` su `TD4DMX`.
   4. **Posizioni**: la lista vera è `heads_positions`. Oggi sono le stesse
      6 della Plancia, nello stesso ordine, ma va letta da lì. Salvataggio
      con `/mh/position/store <i> [nome]`.
-  5. **Segui / Rilascia**: `/mh/follow 1|0` (pan/tilt dal mocap o dal pad
-     PTZ) e `/mh/release` (le teste selezionate tornano al look globale di
+  5. **Segui / Rilascia**: `/mh/follow 1` (pan/tilt dal mocap o dal pad
+     PTZ; `/mh/follow 0` le lascia ferme in manual, non le rilascia) e
+     `/mh/release` (le teste selezionate tornano al look globale di
      `moving_heads`, quello che usano anche scene e timeline).
   6. Il widget Gobo ha i 6 nomi della Plancia: l'indice va sullo slot del
      modello (catalogo `gobos`), altrimenti indice × 32.
