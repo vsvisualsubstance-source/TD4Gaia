@@ -6874,3 +6874,68 @@ palco; TD si adegua solo nella visualizzazione.** Commit `fe65511` su
   oggi sono simulate. Quando ci saranno quelle vere, se una va al
   contrario aggiungeremo un'inversione pan/tilt per testa in TD, senza
   cambiare il contratto del pad.
+
+**2026-10-19 (TD/Win-PD, 31)**: **Timeline uguale in TD e in Plancia:
+trasferimento nei due sensi, revisione e conflitti.** Commit `5a88409` su
+`TD4DMX`. Estende la nota 29 (stesso documento) senza romperla. Provato
+via Gaia e sul broker OPS.
+
+- **Principio**: c'è **una** timeline, quella caricata in DMX Master. La
+  Plancia e TD sono due editor della stessa timeline. Non si fondono due
+  versioni: chi salva per ultimo vince, ma solo se partiva dalla versione
+  più recente. Altrimenti TD rifiuta e dice perché.
+- **Revisione** `rev`: un hash del contenuto (`name`, `bpm`, `length`,
+  `loop`, `cues`, `keys`). Lo stesso contenuto ha la stessa `rev` su
+  qualunque macchina e chiunque l'abbia fatto. Cambia a ogni modifica, da
+  qualunque lato (Plancia, Gaia, inspector della show in TD).
+- **TD → Plancia**: nuovo topic **`gaia/devices/td-dmx-win/show_timeline`**,
+  **retained**. Viene pubblicato appena `rev` cambia (controllo ogni 0,5
+  s) e ripubblicato comunque ogni 60 s. Contiene il documento della nota
+  29, più `rev`, `source` (chi l'ha caricata: `"plancia"`, `"gaia"`… oppure
+  `"td"` se è stata modificata in TD dopo l'ultimo caricamento),
+  `device_id` e `ts`. Esempio verificato: una cue aggiunta in TD → topic
+  con la nuova `rev` e `source: "td"` in meno di un secondo.
+  `show_timeline` nello status resta disponibile, con la stessa forma.
+- **Plancia → TD**: `set` di `show_timeline` (nota 29) con in più:
+  - `"base_rev"`: la `rev` della timeline da cui la Plancia è partita
+    (l'ultima ricevuta dal topic). Se nel frattempo TD è cambiata, il
+    caricamento viene **rifiutato** (`conflict: true`), non viene scritto
+    niente e l'errore riporta le due revisioni. `"force": true`
+    sovrascrive lo stesso; solo dopo conferma dell'utente.
+  - `"source": "plancia"`: il nome di chi carica, che poi compare in
+    `source` sul topic.
+  - `"missing_scenes"`: `"error"` (predefinito) oppure `"marker"`. Con
+    `marker`, una cue che punta a una scena che TD non ha diventa un
+    marker (stessa etichetta, non cambia le luci) e compare un avviso.
+    Serve per portare in TD una scaletta disegnata in Plancia prima che
+    le scene esistano in TD.
+  - L'esito `show_timeline_result` ha in più `rev` (la nuova),
+    `previous_rev` e `conflict`.
+- **Flusso consigliato per la Plancia**:
+  1. Iscriversi a `gaia/devices/td-dmx-win/show_timeline`: il documento
+     ricevuto è la timeline dell'editor. Se arriva una `rev` nuova mentre
+     non ci sono modifiche locali, si aggiorna l'editor; se ci sono
+     modifiche locali, avvisare ("TD ha cambiato la timeline").
+  2. "Manda a DMX Master": `dry_run` con `base_rev`, mostra errori e
+     avvisi, poi l'invio vero. Confermare quando il topic porta la `rev`
+     dell'esito.
+  3. Su `conflict`: ricaricare dal topic, rifare la modifica, oppure
+     `force` dopo conferma.
+  4. **Andata e ritorno senza perdite**: conservare i campi che la
+     Plancia non usa e rimandarli uguali. In particolare `fade` di ogni
+     cue (altrimenti si applica `default_fade`) e `keys` (le automazioni
+     dei parametri TD: se `keys` manca TD le lascia com'erano, se è `[]`
+     le cancella).
+  5. **Scene**: usare l'`id` del catalogo (`show_scene_catalog`, nota 28)
+     e non i 12 look locali (Walk-in, Intro…), che in TD non esistono. Per
+     crearle in TD: `show_scene_capture` (nota 26). Fino ad allora:
+     `missing_scenes: "marker"`.
+- **Scalette con nome**: restano un archivio della Plancia. TD tiene solo
+  la timeline caricata (`name`). Per passare a un'altra scaletta la si
+  manda con `base_rev` uguale alla `rev` corrente.
+- **Verificato**: caricamento "da Plancia" con `base_rev` giusta → ok,
+  nuova `rev`, `source: "plancia"`; lo stesso con `base_rev` vecchia →
+  `conflict`, niente scritto; cue aggiunta in TD → topic aggiornato con
+  `source: "td"`; scena `Walk-in` → errore, oppure marker con
+  `missing_scenes: "marker"`; timeline originale ripristinata identica
+  (stessa `rev`).
