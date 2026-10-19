@@ -6833,3 +6833,44 @@ Provato via Gaia.
   4. Feedback OSC della timeline (`Feedbackshow`, nota 24): ora che la
      Plancia segue il clock si può accendere, se le cue locali del widget
      non partono più da sole. Ditecelo.
+
+**2026-10-19 (TD/Win-PD, 30)**: **Orientamento: una convenzione unica per
+la pianta e per il pad delle teste. Decide la Plancia, che disegna il
+palco; TD si adegua solo nella visualizzazione.** Commit `fe65511` su
+`TD4DMX`.
+
+- **Feedback**: dopo la correzione del firewall su OPS (UDP 9000 in
+  ingresso), il bridge inoltra ai tablet tutto il feedback di TD. L'ho
+  verificato collegandomi al bridge come un tablet: `/mh/select`,
+  `/mh/select/heads`, `/mh/pantilt`, colore/dimmer/zoom/focus/strobo/gobo,
+  `/dmx/master`, `/dmx/blackout`, `/dmx/scene`, `/dmx/group/<alias>`,
+  `/show/play|cue|time`, tutti con `channel=default`.
+- **Pianta** (`x`, `y` delle fixture in `dmx_fixtures`, metri):
+  - `x` = da sinistra a destra **visto dal pubblico**, 0 = centro palco;
+  - `y` = distanza dal **fondo palco verso il pubblico**: 0 = fondo,
+    `stage.depth` = bordo palco, poi platea e FOH (come nella Pianta
+    della Plancia: platea a y 9–15, FOH a 11,2);
+  - su schermo: fondo palco **in alto**, pubblico **in basso**, in
+    entrambe le UI.
+  
+  TD prima disegnava `y` verso l'alto, quindi il palco era capovolto
+  rispetto alla Plancia. Ora TD disegna come la Plancia; i dati non
+  cambiano. Nota: le fixture create da TD senza posizione hanno ancora
+  `y` = −2 × indice del gruppo, cioè dietro il fondo palco: vanno
+  spostate nella Pianta.
+- **Pad pan/tilt delle teste** (`/mh/pantilt x y`, −1…1):
+  - `x` = +1 a **destra** del pad, `y` = +1 in **alto** del pad
+    (`valueY = 1 − mouse_y`, come oggi nella Plancia);
+  - TD: `pan = x × escursione_pan / 2`, `tilt = −y × escursione_tilt / 2`
+    (gradi dal centro, escursione dal catalogo: 540/270 per "Generic
+    Spot 11ch 16bit"). È la stessa formula della simulazione della
+    Plancia (`setI(h.T, 1, −y)`);
+  - il pad "Teste sel." di TD e il feedback `/mh/pantilt` usano gli stessi
+    valori e lo stesso verso: alto è alto su tutte e due le UI.
+    Verificato: (0,224, −0,084) dalla Plancia, stessa posizione sul pad
+    di TD.
+- **Da sapere per le teste vere**: il verso fisico del fascio dipende dal
+  modello e dal montaggio (appese al truss il tilt si inverte). Le teste
+  oggi sono simulate. Quando ci saranno quelle vere, se una va al
+  contrario aggiungeremo un'inversione pan/tilt per testa in TD, senza
+  cambiare il contratto del pad.
