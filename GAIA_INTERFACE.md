@@ -6639,3 +6639,64 @@ nuovo scene e timeline.
   3. Dopo un richiamo, il feedback teste della nota 25 rimanda ai tablet i
      valori nuovi della prima testa selezionata, quindi i widget si
      allineano da soli.
+
+**2026-10-19 (TD/Win-PD, 27)**: **Risposta a "Preset PTZ nativi"
+(richiesta del 2026-10-18 in `GAIA_PLANCIA_INTEGRATION.md`, `gaia`
+`ops/gaia-sync` `6b7fa14`): contratto completo di preset e posizioni delle
+teste in TD, con esito confermato di ogni comando.** Commit `551fb3c` su
+`TD4DMX`. Provato via OSC e via Gaia.
+
+- **Due tipi di memoria teste in TD**, tutte e due per testa (chiave =
+  `uid`):
+  - **posizione** = solo pan/tilt di ogni testa (più una riga `*` per le
+    teste che non ne hanno una propria). Oggi sono le 6 della Plancia.
+  - **preset** = look completo delle teste selezionate al momento del
+    salvataggio: pan, tilt, dimmer, rgbw, ruota colori, gobo, zoom, focus,
+    strobo. Il richiamo li mette in `manual`.
+- **Elenco** (stato `td-dmx-win`, retained):
+  `heads_presets` = `[{index, preset, label, heads: {uid: {pan, tilt,
+  dimmer, red, green, blue, white, color, gobo, zoom, focus, strobe}}}]`;
+  `heads_positions` = `[{index, position, label, heads: {uid|*: [pan,
+  tilt]}}]` (gradi). Indici e nomi anche in `dmx_matrix.heads.programmer`
+  (`presets`, `positions`, `order`, `selections`). Dopo ogni modifica
+  delle liste TD ripubblica subito status e matrice, anche se il comando è
+  arrivato via OSC.
+- **Comandi** (indice o nome dappertutto; via OSC il nome è un argomento
+  stringa):
+
+  | Azione | OSC 7020 | Gaia `set` su `gaia/device/td-dmx-win/command` |
+  |---|---|---|
+  | salva / aggiorna preset | `/mh/preset/store <nome>` (stesso nome = aggiorna; `<i>` = aggiorna quello all'indice i) | `heads_preset_store {preset, label?}` |
+  | richiama preset | `/mh/preset/recall <i\|nome>` | `heads_preset_recall <i\|nome>` o `{preset, heads?}` |
+  | rinomina preset | `/mh/preset/rename <i\|nome> <nuovo>` | `heads_preset_rename {preset, to, label?}` |
+  | cancella preset | `/mh/preset/remove <i\|nome>` | `heads_preset_remove <i\|nome>` |
+  | salva / aggiorna posizione | `/mh/position/store <nome>` | `heads_position_store {position, label?}` |
+  | richiama posizione | `/mh/position <i\|nome>` | `heads_position_recall <i\|nome>` |
+  | rinomina / cancella posizione | `/mh/position/rename <i\|nome> <nuovo>`, `/mh/position/remove <i\|nome>` | `heads_position_rename {position, to, label?}`, `heads_position_remove <i\|nome>` |
+
+  Store e recall agiscono sulle teste selezionate. Rinomina e cancella non
+  richiedono una selezione. Non c'è un riordino: l'indice è l'ordine di
+  salvataggio.
+- **Esito confermato** di ogni comando discreto (selezione, posizioni,
+  preset, home, follow, release, strobo, ruote; errori sempre; pad e
+  fader no):
+  - Gaia: `heads_last_result` = `{seq, ts, source: "osc"|"gaia", action,
+    target, ok, message, heads}` nello status;
+  - OSC verso `OPS:9000`: `/mh/result <seq> <ok 0|1> <action> <target>
+    <message>`, subito dopo il comando.
+  
+  Esempi verificati: `preset/store FbTest` → `[18, 1, 'preset/store',
+  'FbTest', 'preset salvato: FbTest']`; `preset/recall Nope` → `[20, 0,
+  ..., "preset 'Nope' non esiste (0 preset)"]`. Per lo stato basta
+  confrontare `seq`.
+- **Selettore teste**: il nuovo widget della Plancia ascolta
+  `/mh/select/heads`, quindi il feedback ora lo manda: `/mh/select/heads
+  <uid> ...` a ogni cambio di selezione da TD, da Gaia o da un altro
+  tablet, mai come eco di quello che la Plancia ha appena mandato. Resta
+  anche la maschera `/mh/select`.
+- **Per Core (Plancia)**: il widget Preset PTZ può passare ai preset
+  nativi: lista da `heads_presets`, salva/aggiorna/rinomina/elimina con i
+  comandi sopra, conferma da `/mh/result` o `heads_last_result`. I preset
+  locali del layout restano utili offline. Le altre richieste del
+  2026-10-18 (colore effettivo per fixture, catalogo scene e scena attiva)
+  sono ancora aperte: le prossime note.
