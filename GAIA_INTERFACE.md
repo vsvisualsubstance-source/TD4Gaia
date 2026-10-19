@@ -6537,3 +6537,66 @@ follower esterno sul broker OPS.
   parte); timecode LTC verso apparati esterni; "last will" MQTT del master
   (oggi se TD muore resta l'ultimo `state` retained, e chi segue lo scopre
   dopo 3,5 s senza heartbeat).
+
+**2026-10-19 (TD/Win-PD, 25)**: **Teste mobili dalla Plancia: tutti gli
+`/mh/*` provati dal vivo, nuovo `Level` di gruppo e feedback verso i
+tablet acceso.** Commit `f093c41` su `TD4DMX`.
+
+- **Provati uno per uno**, con la stessa funzione che usa l'OSC In 7020:
+  `/mh/select` (maschera), `pantilt`, `color`, `dimmer`, `zoom`, `focus`,
+  `gobo`, `position`, `strobe`, `home`, `select/all`, `release`. Tutti
+  applicati alle teste selezionate. Senza teste selezionate TD ignora il
+  comando e lo scrive nello stato di `plancia_in`.
+- **Corretto**: `/dmx/group/mh` (fader di gruppo delle teste) non faceva
+  niente, perché il gruppo teste non aveva un `Level`. Ora c'è:
+  `moving_heads` → `Level`, applicato al dimmer delle teste insieme a
+  Master e Strobe, come per gli altri gruppi. Verificato: con Master 0,66
+  il dimmer passa da 169 a 85 con `/dmx/group/mh 0.5`. Gaia: `heads_level`.
+- **Nuovo: feedback teste verso `OPS:9000`** (bridge.js `OSC_IN`),
+  **acceso**. Al massimo 10 volte al secondo, solo quando qualcosa cambia:
+  - `/mh/select` con la selezione vera di TD, come maschera in ordine di
+    unit (oggi 2 valori: MH1, MH6);
+  - i valori della **prima testa selezionata**: `/mh/pantilt x y`
+    (−1…1, stessa scala del pad), `/mh/color r g b`, `/mh/dimmer`,
+    `/mh/zoom`, `/mh/focus`, `/mh/strobe 0|1`, `/mh/gobo` (indice dello
+    slot);
+  - `/dmx/group/mh` (il `Level`).
+  
+  Così ogni tablet mostra lo stato vero anche quando la selezione o i
+  valori cambiano da TD, da Gaia o da un altro tablet. Niente loop:
+  `applyWidgets` aggiorna solo i widget e non rimanda. **Niente eco**: TD
+  non rimanda un indirizzo che la Plancia ha mandato negli ultimi 0,5 s,
+  quindi il pad non salta mentre lo si trascina. Ogni 5 s TD rimanda
+  tutto, per i tablet aperti dopo. Si spegne con `plancia_in` →
+  `Feedbackheads`. La timeline (`Feedbackshow`) resta spenta: vedi nota 24.
+- **Anche per nome**: `/mh/position` e `/mh/preset/recall` accettano un
+  nome (argomento stringa) oltre all'indice.
+- **Per Core (Plancia)**:
+  1. **Widget Selezione**: oggi ha 8 etichette fisse "MH 1..8", ma il
+     palco ha 2 teste. Costruirlo da `heads_list` (nello `status` di
+     `td-dmx-win`, aggiornato a ogni comando e ogni 30 s:
+     `[{unit, key, uid, name, profile, selected, mode, pan, tilt, ...}]`),
+     una casella per testa con il suo `name`. Per selezionare mandare
+     `/mh/select/heads <uid> <uid> ...` (oppure `select/add`,
+     `select/remove`, `select/all`, `select/clear`) invece della maschera,
+     che dipende dall'ordine. La maschera resta accettata.
+  2. **Selezioni con nome** (sottogruppi delle teste: `mh_sx`,
+     `mh_fronte`...): la Plancia le definisce con `heads_selections` (set =
+     sostituisce la lista: `[{selection, label, heads: [uid]}]`) e le
+     richiama con `/mh/select/set <nome>`.
+  3. **Preset** (look completo delle teste selezionate): lista da
+     `heads_presets`; richiamo con `/mh/preset/recall <indice|nome>`;
+     salvataggio con `/mh/preset/store <i> [nome]` o `heads_preset_store
+     {preset, label}`.
+  4. **Posizioni**: la lista vera è `heads_positions`. Oggi sono le stesse
+     6 della Plancia, nello stesso ordine, ma va letta da lì. Salvataggio
+     con `/mh/position/store <i> [nome]`.
+  5. **Segui / Rilascia**: `/mh/follow 1|0` (pan/tilt dal mocap o dal pad
+     PTZ) e `/mh/release` (le teste selezionate tornano al look globale di
+     `moving_heads`, quello che usano anche scene e timeline).
+  6. Il widget Gobo ha i 6 nomi della Plancia: l'indice va sullo slot del
+     modello (catalogo `gobos`), altrimenti indice × 32.
+- **Da sapere**: una testa toccata dalla Plancia passa in `manual` e non
+  segue più le scene (`/dmx/scene`) e la timeline, che agiscono sul look
+  globale, finché non arriva `/mh/release`. Estendere le scene allo stato
+  per testa è nella proposta della nota 23, ancora da fare.
