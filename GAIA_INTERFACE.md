@@ -6939,3 +6939,67 @@ via Gaia e sul broker OPS.
   `source: "td"`; scena `Walk-in` → errore, oppure marker con
   `missing_scenes: "marker"`; timeline originale ripristinata identica
   (stessa `rev`).
+
+**2026-10-19 (TD/Win-PD, 32)**: **Risposta a "Feedback DMX Master →
+Plancia — lavoro da fare" (`gaia` `caa4388`,
+`minipc/touchdesigner/GAIA_TD_INTEGRATION.md`): stato di ogni fixture
+su MQTT, riserva OSC diretta, stato generale completo.** Commit `b0ee279`
+su `TD4DMX`. Verificato dal vivo.
+
+- **Stato per fixture: canale principale MQTT.** Esiste dalla nota 28:
+  `gaia/devices/td-dmx-win/dmx_output`, **retained**, un messaggio con
+  tutte le fixture, al cambio (massimo 10/s) e heartbeat ogni 2 s. Ogni
+  fixture ha `uid` (lo stesso di `dmx_fixtures`), `dimmer`, `rgb`,
+  `rgb_out`, `intensity`, `white`/`amber`/`uv`; le teste anche `pan`,
+  `tilt` (gradi), `gobo`, `color_wheel`, `shutter`. Oggi la Plancia su
+  `main` non si iscrive a questo topic (legge `dmx_matrix` e `status`):
+  basta aggiungerlo all'elenco in `70-gaia-mqtt.js`. Un tablet appena
+  aperto riceve subito l'ultimo stato (retained).
+- **Semantica: uscita effettiva.** I valori sono i canali DMX come escono
+  verso Art-Net, con palette, effetti, `Level` di gruppo, Master, strobo e
+  blackout già applicati. Non sono i parametri del programmer. Per il
+  Render del Palco usare `rgb_out` (0–1, colore come si vede) e
+  `intensity`. I controlli (fader, pad) restano sul feedback OSC qui
+  sotto, che invece porta i valori di controllo (master, livelli, pad).
+- **Riserva OSC diretta**, se MQTT non è disponibile. Stessi valori, verso
+  `OPS:9000` come il resto del feedback:
+
+  | Indirizzo | Argomenti |
+  |---|---|
+  | `/dmx/fixture/<uid>` | `sent` 0/1, `intensity` 0–1, `r g b` = `rgb_out` 0–1 (−1 = la fixture non ha canali colore) |
+  | `/dmx/fixture/<uid>/head` | solo teste: `pan tilt` (gradi), `gobo color_wheel shutter` 0–255 (−1 = assente) |
+  | `/dmx/output/source` | `"mqtt"` oppure `"osc"`: dove leggere lo stato per fixture adesso |
+
+  - Quando parte: parametro `Feedbackfixtures` su `plancia_in`, `auto`
+    (predefinito) | `always` | `off`. In `auto` TD manda la riserva solo
+    se `dmx_output` non arriva al broker (MQTT di TD scollegato, nessuna
+    pubblicazione da 6 s) **oppure se la Plancia la chiede** con
+    **`/dmx/output/osc 1`**. La richiesta vale 15 s: la Plancia la ripete
+    ogni 5 s finché il suo MQTT è giù, e manda `/dmx/output/osc 0` quando
+    torna. Serve perché il browser può perdere il broker anche quando TD
+    lo vede.
+  - Ritmo: solo le fixture cambiate, al massimo 10/s; tutte ogni 5 s.
+    `/dmx/output/source` al cambio e ogni 5 s. Con il rig audio-reattivo
+    sono circa 60 messaggi/s per 10 fixture: per questo è una riserva.
+  - **Uso consigliato in Plancia**: leggere `dmx_output` da MQTT; se non
+    arriva da 6 s (3 heartbeat), mandare `/dmx/output/osc 1` ogni 5 s e
+    usare `/dmx/fixture/*`; appena `dmx_output` torna, `/dmx/output/osc
+    0`. Le due fonti hanno gli stessi `uid` e gli stessi valori.
+- **Stato generale verso `OPS:9000`** (con `Feedbackdmx`): `/dmx/master`,
+  `/dmx/blackout`, **`/dmx/strobe`** 0/1, **`/dmx/strobe/rate`** Hz,
+  **`/dmx/fade`** s (nuovi), `/dmx/scene <indice attivo>`,
+  `/dmx/group/<alias>` per **tutti** i gruppi (front, back, mh, ledbar,
+  haze, blinder: prima si è visto solo `blinder` perché era l'unico che
+  cambiava). Teste: `/mh/*` (note 25 e 27). Timeline: `/show/*`.
+  Chase e LED wall non esistono ancora in TD: non c'è niente da
+  rimandare. La palette di ogni rig è nel `dmx_matrix`.
+- **Eco e loop**: un indirizzo che la Plancia ha mandato negli ultimi
+  0,5 s non torna indietro; tutto ciò che cambia in TD, da Gaia o da un
+  altro tablet viene pubblicato. La Plancia aggiorna solo i widget con
+  quello che riceve, senza rimandarlo: nessun loop. `/dmx/fixture/*` e
+  `/dmx/output/source` sono solo in uscita da TD.
+- **Verificato**: `/dmx/output/osc 1` → `/dmx/output/source "osc"` e tutte
+  le 10 fixture subito, poi solo quelle che cambiano; `/dmx/output/osc 0`
+  → `"mqtt"` e stop; con `dmx_output` spento la sorgente passa da sola a
+  `"osc"`; strobo, rate e fade nel giro di refresh; feedback riportato su
+  `OPS:9000`.
