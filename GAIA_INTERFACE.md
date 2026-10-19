@@ -6458,3 +6458,82 @@ sono tornate al look globale.
     `/meter/l` e `/meter/r` veri dall'audio engine di TD; colore reale
     per fixture nel Render della Plancia; contenuti del LED wall generati
     da TD in NDI verso il gateway `444e40e`.
+
+**2026-10-19 (TD/Win-PD, 24)**: **Orologio dello show condiviso: il
+master è la timeline di DMX Master, tutti gli altri la seguono.**
+Commit `aef2965` su `TD4DMX`, `gaia_client` 1.3.0 (nuovo modulo `show_clock`). Verificato dal vivo con un
+follower esterno sul broker OPS.
+
+- **Prima**: ogni pagina Plancia faceva girare una sua timeline nel
+  browser e mandava `/show/time` 10 volte al secondo. Due tablet erano due
+  orologi. TD ignorava `/show/play` e `/show/time`.
+- **Ora**: un solo orologio, quello della timeline `show` di DMX Master
+  (`td-dmx-win`). È nell'agent (`gaia_client`, pagina **Clock**,
+  `Clockrole` = `master` | `follower` | `off`), quindi DMX, PatchDeck e
+  Controller usano lo stesso codice. DMX Master è `master`. Gli altri
+  progetti diventano `follower` quando aggiornano `gaia_client` a 1.3.0.
+- **Topic** (stesso broker, nessun traffico per frame):
+  - `gaia/show/clock/state` — **retained**, dal master. Mandato a ogni
+    cambio (play, pausa, salto, cue, loop, durata) e comunque una volta al
+    secondo:
+    `{"v":1, "master":"td-dmx-win", "seq":n, "sent_ms":ms, "playing":bool,
+    "pos":s, "rate":1.0, "length":s, "loop":bool, "active":bool,
+    "timeline":"show", "cue":{"index":n, "count":n, "label":"",
+    "scene":"", "time":s}}`. `cue.index` parte da 1; 0 = prima della prima
+    cue.
+  - `gaia/show/clock/command` — chiunque → master:
+    `{"action": "play"|"pause"|"toggle"|"stop"|"seek"|"go"|"back"|"cue",
+    "value": ...}`. `seek` in secondi, `cue` = numero di cue (da 1),
+    `play` con 0/1 opzionale.
+  - `gaia/show/clock/ping` `{"from":id, "n":k, "t0":ms}` e risposta su
+    `gaia/show/clock/pong/<from>` (stesso payload).
+- **Come si calcola la posizione** (uguale in TD e nel browser): niente
+  NTP, niente orologi di sistema allineati. Chi segue misura il ritardo con
+  il ping e calcola da solo:
+  `pos_ora = pos + (adesso − ricevuto + ritardo) × rate` se `playing`.
+  `ritardo` = metà del ping più veloce tra gli ultimi 10. Ping ogni 2 s.
+  Se non arriva uno `state` per 3,5 s, il master è perso: tenere la
+  posizione, non estrapolare.
+- **Misurato**: ping andata/ritorno 4 ms minimo, 10 ms mediano
+  (follower su PC MSI → broker OPS → TD). La posizione calcolata dal
+  follower resta entro 2–3 ms da quella del master (una volta −14 ms,
+  jitter di un frame). Play, pausa, seek, cue e stop applicati via
+  `command`.
+- **Anche via OSC 7020** (canale 3, come oggi): `/show/play 0|1` mette in
+  play o in pausa la timeline di TD. `/show/time s` fa un salto solo se TD
+  è fermo: in play TD tiene il suo orologio e ignora i 10/s della Plancia.
+  `/show/cue n` per ora è ignorata, perché è una cue della lista del
+  widget della Plancia, non di TD. `/show/go` e `/show/back` invariati.
+- **Feedback verso `OPS:9000`** (bridge.js `OSC_IN`): pronto ma **spento**
+  (`plancia_in` → `Feedback`). Manda `/show/play` al cambio, `/show/time`
+  10 volte al secondo in play, `/show/cue n` al cambio. È spento perché
+  oggi, appena la Plancia riceve `/show/play 1`, fa avanzare la sua
+  timeline locale e spara le **sue** cue: `/show/cue` e soprattutto
+  `/dmx/scene`, che richiamerebbero scene sopra la timeline di TD.
+- **Per Core (Plancia)**:
+  1. Widget Timeline: quando c'è uno `state` fresco di
+     `gaia/show/clock/state`, smettere di far girare l'orologio locale e di
+     sparare cue locali. Mostrare `pos` calcolata come sopra (ping via MQTT
+     su WebSocket, `performance.now()`), con cue e durata prese dallo
+     `state` (e da `show_cues` per la lista).
+  2. Play, pausa, stop, GO, Back e click sulla barra: mandare
+     `gaia/show/clock/command` (oppure `/show/*` su 7020, ma `command` dà
+     anche `seek` e `cue n` in modo esplicito).
+  3. Fatto questo, ditecelo e accendiamo `Feedback` verso `OPS:9000`, così
+     anche un tablet senza MQTT vede il tempo.
+  4. Ancora aperti dalle note precedenti: **21** (mandare `dmx_groups` con
+     `bind` front/back/mh), **22** (proposta "Ottimizza" con
+     prima/dopo + "Applica"; barre su U1 di default), **23** (selezione
+     teste, posizioni/preset, Segui/Rilascia). Il contratto
+     `GAIA_PLANCIA_INTEGRATION.md` dice ancora "in costruzione" per 7020 e
+     canale 1b: sono fatti dalla nota 16.
+- **Per PatchDeck e Controller**: aggiornare `gaia_client` a 1.3.0 e
+  mettere `Clockrole` = `follower`. Il modulo dà `position()`, `state()`,
+  `latency()` e `register_listener(fn)`; per mandare comandi
+  `command('play')`. Il collegamento ai loro motori (es. clip o tempo di
+  PatchDeck) va fatto lato progetto.
+- **Non fatto**: BPM e fase di battuta (il campo `rate` c'è, il BPM no:
+  per Resolume/Ableton c'è l'Ableton Link CHOP di TD, da valutare a
+  parte); timecode LTC verso apparati esterni; "last will" MQTT del master
+  (oggi se TD muore resta l'ultimo `state` retained, e chi segue lo scopre
+  dopo 3,5 s senza heartbeat).
