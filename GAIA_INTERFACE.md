@@ -6601,3 +6601,41 @@ tablet acceso.** Commit `f093c41` su `TD4DMX`.
   segue più le scene (`/dmx/scene`) e la timeline, che agiscono sul look
   globale, finché non arriva `/mh/release`. Estendere le scene allo stato
   per testa è nella proposta della nota 23, ancora da fare.
+
+**2026-10-19 (TD/Win-PD, 26)**: **Le scene portano con sé anche le teste
+mobili, una per una.** Commit `117589f` su `TD4DMX`. Chiude l'avvertenza
+della nota 25: una testa toccata dalla Plancia (in `manual`) ora segue di
+nuovo scene e timeline.
+
+- **Cattura**: una scena con la categoria "Teste mobili" (`heads`) salva,
+  oltre al look globale di `moving_heads`, ogni testa per `uid`: il modo
+  (`global` | `manual` | `follow`) e i suoi valori effettivi (pan, tilt,
+  dimmer, rosso/verde/blu/bianco, ruota colori, gobo, zoom, focus,
+  strobo).
+- **Richiamo** (`/dmx/scene i` dalla Plancia, `show_scene_recall` da Gaia,
+  cue della timeline): una testa salvata `global` viene rilasciata e torna
+  al look globale; una `manual` o `follow` riprende i suoi valori e il suo
+  modo.
+- **Crossfade** (`/dmx/fade` per `/dmx/scene`, fade della cue): i valori
+  sfumano. Una testa che passa in `manual`/`follow` cambia subito modo; una
+  che torna `global` viene rilasciata solo a fine fade, così pan/tilt non
+  saltano a metà.
+- **Verificato dal vivo** con due scene di prova, poi cancellate: richiamo
+  istantaneo; fade di 20 s (dopo 1,2 s la testa che torna global è ancora
+  manual con il pan da 30 a 28,2, l'altra è già manual da 0 verso −40);
+  fine fade corretta.
+- **Scene vecchie**: quelle salvate prima di oggi non hanno le righe per
+  testa e lasciano lo stato delle teste com'è. Per includerlo vanno
+  ricatturate (oggi c'è solo `TestScene1`).
+- **Per Core (Plancia)**:
+  1. Per salvare una scena dalla Plancia, comprese le teste:
+     `{"action": "set", "param": "show_scene_capture", "value": "<nome>"}`
+     su `gaia/device/td-dmx-win/command`. Prende i valori live di quel
+     momento.
+  2. La lista vera delle scene è `show_scenes` (nome, label, categorie).
+     `/dmx/scene i` usa lo stesso ordine. Resta la proposta della nota 23:
+     un'unica lista, quella di TD, al posto dei 12 look della Plancia (che
+     si possono importare una volta come scene di TD, testa per testa).
+  3. Dopo un richiamo, il feedback teste della nota 25 rimanda ai tablet i
+     valori nuovi della prima testa selezionata, quindi i widget si
+     allineano da soli.
