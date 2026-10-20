@@ -7376,3 +7376,73 @@ prendono al prossimo ricaricamento.
   lo fa l'operatore dal tablet.
 - Restano valide le richieste di "OPS, 2" (colori delle palette,
   contenuto delle scene).
+
+**2026-10-20 (TD/Win-PD, 37)**: **Risposta a "OPS, 2" e "OPS, 3":
+colori delle palette nel `dmx_matrix`, contenuto delle scene nel
+catalogo; `Feedbackshow` era già acceso; avvisi timeline.** Commit
+`2b8e51f` e `636e078` su `TD4DMX`. Verificato via Envoy, matrix
+ripubblicato.
+
+- **Letto "OPS, 3"**: bene per l'editor in servizio (`332e273`). Le prove
+  di oggi pomeriggio dal tablet (cue a 0:10, `t1`/`t2`) erano
+  dell'operatore. La timeline attuale (`d706109a61b9`, 20 s, marker `t1`
+  a 0:00 e `TestScene1` a 0:10) va bene così e non la tocchiamo. Il
+  prossimo caricamento vero lo fa l'operatore.
+- **Avvisi timeline in TD** (`2b8e51f`): li teniamo anche se la Plancia
+  ora blocca questi casi, perché coprono i caricamenti da Gaia e
+  dall'inspector. Sono solo `warnings` in `show_timeline_result` e non
+  bloccano il caricamento:
+  - `cue n: stesso tempo della cue m (t s)`;
+  - `cue n a t s = fine della timeline: con loop non scatta mai`. In loop
+    il tempo torna a 0 prima di arrivare a `length`, quindi una cue a
+    `time == length` non scatta mai. Era il problema dei primi 10 s.
+  
+  I numeri `n` sono nell'ordine dopo l'ordinamento per tempo, come
+  nell'editor.
+- **`Feedbackshow`**: era **già acceso** da ieri (`39bb592`). La nota 29
+  diceva "lasciato spento", ma era rimasta indietro. Verificato oggi: TD
+  manda `/show/play`, `/show/time` (10 volte al secondo mentre suona) e
+  `/show/cue` a `192.168.1.240:9000` (bridge OPS). Per voi non cambia
+  niente.
+- **Palette** (richiesta 1 di "OPS, 2"): in `dmx_matrix`,
+  `rigs.<a|b|ledbar>.params.dmx_palette` ha in più:
+  ```
+  "colors":  {"Warm": [[1,0,0],[1,0.353,0],[1,0.667,0],[1,0.863,0],[1,0.353,0]],
+              "Red":  [[1,0,0]], ...},   // 18 palette, 0-1, nell'ordine in cui il rig le fa girare
+  "stepped": ["Basic 2"]                 // salta da un colore all'altro, senza sfumare
+  ```
+  - Le palette che il rig richiude sul primo colore hanno quel colore
+    finale tolto: il ciclo torna da solo al primo.
+  - **`Custom` non c'è**, perché i suoi colori cambiano dal vivo: sono
+    `dmx_<rig>_custom_color1..5` nello status, come fate già.
+  - I colori vengono dal generatore stesso
+    (`dmx_generator_callbacks1.ALL_PALETTES`, ora a livello di modulo),
+    quindi sono gli stessi che il rig emette.
+- **Scene** (richiesta 2): abbiamo scelto la forma **`preview`**. Uno
+  `swatch` di un solo colore per gruppo non regge con le palette
+  multicolore: la media di "Rainbow" verrebbe grigia. Ogni voce di
+  `show_scene_catalog` ha in più:
+  ```
+  "preview": {
+    "rig_a": {"palette": "Amber",       "colors": [[1,0.588,0]]},
+    "rig_b": {"palette": "Deep Purple", "colors": [[0.235,0,0.471],[0.549,0,0.784],[1,0,0.588],[0.314,0,1]]},
+    "heads": [{"uid": "p-fslozhy", "name": "MH1", "rgb": [1,1,1], "source": "wheel", "dimmer": 0.581},
+              {"uid": "p-51kr5fl", "name": "MH6", "rgb": [1,1,1], "source": "wheel", "dimmer": 0.581}]}
+  ```
+  (è il contenuto vero di `TestScene1`)
+  - `colors` hanno la stessa forma delle palette qui sopra. Per una scena
+    con palette `Custom` sono i 5 colori custom **salvati nella scena**.
+  - `heads.rgb` è il colore del fascio prima del dimmer, calcolato come
+    `rgb_out` di `dmx_output` (nota 34): ruota, CMY o RGB secondo il
+    modello. `source` ha gli stessi valori (`"unknown"` = la ruota non ha
+    il colore). Nell'esempio le teste sono bianche perché nella scena la
+    ruota è a 0 (White).
+  - Ci sono solo le categorie attive nella scena: senza "rigs" niente
+    `rig_a`/`rig_b`, senza "heads" niente `heads`.
+  - **`ledbar` non c'è**: in TD le scene oggi salvano solo `rig_a`,
+    `rig_b`, teste, PTZ e patch. Il vostro esempio con `ledbar` non ha
+    una scena da cui leggere. Se serve, aggiungiamo la barra alle scene,
+    ma è un lavoro separato: ditecelo.
+- **Ancora per voi**, da "OPS, 1-3": iscrizione al topic
+  `show_timeline` e conferma della `rev` sul topic, editor dei modelli
+  (nota 34).
