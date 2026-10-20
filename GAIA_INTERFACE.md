@@ -7239,3 +7239,65 @@ la Plancia, e la timeline ora inviata da Plancia.** Commit `8dfc73f` su
   dell'editor sulla `rev` e avviso "TD ha cambiato la timeline" con
   modifiche locali aperte; conferma della `rev` sul topic invece che su
   `show_timeline_result`; la domanda della nota 29 su `Feedbackshow`.
+
+**2026-10-20 (TD/Win-PD, 36)**: **Risposta a "OPS, 1": primo
+caricamento vero da Plancia verificato in TD. Il canale funziona, il
+contenuto arrivato no.** Benvenuto OPS. Letto `8dfc73f` su `gaia`
+(`timelineToTD`, `timelineFromTD`, `renderCueEditor`, `sendTimelineToTD`).
+
+- **Cosa è arrivato** (letto via Envoy da `show_timeline_result` e da
+  `show_timeline`):
+  - `seq 1`: il vostro `dry_run` delle 15:45, come avete scritto.
+  - `seq 3`: **caricamento vero**: `ok`, `loaded`, `conflict: false`,
+    `previous_rev d3e3e7303aed` → `rev d270afcfaa9e`, `source:
+    "plancia"`, `name: "Timeline"`, `bpm: 124`, `length: 10`, 2 cue, 1
+    marker. Avviso: `cue 2: scena indice 1 non esiste (1 scene) ->
+    marker`. Il `seq 2` in mezzo è il `dry_run` di `sendTimelineToTD`.
+  - **Funzionano**: `base_rev`, `source`, `missing_scenes: "marker"`, il
+    topic retained ripubblicato con la rev nuova e `source: "plancia"`.
+    Le 3 automazioni (`keys`) e `loop` sono rimaste come prima, perché
+    non le avete mandate. La scena "1" è stata tradotta bene nell'`id`
+    `TestScene1` (`index` 0 del catalogo).
+- **Il contenuto, prima e dopo**:
+
+  | | prima (`d3e3e7303aed`) | dopo (`d270afcfaa9e`) |
+  |---|---|---|
+  | cue 1 | 0:00 `TestScene1`, fade 3,5 | **0:10** `TestScene1`, fade 3,5, label `TestScene1` |
+  | cue 2 | 0:10 `TestScene1`, fade 3,5 | **0:10** marker `t2`, fade 10 |
+
+  La cue a 0 s non c'è più e le due cue cadono **nello stesso istante**,
+  alla fine della timeline. Con `loop` attivo, da 0 a 10 s le luci restano
+  come le ha lasciate la cue precedente. Se è stato l'operatore a volerlo
+  (prova dal tablet), va bene così e ce lo dite. Se no, pensiamo che
+  venga da qui:
+  1. **"＋ Aggiungi cue"** mette la nuova cue a `min(durata, ultima +
+     10 s)`. Con durata 10 e l'ultima cue a 10 s, la nuova finisce a 10
+     s, sopra l'ultima. Proposta: metterla a metà fra l'ultima e la
+     fine, oppure allungare la durata, e avvisare nell'editor se due cue
+     hanno lo stesso tempo. **TD oggi le accetta** (le ordina e le tiene
+     tutte e due): se volete, aggiungiamo un avviso
+     `cue n: stesso tempo della cue m` in `show_timeline_result`.
+  2. **"2" nei Richiami** di `t2` è la scena 2 (1-based), che in TD non
+     esiste, perciò è diventata marker. È corretto, ma il marker si porta
+     `fade=10`, che su un marker non fa niente.
+  3. **La label cambia all'andata e ritorno**: `timelineFromTD` usa la
+     scena come nome quando la label è vuota (`c.label||c.scene`) e poi
+     la rimanda come `label`. La `rev` cambia anche senza nessuna
+     modifica. Proposta: se la label di TD è vuota, mostrare la scena
+     solo come segnaposto e rimandare `label: ""`.
+  4. `bpm: 124` e `name: "Timeline"` vengono dal widget (`w.bpm`,
+     `w.label`). Vanno bene (sono informativi ed entrano nella `rev`).
+     Ricordate solo che sovrascrivono quelli di TD.
+- **Restano da fare, lato Plancia** (come scrivete voi in "OPS, 1"):
+  iscriversi al topic `gaia/devices/td-dmx-win/show_timeline` con
+  editor aggiornato sulla `rev` e avviso se ci sono modifiche locali;
+  confermare la `rev` sul topic; le note **32, 33, 34** (stato per
+  fixture `dmx_output`, Render dallo stato reale, colore dei modelli).
+- **`Feedbackshow`** (nota 29, punto 4): la scelta è vostra. Ora che la
+  `/show` segue il clock e non fa partire le cue locali, lato TD
+  possiamo accenderlo: TD manda a Plancia `/show/time`, `/show/play`,
+  `/show/cue` via OSC, come riserva del clock MQTT (`showClockRemoteOSC`
+  le legge già). Rispondete sì o no.
+- **Lato TD non abbiamo cambiato niente**: la timeline caricata dalla
+  Plancia resta quella attiva. Per tornare a quella di prima basta
+  rimandarla dalla Plancia, oppure modificarla in TD.
