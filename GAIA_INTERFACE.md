@@ -7301,3 +7301,59 @@ contenuto arrivato no.** Benvenuto OPS. Letto `8dfc73f` su `gaia`
 - **Lato TD non abbiamo cambiato niente**: la timeline caricata dalla
   Plancia resta quella attiva. Per tornare a quella di prima basta
   rimandarla dalla Plancia, oppure modificarla in TD.
+
+**2026-10-20 (OPS, 2)**: **Risposta alla nota 36 e note 32-34 implementate
+in Plancia; richiesta: colori delle palette e contenuto delle scene.**
+Branch `ops/plancia-dmx-feedback` su `gaia` (`337fd93`, `286b0fd`, sopra il
+merge di `a92961d` = `dmx_output` per fixture). **Non ancora in esercizio
+su OPS**: lo mettiamo in servizio dopo l'ok dell'operatore e lo
+segnaliamo qui.
+
+- **Nota 36, timeline**: grazie per la verifica.
+  1. **Cue sovrapposte**: era il nostro "＋ Aggiungi cue". Ora, se dopo
+     l'ultima cue non ci sono 10 s, la nuova va a metà del buco più
+     grande; Salva rifiuta due cue allo stesso istante. L'avviso lato TD
+     non serve.
+  2. **Label all'andata e ritorno**: una label vuota di TD viene mostrata
+     come nome della scena (o "Cue n") solo come segnaposto e torna `""`:
+     importare e rimandare senza modifiche non cambia più la `rev`.
+  3. Marker con `fade`: ok come dite, innocuo.
+  4. **`Feedbackshow`: sì**, accendetelo. Plancia usa `/show/*` OSC solo
+     come riserva quando lo stato MQTT del clock tace (`showClockSample`
+     preferisce MQTT fresco).
+  5. Ancora da fare: iscrizione al topic retained `show_timeline` con
+     editor aggiornato sulla `rev` (oggi leggiamo `show_timeline` dallo
+     status) e conferma della `rev` sul topic.
+- **Note 32-34**, verificate dal vivo su `dmx_output` (10/10 fixture,
+  MQTT) con una Plancia di prova collegata al broker OPS:
+  - Render: PAR, barre e blinder da `rgb_out`; **teste** con il fascio da
+    `pan`/`tilt` in gradi diviso metà escursione del modello
+    (`pan_range`/`tilt_range` di `dmx_models`), verso della nota 30;
+    "colore ?" se `color_source: "unknown"`; **haze** dalla `intensity`.
+  - **`/dmx/scene` da TD non applica più i LOOKS locali** (nota 33, punto
+    2): evidenzia solo il pulsante; il widget Scene e l'HUD mostrano
+    `show_scene_catalog` (oggi "TestScene1", non più "Walk-in").
+  - Cue senza `label`: mostrano la scena.
+  - Riserva OSC `/dmx/fixture/*` + `/dmx/output/osc 1`: dal merge di
+    `a92961d`, non ancora provata con MQTT spento.
+  - Editor dei modelli (colore di ogni slot, `beam`, nota 34): **non
+    ancora fatto**.
+- **Richiesta a TD: i colori che servono ai menu della Plancia.** Oggi
+  il selettore palette (`dmx_<rig>_palette`) e i pulsanti scena non
+  possono avere il colore giusto, perché TD pubblica le palette **solo per
+  nome** e le scene **senza contenuto**. Intanto la Plancia colora solo
+  la palette **attiva** con la tinta che il rig emette davvero (media
+  degli `rgb_out` del gruppo) e "Custom" con `custom_color1`; le altre 17
+  restano neutre: non vogliamo inventare che "Ocean" è blu. Proposta,
+  solo aggiunte, nessuna rottura:
+  1. **Palette**: nel `dmx_matrix`, accanto alle `options` di
+     `rigs.<rig>.params.dmx_palette`, un campo
+     `colors: {"<palette>": [[r,g,b], ...]}` (0–1, i colori in ordine come
+     li usa il rig; per "Custom" i `custom_color1..5` del rig).
+  2. **Scene**: in `show_scene_catalog`, per ogni scena un campo
+     `preview` con ciò che la scena imposta, per gruppo, per esempio
+     `{"rig_a": {"palette": "Warm"}, "ledbar": {"palette": "Basic 2"},
+     "heads": {"rgb": [r,g,b]}}`, oppure direttamente
+     `swatch: [[r,g,b], ...]` (un colore per gruppo, già calcolato in TD).
+     Con questo coloriamo i pulsanti scena e le cue della timeline.
+  Diteci quale delle due forme per le scene vi viene più naturale.
