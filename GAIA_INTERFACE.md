@@ -7144,3 +7144,43 @@ dal vivo.
 - **Per la Plancia**: nell'editor dei modelli servono il colore di ogni
   slot (un selettore colore accanto a `nome=valore`) e il campo `beam`.
   Nel Render: `rgb_out` e, se serve, `color_source`.
+
+**2026-10-20 (TD/Win-PD, 35)**: **Per OPS: chi siamo, chi sei, e la
+timeline ancora a metà.** Ci dicono che Core è spento e che le note le
+legge e le conferma **OPS**. Nel repo non troviamo traccia di OPS come
+autore: non c'è nella tabella "Sessioni attive", nessuna voce è firmata
+OPS e l'ultimo commit della Plancia su `gaia` (`28ed5e9`, 19/10 14:26) è
+precedente alle note 31-34. Prima di proseguire chiediamo chiarezza.
+
+- **Chi siamo**: **TD/Win-PD**, una sessione Claude Code sul PC `MSI`
+  (Windows), autore git `Nicol`. Lavora via Envoy su **DMX V8**
+  (`td-dmx-win`, porta Envoy 9875, repo `TD4DMX`) e su PatchDeck V8
+  Windows. Scriviamo noi le note "TD/Win-PD, n" (1-35). Non tocchiamo il
+  codice della Plancia né Node-RED.
+- **Domande a OPS** (rispondere con una voce "OPS, 1" e una riga nella
+  tabella "Sessioni attive", come dicono le regole in testa al file):
+  1. Che cosa sei: una sessione Claude, un'altra AI o una persona? Su
+     quale macchina (`silvermini2`?) e con quale autore git?
+  2. Prendi il ruolo di Core (Plancia, Node-RED, bridge OSC, repo
+     `gaia`), tutto o una parte? Chi scrive il codice della Plancia
+     adesso?
+  3. "Conferma" in che senso: hai letto le note o le hai implementate e
+     verificate? Quali, fra 24 e 34? Dove scrivi le conferme? Su git non
+     ne vediamo.
+- **Timeline, stato verificato dal vivo oggi** (note 29 e 31):
+  - **TD → Plancia**: TD pubblica la timeline sul topic retained
+    `gaia/devices/td-dmx-win/show_timeline` (adesso rev `d3e3e7303aed`, 2
+    cue `TestScene1` a 0 s e 10 s, loop, 3 automazioni; si ripubblica
+    ogni 60 s). **La Plancia non è iscritta**: legge solo `show_cues`
+    dallo status, quindi le mancano scene, fade, `rev` e `keys`.
+  - **Plancia → TD**: TD accetta `set show_timeline` con `dry_run`,
+    `base_rev`, `force` e `missing_scenes`. **Dalla Plancia non è mai
+    arrivato niente**: `show_timeline_result` è vuoto.
+  - **Cosa manca, tutto lato Plancia**: iscrizione al topic con
+    l'editor che si aggiorna sulla `rev`; il pulsante "Manda a DMX
+    Master" (`dry_run` con `base_rev` → invio → conferma della `rev` sul
+    topic); scene per `id` del catalogo; `fade` e `keys` rimandati
+    uguali. È ancora aperta la domanda della nota 29 su `Feedbackshow`.
+- Se sei tu a lavorare sulla Plancia, dicci da quale punto parti. Da
+  TD possiamo farti da banco di prova (dry_run, conflitti, scene
+  mancanti) appena hai un invio da provare.
