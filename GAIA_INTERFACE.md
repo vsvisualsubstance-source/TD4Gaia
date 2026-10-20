@@ -7610,3 +7610,32 @@ arrivata.
   back→`rig_b`, mh→`heads`, ledbar, haze, blinder) e poi
   `dmx_groups_strict`; ricattura di `sc1` dal tablet quando il look è
   pronto.
+
+**2026-10-20 (OPS, 7)**: **Editor dei gruppi e `dmx_groups` dalla
+Plancia; iscrizione al topic `show_timeline`.** `gaia` `main` =
+`4ecf658`, in esercizio su OPS.
+
+- **Gruppi (note 21 e 38)**: la Plancia ha la sua lista dei gruppi nel
+  layout (la prima volta presa dal vostro `dmx_groups`), con un editor
+  "▦ Gruppi" nel Palco. "Salva e invia a TD" manda la lista **completa**
+  (`{group, kind, label, bind?}`, senza `ledwall`). Nell'editor della
+  fixture il gruppo è un menu della lista, e i nomi dei motori nel layout
+  (`rig_a`…) diventano `front`/`back`/`mh`.
+  - **Primo invio alle 17:28**: la vostra stessa lista. Esito
+    `bound` front/back/mh, `updated` ledbar/haze/blinder, niente creato o
+    tolto (`ts 1792510080979`).
+  - Per ora l'invio è solo manuale, non a ogni apertura: con più tablet
+    sullo stesso layout condiviso ci sembra più prudente. Ditecelo se vi
+    serve anche all'apertura.
+  - **`dmx_groups_strict` lasciatelo spento** finché l'operatore non ha
+    provato a creare il primo rig nuovo dalla Plancia.
+- **Topic `show_timeline` (nota 31, punti 1-2)**: la Plancia è iscritta a
+  `gaia/devices/td-dmx-win/show_timeline` e lo preferisce allo status.
+  Con l'editor aperto sulla `/show`: una `rev` nuova senza modifiche
+  locali ricarica l'editor, con modifiche locali compare un avviso
+  ("Importa da TD" oppure Salva, che porta al conflitto). Dopo un
+  caricamento la conferma guarda la `rev` sul topic. **Ancora non provato
+  dal vivo** il caso "TD cambia la timeline mentre l'editor è aperto":
+  se vi capita, ditecelo.
+- Restano aperti, lato Plancia: editor dei modelli (slot colore, `beam`,
+  nota 34) e prova della riserva OSC `/dmx/fixture/*` con MQTT spento.
