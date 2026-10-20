@@ -7486,3 +7486,90 @@ di `rig_a`. Situazione di oggi: `rig_a` (front) = UP1 addr 1, PAR12 addr
 
 Intanto, lato Plancia: con `colors` e `preview` della nota 37 coloriamo
 tutti i pulsanti palette e scena. Vi diciamo quando è in esercizio.
+
+**2026-10-20 (TD/Win-PD, 38)**: **Risposta a "OPS, 4": rig, gruppi e
+universi. Le scene ora salvano tutti i rig, barre LED, haze e blinder
+compresi.** Commit `aff3f17` su `TD4DMX`. Verificato via Envoy sul patch
+di stasera.
+
+- **Prima una correzione sui nomi**: **barre LED ≠ LED wall.** `ledbar`
+  (gruppo "LED bar", rig `rig_ledbar`, BAR1 e BAR11) sono barre DMX: un
+  rig `chase` come front e back, dentro le scene. Il **LED wall** riceve
+  video **NDI da PatchDeck**: è **fuori dal DMX** e non va né in
+  `dmx_groups`, né nel patch, né nelle scene di DMX Master. Il suo posto
+  è il Palco/Video della Plancia.
+1. **Un solo universo: sì.** Il rig è solo il motore (palette, audio,
+   livello), mentre universo e indirizzo sono di ogni fixture. Front,
+   back, ledbar, haze, blinder e teste possono stare tutti su
+   `2.1.1.2:1`. Un rig può anche stare su più universi: già oggi
+   `ledbar` ha BAR1 su `:1` all'indirizzo 39 e BAR11 su `:2` all'indirizzo 1.
+2. **Quick patch contro patch per fixture: vince la tabella
+   (`dmx_fixtures`).** I parametri quick patch
+   (`dmx_<rig>_fixture_count`, `start_address`, `output_port`,
+   `fixture_profile`) **riflettono** la tabella: `fixture_count` =
+   **l'unità più alta** del gruppo, non il numero di fixture;
+   `start_address`, porta e profilo sono quelli della prima fixture. Per
+   `rig_b` oggi `fixture_count` = **8** (UP1 è l'unità 3, UP6 l'unità 8),
+   `start_address` = 5. L'"1" che avete letto è probabilmente il
+   `default` del matrix, non il valore.
+   - ⚠️ **Scriverli è distruttivo**: un `set` di uno di questi quattro
+     **riscrive l'intero gruppo** come blocco uniforme consecutivo. Con
+     `rig_b` oggi: 8 unità da 4 canali dal 5 = indirizzi 5-36. Gli
+     indirizzi 5 e 9 diventano 5, 9, 13 e così via, e il blocco **si
+     sovrappone alle teste** (17 e 28). **Con la patch per fixture la
+     Plancia non deve mai scriverli**: usate `dmx_fixtures` /
+     `dmx_fixture_update`. Sono solo una scorciatoia per chi patcha da TD
+     un blocco uniforme.
+3. **Più rig: si può.** Ogni rig `chase` costa circa **0,7-0,9 ms per
+   frame** di CPU (misurato: `rig_a` 0,86, `rig_b` 0,72, `ledbar` 0,81),
+   contro i 16,6 ms disponibili a 60 fps: altri 3-4 rig ci stanno senza
+   problemi. Ogni rig ha il suo motore; l'ingresso audio lo sceglie
+   `Audiobus` (sorgente a/b), non viene duplicato. **Quando conviene**:
+   un rig nuovo serve quando un gruppo deve **comportarsi** in modo
+   diverso (velocità, reazione all'audio, livello, accensione/scena
+   propria). Se cambia **solo il colore**, basta la palette per fixture
+   (punto 4). Side e floor, se devono pulsare diversamente da front, sono
+   un buon caso per un rig.
+4. **Palette per fixture: sì, cambia solo il colore.** Livello, audio,
+   velocità, fase, kick e dimmer restano quelli del rig. La palette del
+   rig **non sovrascrive mai** quella della fixture: vale solo per le
+   fixture con `palette` vuota. `Custom` = i 5 colori custom del rig.
+5. **Scene con tutti i rig: fatto** (`aff3f17`). I rig delle scene ora
+   vengono dalla tabella dei gruppi del patch, quindi entra ogni rig di
+   tipo `chase` o `level`: `rig_a`, `rig_b`, **`ledbar`**, **`haze`**,
+   **`blinder`** e quelli creati in futuro. Il target nella scena è il
+   **nome del gruppo**.
+   - Categoria `rigs`: per i rig `chase` la pagina "DMX Reactive"
+     (palette, dimmer, colore, kick); per i rig a livello `Level` e
+     `Fan`.
+   - `groups`: `Patchenable` di ogni rig, delle teste e `Blackout`.
+     `audio`: `Audiobus` di ogni rig `chase`.
+   - `preview` in `show_scene_catalog` (nota 37) segue la stessa regola:
+     `{"ledbar": {"palette": "Basic 2", "colors": [...]}, "haze":
+     {"level": 0.833}, "blinder": {"level": 0.348}, ...}` per ogni rig
+     presente nella scena.
+   - Le automazioni (`keys`) possono pilotare anche i parametri di questi
+     rig (`ledbar.Mindimmer`, `haze.Level`...).
+   - **Le scene già salvate non cambiano**: hanno solo le righe che
+     avevano. `sc1` (era `TestScene1`, rinominata oggi nelle prove) non
+     contiene ancora barre, haze e blinder: va ricatturata
+     (`show_scene_capture`) quando l'operatore ha il look giusto.
+     Verificato con una scena di prova (catturata e poi cancellata): ha
+     tutti e 5 i rig.
+6. **`dmx_groups` dalla Plancia: sì**, la proposta della nota 21 resta
+   valida, insieme all'editor dei gruppi. **Senza `ledwall`.** I gruppi
+   DMX di oggi:
+
+   | Plancia | TD | tipo |
+   |---|---|---|
+   | front | `rig_a` | chase |
+   | back | `rig_b` | chase |
+   | mh | `heads` | teste |
+   | ledbar | `ledbar` | chase |
+   | haze | `haze` | level |
+   | blinder | `blinder` | level |
+
+   Un gruppo nuovo mandato in `dmx_groups` diventa un rig del suo tipo
+   ed entra da solo nelle scene, dalla cattura successiva. Accendete
+   `dmx_groups_strict` solo quando la Plancia manda sempre la lista
+   completa.
