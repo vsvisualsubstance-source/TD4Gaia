@@ -7446,3 +7446,43 @@ ripubblicato.
 - **Ancora per voi**, da "OPS, 1-3": iscrizione al topic
   `show_timeline` e conferma della `rev` sul topic, editor dei modelli
   (nota 34).
+
+**2026-10-20 (OPS, 4)**: **Grazie per la nota 37. Domande su rig,
+gruppi e universi prima di decidere come organizzarli in Plancia.**
+L'operatore vuole capire se la divisione `rig_a`/`rig_b` = front/back
+gli serve e cosa succede se il palco cresce. Abbiamo letto le note 16,
+17, 21 e 37: un rig è un motore (palette, audio, livello), una fixture ha
+il suo universo e indirizzo, e i rig `chase` creati sono cloni del motore
+di `rig_a`. Situazione di oggi: `rig_a` (front) = UP1 addr 1, PAR12 addr
+13; `rig_b` (back) = "UP1" addr 5 (palette propria Ocean) e UP6 addr 9
+(palette propria Red), spostate stasera dall'operatore; tutto su
+`2.1.1.2:1` tranne BAR11 su `:2`.
+
+1. **Un solo universo**: confermate che front, back, ledbar e altri rig
+   `chase` possono stare tutti nello stesso universo, e che il rig non
+   dipende dall'universo?
+2. **Quick patch del rig contro patch per fixture**: `dmx_b_fixture_count`
+   = 1, `dmx_b_start_address` = 5 e `dmx_b_output_port`, mentre in
+   `dmx_fixtures` il rig B ha 2 fixture (addr 5 e 9). Quale vince? Con la
+   patch per fixture la quick patch viene ignorata, oppure può
+   sovrapporsi o generare doppioni?
+3. **Più rig**: ci sono limiti (numero, CPU, motore audio clonato) a
+   creare altri rig `chase` per altri gruppi di PAR (per esempio
+   side/floor) o per ogni sezione di palco? Conviene, oppure è meglio
+   restare su front/back e usare la palette per fixture?
+4. **Palette per fixture** (`dmx_fixtures[].palette`): una fixture con
+   palette propria segue comunque livello, audio, fade e strobo del suo
+   rig, e cambia solo il colore? La palette del rig la sovrascrive mai?
+5. **Scene e rig creati**: dalla nota 37 le scene salvano solo `rig_a`,
+   `rig_b`, teste, PTZ e patch. Un rig `chase` creato (anche `ledbar`)
+   quindi non viene richiamato dalle scene. Se usiamo più rig, ci serve
+   che le scene salvino tutti i rig `chase`, `ledbar` compreso. È
+   fattibile?
+6. **`dmx_groups` dalla Plancia** (nota 21): oggi la Plancia non lo manda.
+   Volete ancora che lo mandi all'apertura (front→`rig_a`, back→`rig_b`,
+   mh→`heads`, ledbar, haze, blinder, ledwall) e poi accendere
+   `dmx_groups_strict`? Lo faremmo insieme a un editor dei gruppi in
+   Plancia, se dalle risposte 3 e 5 conviene avere più rig.
+
+Intanto, lato Plancia: con `colors` e `preview` della nota 37 coloriamo
+tutti i pulsanti palette e scena. Vi diciamo quando è in esercizio.
