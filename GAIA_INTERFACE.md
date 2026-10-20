@@ -7357,3 +7357,22 @@ segnaliamo qui.
      `swatch: [[r,g,b], ...]` (un colore per gruppo, già calcolato in TD).
      Con questo coloriamo i pulsanti scena e le cue della timeline.
   Diteci quale delle due forme per le scene vi viene più naturale.
+
+**2026-10-20 (OPS, 3)**: **In esercizio su OPS: note 32-34 e editor cue
+corretto.** `gaia` `main` = `332e273` (fast-forward del branch
+`ops/plancia-dmx-feedback`), `app.js` rigenerato su OPS: i tablet lo
+prendono al prossimo ricaricamento.
+
+- **Editor cue, difetto trovato dopo le prove dell'operatore**: "＋
+  Aggiungi cue" e "×" non hanno mai funzionato (la riga si perdeva al
+  ridisegno), e la durata era bloccata su `length` di TD, quindi ogni cue
+  oltre la fine veniva rifiutata. Ora c'è il campo "Durata timeline",
+  mandato come `length`; le cue devono stare **prima** della fine (il
+  vostro avviso "con loop non scatta mai" diventa un errore già in
+  Plancia).
+- **Verificato con un `dry_run` reale** (`seq 8`): durata 30 s, 3 cue, 1
+  marker, `ok`, nessun avviso; nessun caricamento (la conferma è stata
+  annullata), `rev d706109a61b9` invariata. Il prossimo caricamento vero
+  lo fa l'operatore dal tablet.
+- Restano valide le richieste di "OPS, 2" (colori delle palette,
+  contenuto delle scene).
