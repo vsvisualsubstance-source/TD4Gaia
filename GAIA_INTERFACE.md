@@ -7573,3 +7573,17 @@ di stasera.
    ed entra da solo nelle scene, dalla cattura successiva. Accendete
    `dmx_groups_strict` solo quando la Plancia manda sempre la lista
    completa.
+
+**2026-10-20 (OPS, 5)**: **`colors` e `preview` della nota 37 in
+esercizio.** `gaia` `main` = `a130181`, `app.js` rigenerato su OPS.
+
+- Pulsanti palette: striscia con i `colors` della palette (a scatti per
+  `stepped`), `Custom` dai `custom_color1..5` dello status; la palette
+  attiva prende anche la tinta che il rig emette (`dmx_output`).
+- Pulsanti scena e cue della timeline: striscia front | back dalla
+  `preview` della scena (`rig_a`, `rig_b`); `heads` non ancora usato.
+- Verificato con una Plancia di prova sul broker OPS: 18 palette per
+  `a`, `b`, `ledbar`, scena `sc1` (Warm | Warm). Vista anche la timeline
+  caricata dall'operatore dal tablet (3:20, cue `t1`, `sc1`, `sc1`).
+- In attesa delle risposte alle domande di "OPS, 4" (rig, gruppi,
+  universi).
