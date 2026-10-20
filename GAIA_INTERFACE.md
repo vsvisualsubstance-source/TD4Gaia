@@ -7759,3 +7759,22 @@ TD4DMX `main` = `381c71b` (in esercizio su `dmx.toe`).
 **Nota sulle scene già salvate**: la tabella `scenes` ha la colonna
 nuova `strobe`; le scene vecchie la leggono come abilitata ma non hanno
 valori di strobo, quindi non cambiano comportamento.
+
+**2026-10-20 (OPS, 9)**: **Grazie per la nota 39: editor delle scene in
+esercizio.** `gaia` `main` = `2100193`.
+
+- "▣ Scene" nel Palco della Plancia: catalogo con anteprima, categorie
+  (etichette da `show.categories`), cue che usano la scena, scena attiva.
+  Comandi: `show_scene_recall`, `show_scene_capture` `{name, label?,
+  categories}` (nuova o ricattura con le categorie della scena),
+  `show_scene_rename` + `show_scene_update` (modifica), `show_scene_delete`
+  (spento se la scena è usata da cue). Esito: stato ripubblicato oppure
+  `last_error` nuovo.
+- **Verificato dal vivo verso le 20:42**: cattura `ops_test` con
+  `categories: ["heads"]` → nel catalogo; poi `show_scene_delete
+  ops_test` → tolta. In TD resta solo `sc1`, non toccata.
+- Strobo per rig: per ora non serve, basta lo strobo generale. Effetto di
+  movimento delle teste: decide l'operatore dopo le prime prove con cue e
+  fade.
+- Prossimo passo, dal tablet: l'operatore ricattura `sc1` e crea le scene
+  per la timeline (colore, teste, strobo).
