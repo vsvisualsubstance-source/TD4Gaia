@@ -7639,3 +7639,51 @@ Plancia; iscrizione al topic `show_timeline`.** `gaia` `main` =
   se vi capita, ditecelo.
 - Restano aperti, lato Plancia: editor dei modelli (slot colore, `beam`,
   nota 34) e prova della riserva OSC `/dmx/fixture/*` con MQTT spento.
+
+**2026-10-20 (OPS, 8)**: **Test riusciti stasera dalla Plancia, e
+domande su scene, cue e automazioni prima di ricatturare `sc1`.**
+`gaia` `main` = `fa064f3`.
+
+- **Riusciti, verificati da OPS su status e `dmx_output`:**
+  - **Rig nuovo dalla Plancia**: l'operatore ha creato `side` (chase)
+    nell'editor gruppi → `dmx_groups_result` `created: ["side"]`, nessun
+    errore; `dmx_side_*` pubblicati; `side` è nel `dmx_matrix` con le 18
+    palette e i colori.
+  - **Fixture nel rig nuovo**: PAR5 (`p-9ufzq3j`, `side`, U1 addr 46)
+    creata dalla Pianta e sincronizzata.
+  - **Palette del rig nuovo**: widget su `dmx_side_palette`, scelta
+    `Blue` → PAR5 `rgb_out` [0, 0, 0.726], `color_source: "rgb"`. Prima
+    era Warm (rosso-arancio): la palette arriva.
+  - Il patch report dice PAR5 `offline` (nodo Art-Net non visto su
+    `2.1.1.2:1`): ci sembra normale senza nodo collegato. Confermate?
+  - Timeline caricata dal tablet (3:20, 3 cue) e topic `show_timeline`
+    letto dalla Plancia: ok.
+- **Cosa vuole l'operatore**: varie scene da usare nella timeline (una
+  con teste che si muovono, una con strobo, una con un colore scelto…),
+  tenendo ben separate le **palette** dei rig dalle **scene** e dalle
+  **cue**. Prima di costruire in Plancia "Cattura scena" ci servono
+  queste risposte:
+  1. **Strobo**: `/dmx/strobe` e `/dmx/strobe/rate` (generali) non
+     risultano né nelle categorie delle scene né nelle `lanes` (per lo
+     strobo c'è solo `heads.Shutteropen`; lo strobo per testa sta nella
+     scena, nota 26). Una "scena strobo" oggi si può fare solo con le
+     teste? Si può far entrare lo strobo generale (on/off e rate), e
+     magari uno strobo per rig, nelle scene e nelle `keys`?
+  2. **Teste in movimento**: una scena è un'istantanea. Il movimento lo
+     intendete con (a) cue in sequenza con fade lunghi tra posizioni
+     diverse, (b) `keys` su `heads.Pan`/`heads.Tilt`, oppure (c) esiste
+     un effetto di movimento (cerchio, otto…) in TD? Cosa fa
+     `heads.Speed`? Le `keys` sulle teste valgono per il programmer
+     globale o per singola testa?
+  3. **Categorie alla cattura**: `show_scene_capture` prende solo il
+     nome. Si possono scegliere le categorie (es. solo `heads`, oppure
+     solo `rigs`) per avere una scena "solo teste" o "solo colore"?
+  4. **Scene parziali e livelli**: richiamando una scena senza una
+     categoria (es. senza `rigs`), quei valori restano come sono? Così due
+     cue vicine potrebbero combinare "colore" (rigs) e "movimento" (heads)
+     senza annullarsi.
+  5. **Gestione delle scene**: esistono comandi per rinominare,
+     cancellare e ricatturare (sovrascrivere) una scena, e per cambiarne
+     le categorie? La Plancia li vorrebbe nell'editor.
+  6. **`sc1`**: la ricatturiamo noi dalla Plancia con lo stesso nome
+     (sovrascrive?) oppure ne facciamo una nuova e cancelliamo `sc1`?
