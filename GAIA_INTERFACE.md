@@ -7687,3 +7687,75 @@ domande su scene, cue e automazioni prima di ricatturare `sc1`.**
      le categorie? La Plancia li vorrebbe nell'editor.
   6. **`sc1`**: la ricatturiamo noi dalla Plancia con lo stesso nome
      (sovrascrive?) oppure ne facciamo una nuova e cancelliamo `sc1`?
+
+**2026-10-20 (TD/Win-PD, 39)**: **Risposta a OPS 5–8: strobo nelle
+scene, scene a strati nella timeline, gestione delle scene da Gaia.**
+TD4DMX `main` = `381c71b` (in esercizio su `dmx.toe`).
+
+- **OPS 5–7**: letto tutto, grazie. Gruppi: l'invio manuale va bene, non
+  ci serve all'apertura; `dmx_groups_strict` resta spento. Altri comandi
+  che riscrivono un gruppo oltre a quelli che avete nascosto: nessuno di
+  "quick patch". Restano, ma sono voluti e da usare con cura:
+  `dmx_fixtures` (set = sostituisce **tutta** la patch) e
+  `dmx_fixture_auto_address` (rinumera gli indirizzi di un gruppo).
+- **PAR5 `offline`**: confermato, è lo stato normale senza un nodo
+  Art-Net che risponde su quell'IP/universo. Diventa `ok` appena il nodo
+  è in rete.
+
+**Risposte alle domande di OPS 8**
+
+1. **Strobo.** Nuova categoria di scena **`strobe`** = strobo generale
+   (`dmx_patch` `Strobe` on/off e `Stroberate` Hz, cioè `/dmx/strobe` e
+   `/dmx/strobe/rate`). Entra anche nelle `lanes`: `patch.Strobe`,
+   `patch.Stroberate` (in `dmx_matrix` → `show.lanes`). Una "scena strobo"
+   = cattura con `categories: ["strobe"]` mentre lo strobo è acceso.
+   Strobo **per rig**: non c'è ancora (lo strobo generale agisce su tutto
+   l'universo, lo strobo per testa sta nella categoria `heads`). Se serve
+   lo aggiungiamo; diteci se basta per rig chase o anche haze/blinder.
+2. **Teste in movimento.** In TD non c'è un generatore di movimento
+   (cerchio, otto…). `heads.Speed` è solo la velocità dei motori pan/tilt
+   della fixture (canale speed, invertito), non un'animazione. Il
+   movimento oggi si fa con: (a) cue in sequenza con fade lunghi tra
+   scene "solo teste" in posizioni diverse; (b) `keys` su `heads.Pan` /
+   `heads.Tilt`. Le `keys` agiscono sul **programmer globale**: muovono
+   le teste in modo `global`; una testa in `manual`/`follow` tiene i suoi
+   valori (quelli stanno nella scena, per testa). Un effetto di movimento
+   vero in TD è fattibile: lo decide l'operatore.
+3. **Categorie alla cattura.** Sì. `show_scene_capture` ora accetta
+   anche JSON: `{name, label?, categories?}` (`categories` sottoinsieme di
+   `rigs`, `heads`, `groups`, `audio`, `strobe`). Il nome semplice
+   (stringa) funziona come prima = tutte le categorie. Una scena **nuova**
+   catturata con categorie abilita solo quelle; su una scena **esistente**
+   sostituisce solo i valori di quelle categorie e lascia gli altri.
+   Elenco ed etichette in `dmx_matrix` → `show.categories`
+   (`[{id, label}]`).
+4. **Scene parziali.** Sì, si sommano. Una scena tocca solo le sue
+   categorie abilitate:
+   - `show_scene_recall` dal vivo: il resto resta com'è;
+   - **timeline** (corretto oggi): ogni par tiene il valore dell'**ultima
+     cue fino a t** la cui scena lo imposta. Così "colore" (cue 1, `rigs`)
+     + "movimento" (cue 2, `heads`) restano entrambi, anche dopo un seek,
+     un loop o una cue marker. Il fade di una cue parte dallo stato a
+     strati. Prima una cue vedeva solo la scena della cue precedente, e
+     dopo un seek le categorie mancanti non venivano ripristinate.
+5. **Gestione delle scene** (nuovi parametri Gaia, `w`; un errore va in
+   `last_error` dello status; dopo ognuno ripubblichiamo il `dmx_matrix`,
+   così le opzioni di `show_scene_recall` si aggiornano):
+   - `show_scene_capture` `{name, label?, categories?}`: crea o
+     **ricattura** (sovrascrive i valori);
+   - `show_scene_update` `{name, label?, categories?}`: cambia etichetta
+     e categorie abilitate, senza toccare i valori;
+   - `show_scene_rename` `{name, to, label?}`: rinomina ovunque (valori e
+     cue che la usano; la `rev` della timeline cambia e il topic
+     `show_timeline` si ripubblica). Rifiutato se `to` esiste già;
+   - `show_scene_delete` `name`: rifiutato se delle cue la usano
+     (togliete prima le cue).
+   Lo `id` delle scene nel catalogo resta il nome: dopo un rename cambia.
+6. **`sc1`**: ricatturatela con lo stesso nome dalla Plancia: sovrascrive
+   e tiene le categorie (le cue che la usano restano valide). Oggi `sc1`
+   ha la categoria `strobe` abilitata ma senza valori (è stata catturata
+   prima): non tocca lo strobo finché non la ricatturate.
+
+**Nota sulle scene già salvate**: la tabella `scenes` ha la colonna
+nuova `strobe`; le scene vecchie la leggono come abilitata ma non hanno
+valori di strobo, quindi non cambiano comportamento.
