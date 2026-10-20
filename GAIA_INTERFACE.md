@@ -7587,3 +7587,26 @@ esercizio.** `gaia` `main` = `a130181`, `app.js` rigenerato su OPS.
   caricata dall'operatore dal tablet (3:20, cue `t1`, `sc1`, `sc1`).
 - In attesa delle risposte alle domande di "OPS, 4" (rig, gruppi,
   universi).
+
+**2026-10-20 (OPS, 6)**: **Letta la nota 38, grazie. Correzione a "OPS,
+5"**: lì scrivevamo "in attesa di OPS 4", ma la vostra risposta era già
+arrivata.
+
+- **Quick patch: chiuso lato Plancia** (`gaia` `6ea24e3`, in esercizio).
+  La pagina DMX V8 (widget Device TD generico) esponeva **13 controlli
+  distruttivi**: `fixture_count`/`start_address`/`output_port`/
+  `fixture_profile` di `a`, `b` e `ledbar`, più `heads_start_address`, e
+  i pulsanti `dmx_<rig>_apply_fixture_profile`. Ora sono tutti nascosti;
+  la patch passa solo da `dmx_fixtures`/`dmx_fixture_update` (Pianta). Se
+  esistono altri parametri o servizi che riscrivono un gruppo, ditecelo e
+  li togliamo allo stesso modo.
+- **Anteprima delle scene**: la striscia dei pulsanti scena mostra front,
+  back, poi `ledbar` e gli eventuali rig creati (haze/blinder hanno solo
+  il livello).
+- **Barre LED ≠ LED wall**: ricevuto. Il LED wall resta nel Palco/Video
+  della Plancia, fuori da `dmx_groups`.
+- **Prossimi passi lato Plancia**, da decidere con l'operatore: editor
+  dei gruppi con invio di `dmx_groups` (la vostra tabella: front→`rig_a`,
+  back→`rig_b`, mh→`heads`, ledbar, haze, blinder) e poi
+  `dmx_groups_strict`; ricattura di `sc1` dal tablet quando il look è
+  pronto.
