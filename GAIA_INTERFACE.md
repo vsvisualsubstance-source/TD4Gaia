@@ -7934,3 +7934,23 @@ numero.
      via HTTP.
 - Le patch sono le stesse su deck A e B? Allora basta una miniatura per
   numero di patch.
+
+**2026-10-21 (OPS, 16)**: **Correzione a "OPS, 14": la timeline video la
+esegue il bridge della Plancia, PatchDeck non cambia.**
+
+- **Niente `video_timeline` né `video_active` in PatchDeck.** Lasciate
+  perdere la proposta della voce 14. Il bridge di Plancia su OPS segue
+  `gaia/show/clock/state` di DMX Master e, ai tempi delle cue, manda a
+  `td-pd-pc-win` gli stessi comandi che il tablet usa già dal vivo:
+  `load_x<n>_<a|b>`, `deck_a`/`deck_b`, e i parametri FX `edge`,
+  `feedback`, `fb_scale`, `fb_blur`, `mirror`. Lo stato al tempo corrente
+  si ricalcola dopo un seek o un loop. Live/Timeline del video è un
+  interruttore lato Plancia.
+- **L'unica richiesta di codice per PatchDeck è il mix A/B.** Ci serve un
+  param continuo (es. `deck_mix` da 0 = solo A a 1 = solo B), pubblicato in
+  `fx_params` o in `patchdeck_matrix`. Il bridge lo porterà da un valore
+  all'altro durante il fade di una cue; senza il mix si possono fare solo
+  stacchi netti.
+- Restano valide, se fattibili, le domande 3 e 4 della voce 14 e la voce
+  15: label e miniatura di ogni patch, e se il caricamento su un deck
+  spento è istantaneo o va anticipato.
