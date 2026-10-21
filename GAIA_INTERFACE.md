@@ -8340,3 +8340,43 @@ Provato dal vivo, poi tutto rimesso com'era: `off` fisso a 255
 (Maxdimmer), `kick` fermo a 200 (Mindimmer) con i colpi, `bass` gain 2
 che segue solo i bassi, gain 0 fermo al Mindimmer; comando per gruppo e
 per fixture, `dmx_fixture_update`, cattura/richiamo con e senza fade.
+
+**2026-10-21 (TD/Win-PD, 45)**: **Risposta a OPS 24: Audio Amount per
+rig, misura dal vivo, audio per fixture in `dmx_output`, scene.** TD4DMX
+`main` = `7097c61` (in esercizio su `dmx.toe`, progetto salvato).
+La nota 44 si è incrociata con la vostra 24 e copre già il punto 2.
+
+1. **Audio per rig: `dmx_<rig>_audio_amount`** (float 0–1, default 1, in
+   tutti i rig chase: `dmx_a_`, `dmx_b_`, `dmx_ledbar_`, `dmx_side_`,
+   `dmx_truss_`…; range e default nel `dmx_matrix` come gli altri). 0 =
+   luci ferme al `max_dimmer`, niente kick, colore fermo alla
+   `color_phase`; 1 = come prima; in mezzo un mix (con 0,5 il dimmer si
+   muove a metà tra la sua posizione audio e il max). Le modalità per
+   fixture della 44 restano sotto (una luce `off` resta ferma anche con
+   amount 1). **Potete togliere il ripiego** min = max: "♪ Audio OFF" =
+   amount 0, "ON" = 1, il fader "quanto segue la musica" = amount.
+2. **Audio per fixture**: vedi nota 44 (`audio`, `audio_gain`,
+   `dmx_fixture_audio` per luci e gruppi). In più ora **`dmx_output`**
+   porta per ogni fixture dei rig chase `"audio"` (`full` | `off` |
+   `bass` | `mid` | `high` | `kick`) e `"audio_gain"`; le altre fixture
+   non hanno questi campi.
+3. **Misura dal vivo**: `dmx_output` ha un blocco nuovo **`rigs`**:
+   `{"rig_a": {"level": 0.42, "kicks": 65, "amount": 1.0, "kick_enable":
+   true}, ...}` per ogni rig chase. `level` 0–1 = livello audio del rig
+   normalizzato sul brano (quello che muove il dimmer); `kicks` =
+   contatore dei colpi rilevati: se è cresciuto dal messaggio prima, c'è
+   stato un kick (fate lampeggiare l'indicatore). Arriva alla frequenza di
+   `dmx_output` (oggi 10 Hz). Il contatore riparte da 0 quando TD
+   ricarica il motore: confrontate solo "diverso dal precedente".
+4. **Scene**: già oggi la categoria **`rigs`** ("Look dei rig") salva
+   **tutta** la pagina audio del rig: `Mindimmer`/`Maxdimmer`,
+   `Kickenable`, soglia, boost, decay, morbidezza, AGC… e da ora anche
+   `Audioamount` e l'audio di ogni luce (nota 44). La categoria `audio`
+   ("Sorgente audio") resta solo la sorgente (`Audiobus`). Quindi un
+   "preset audio dentro la scena" = cattura con `rigs`. Per tenere
+   separati colore e audio non abbiamo una categoria apposta: se vi serve
+   (es. scena "solo audio" senza toccare le palette), ditecelo e
+   spostiamo i parametri audio in una categoria loro.
+
+**`/dmx/chase`**: il chase per rig non è in programma; toglietelo pure
+anche dalla pagina DMX.
