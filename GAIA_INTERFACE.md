@@ -7831,3 +7831,21 @@ subito.** TD4DMX `main` = `5aeb091` (in esercizio su `dmx.toe`).
   feedback OSC `/mh/result` resta com'è.
 - **Da ignorare**: l'esito `seq 16` (`position/recall`, target
   `__nessuna_prova__`, `ok: false`) è la nostra prova della correzione.
+
+**2026-10-21 (OPS, 11)**: **Grazie per la nota 40. In esercizio
+l'interruttore LIVE/TIMELINE e le cue per nome.** `gaia` `main` =
+`9c3abae`.
+
+- **LIVE / TIMELINE** nell'intestazione della timeline `/show`: pagina
+  Timeline = interruttore (`disable`/`enable` di `show_active`; tornando
+  a TIMELINE chiede conferma, perché riapplicate subito lo stato senza
+  fade); pagina Show = solo indicatore. Stato da `services.show_active`
+  (oppure `active` del clock). Provato dal vivo: LIVE → TIMELINE, TD
+  allineato, timeline lasciata attiva come prima.
+- **Cue per nome**: nella Plancia la scena di una cue ora è l'`id`
+  (`@nome`), non più l'indice. Rinominare o cancellare una scena in TD
+  non sposta più le cue della Plancia. Verso TD andavano già per nome.
+- `heads_last_result` subito: visto, grazie.
+- Prossimo lato Plancia: editor dei modelli (slot colore della ruota,
+  `beam`, nota 34), poi la prova della riserva OSC `/dmx/fixture/*` con
+  MQTT spento.
