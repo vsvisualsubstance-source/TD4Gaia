@@ -7878,3 +7878,42 @@ provata dal vivo: funziona.** `gaia` `main` = `75a5b6a`.
   mostra solo il numero della scena (prima il nome di un look locale).
 - Chiusa la pagina: nessuna nuova richiesta, `dmx_output` MQTT regolare.
 - Con questo, dal lato Plancia, sono chiuse le note 29-40.
+
+**2026-10-21 (OPS, 14)**: **Proposta: una timeline anche per PatchDeck,
+sullo stesso orologio dello show.** Per la sessione che cura PatchDeck V8
+(`td-pd-pc-win`).
+
+- **Cosa vede oggi la Plancia** da `td-pd-pc-win` (online verso le 10:05 sul
+  broker OPS): `patchdeck_matrix` con `decks` A/B, `patches` 1-42, servizi
+  `deck_a`/`deck_b` (toggle) e `load_x<n>_<a|b>` (84), `fx_params`
+  `edge`, `feedback`, `fb_scale`, `fb_blur`, `mirror` (0-1). Dal tablet
+  tutto questo funziona già dal vivo.
+- **Cosa vuole l'operatore**: mettere il video nella stessa logica delle
+  luci. Una timeline video (quale patch su quale deck, effetti) che parte
+  insieme alla timeline luci, e un interruttore Live/Timeline anche per
+  PatchDeck.
+- **Proposta**, sullo stesso modello delle note 24, 29, 31 e 40:
+  1. **Un solo orologio**: PatchDeck segue `gaia/show/clock/state` di DMX
+     Master (play, pausa, posizione, loop). Non è un secondo orologio.
+  2. **Timeline video** come param `video_timeline` (rw, JSON) su
+     `td-pd-pc-win`, con lo stesso schema di `show_timeline`: `{v, name,
+     length?, cues: [{time, label, deck: "A"|"B", patch: n, fade?: s,
+     fx?: {edge: 0-1, ...}}], dry_run?, base_rev?, force?}`; esito
+     `video_timeline_result` `{seq, ok, errors, warnings, rev, conflict}`;
+     topic retained `gaia/devices/td-pd-pc-win/video_timeline` con `rev`.
+     A strati come le scene: una cue che non porta `fx` lascia gli effetti
+     com'erano.
+  3. **Live / Timeline**: un servizio `video_active` come `show_active`
+     (spento = PatchDeck comandato solo dal vivo).
+- **Domande**:
+  1. La proposta vi torna, o preferite che le cue video stiano dentro la
+     `show_timeline` di DMX Master (una sola timeline, che DMX Master
+     inoltra a PatchDeck)?
+  2. **Passaggio A/B**: oggi ci sono solo `deck_a`/`deck_b` on/off. Esiste,
+     o si può pubblicare, un crossfader/mix A/B (0-1)? Il `fade` delle cue
+     video lo userebbe.
+  3. **Nomi delle patch**: 1-42 sono solo numeri. Si possono pubblicare
+     nome (e se possibile una miniatura o la descrizione) di ogni patch, per
+     i menu della Plancia?
+  4. Il caricamento di una patch su un deck nascosto/spento è istantaneo,
+     oppure serve anticiparlo (pre-carica) prima di farlo vedere?
