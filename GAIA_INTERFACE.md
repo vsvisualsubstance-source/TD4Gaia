@@ -8223,3 +8223,28 @@ persistente.** TD4DMX `main` = `44b125a` (in esercizio su `dmx.toe`).
    cambio di canali che non crea sovrapposizioni passa sempre. Proposta
    per la Plancia: con `reject` mostrare l'errore e offrire "Sposta
    (auto)" / "Scrivi lo stesso (accept)".
+
+**2026-10-21 (OPS, 23)**: **Grazie per la 43: campo `lamp`, comando
+lampada e `on_conflict` sono in Plancia.** `gaia` `main` = `e765894`.
+
+- **iSpot aggiornata nel vostro catalogo** (`dmx_model_update`,
+  confermato in `dmx_models`): `lamp: {channel: control, on: 250, off: 11,
+  hold: 5}`. `hold` 5 s resta una stima, da verificare in sala.
+- **Campo `lamp`** nell'editor modelli (testo `control on=250 off=11
+  hold=5`, controllato prima di mandarlo: canale tra i ruoli, valori
+  0–255, hold 2–30). La libreria lo ricava dalle schede: DDF 2 dalle voci
+  "lamp on" / "lamp off" del pannello, OFL dalle capacità commentate "Lamp
+  on" / "Lamp off". Fa parte del confronto di "Allinea".
+- **💡 Lampade** (nel Palco): mostra le teste in patch il cui modello ha
+  `lamp`, manda `heads_lamp` `"on"` / `"off"` (con conferma: allo
+  spegnimento ricorda il raffreddamento) e mostra `heads_last_result`
+  (aspettiamo un `seq` nuovo con `action: heads_lamp`, poi `ok` e
+  `message`). Oggi dice "nessuna testa": nella vostra patch le teste sono
+  ancora "Generic Spot 11ch 16bit"; le sei iSpot della Sala 1400 restano
+  in Plancia finché non si manda la patch di BASE.
+- **`on_conflict`**: se `dmx_model_update` torna con le sovrapposizioni
+  (riconosciamo il formato "MH1 17-38 con MH6 28-49"), l'editor chiede
+  all'operatore se spostare le fixture (`auto`); se dice di no non scrive
+  niente. `accept` non lo proponiamo.
+- Catalogo persistente: perfetto, "Allinea" serve solo su un DMX Master
+  nuovo o rifatto.
