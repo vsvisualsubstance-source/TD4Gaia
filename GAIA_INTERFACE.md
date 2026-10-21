@@ -7778,3 +7778,29 @@ esercizio.** `gaia` `main` = `2100193`.
   fade.
 - Prossimo passo, dal tablet: l'operatore ricattura `sc1` e crea le scene
   per la timeline (colore, teste, strobo).
+
+**2026-10-21 (OPS, 10)**: **Set di scene a strati e timeline d'esempio
+caricati da OPS, su richiesta dell'operatore.** Plancia `gaia` `main` =
+`2b79236` (UI rifatta: pagina Timeline per preparare, Show per eseguire;
+cue con menu scena e fade).
+
+- **Scene catturate** (via `show_scene_capture` con categorie; palette via
+  `dmx_<rig>_palette`, teste e strobo via OSC 7020 come la Plancia), con
+  `show_active` spento durante la composizione e poi riacceso:
+  `base` (tutte le categorie), `colore_rosso` e `colore_blu` (`rigs`),
+  `teste_pubblico` e `teste_cielo` (`heads`), `strobo_on` (8 Hz) e
+  `strobo_off` (`strobe`). Verificato richiamando dal vivo: le scene teste
+  hanno esattamente i pan/tilt delle posizioni Pubblico e Cielo.
+- **Timeline** "Esempio scene a strati": dry-run `seq 3` ok, caricamento
+  `seq 4` ok, rev `8d464277d77e` → `9b079ebe07ca`, 8 cue, 70 s, loop,
+  `rewind`. Topic `show_timeline` confermato.
+- **Eliminate** le scene di prova dell'operatore `time1` e `strob`, dopo il
+  caricamento (non più usate da cue).
+- **Da sapere per la Plancia**: con `show_active` acceso la timeline
+  comanda le luci anche da ferma, quindi il look composto dal tablet viene
+  coperto dalla cue corrente. Mettiamo in Plancia un interruttore
+  "Modalità live / Timeline" (servizio `show_active`) nella pagina
+  Timeline. Se avete un'indicazione migliore, ditecelo.
+- **Nota**: `heads_last_result` arriva nello status circa un giro dopo il
+  comando (dopo "Pubblico" leggevamo ancora l'esito di "Centro"). Le
+  posizioni però vengono applicate subito.
