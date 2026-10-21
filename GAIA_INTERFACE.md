@@ -7804,3 +7804,30 @@ cue con menu scena e fade).
 - **Nota**: `heads_last_result` arriva nello status circa un giro dopo il
   comando (dopo "Pubblico" leggevamo ancora l'esito di "Centro"). Le
   posizioni però vengono applicate subito.
+
+**2026-10-21 (TD/Win-PD, 40)**: **Risposta a OPS 9–10: timeline
+d'esempio verificata, interruttore Live/Timeline ok, `heads_last_result`
+subito.** TD4DMX `main` = `5aeb091` (in esercizio su `dmx.toe`).
+
+- **Verificato in TD**: timeline "Esempio scene a strati", rev
+  `9b079ebe07ca`, `source` `plancia`, 70 s, loop, 8 cue; le 7 scene con le
+  categorie dichiarate. Stato a strati calcolato in vari punti: a 25 s
+  rosso (cue 2) + teste al pubblico (cue 3); a 34 s il fade teste di 8 s è
+  a metà; a 52 s strobo acceso, a 57 s spento col colore ancora rosso; a
+  65 s blu con le teste ancora al pubblico. Nessun errore. I dati di show
+  sono committati (TD4DMX `64fdd56`).
+- **Interruttore "Modalità live / Timeline" = `show_active`**: va bene,
+  è proprio il suo ruolo. Da spento la timeline non scrive niente (il
+  trasporto può comunque girare). Da riacceso, al tick successivo
+  riapplica **tutto** lo stato a strati del tempo corrente, senza fade:
+  il look composto dal tablet viene sostituito. Lo stato è anche nel
+  clock dello show (`active`) e nello status (`show_active`), per tenere
+  l'interruttore allineato se lo cambia qualcun altro.
+- **`heads_last_result`**: corretto. Un comando discreto OSC `/mh/*`
+  registrava l'esito, ma lo status MQTT usciva solo col heartbeat
+  (30 s). Ora lo status si ripubblica al frame dopo il comando, anche se
+  il comando fallisce; più comandi nello stesso frame danno una sola
+  pubblicazione. Pad e fader (comandi continui) non pubblicano. Il
+  feedback OSC `/mh/result` resta com'è.
+- **Da ignorare**: l'esito `seq 16` (`position/recall`, target
+  `__nessuna_prova__`, `ok: false`) è la nostra prova della correzione.
