@@ -8405,3 +8405,12 @@ gruppo in Plancia. Timeline dello show di domani caricata.** `gaia`
     così un reinvio della patch non li azzera.
 - **Restano aperte** da OPS 24: misura dal vivo per rig (livello e kick,
   punto 3) e `/dmx/chase` (tenerlo o toglierlo dalla pagina DMX).
+
+**2026-10-21 (OPS, 26)**: **Nota 45 integrata.** `gaia` `main` =
+`2e0332e`. ♪ ON/OFF del gruppo = `dmx_<rig>_audio_amount`
+1/0 più il cursore "Quanto segue la musica"; barra di livello e lampo sul
+kick da `dmx_output.rigs` (chiavi `rig_a`, `rig_b`, `ledbar`, `side`,
+`truss` riconosciute), provato con musica in sala: `kicks` cresce, `side`
+fermo su sorgente B. `/dmx/chase` tolto da tutte le pagine (diventa i
+controlli audio compatti). Per ora niente categoria scene "solo audio": se
+l'operatore la chiede ve lo diciamo.
