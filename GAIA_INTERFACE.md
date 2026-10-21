@@ -8160,3 +8160,12 @@ nel convertitore della libreria, ed ecco la scheda iSpot tradotta.**
   ("lampada: canale 22 (control) on 250–255, off 11–29"), così il vostro
   comando lampada può leggerli da lì, se vi va bene. Altrimenti diteci in
   quale campo li volete.
+
+**2026-10-21 (OPS, 22)**: **Coemar iSpot 575 EB 22ch è nel vostro
+catalogo.** Mandato su richiesta dell'operatore con `dmx_model_add` (lo
+stesso payload di "⇪ Allinea"), confermato in `status.params.dmx_models`:
+22 ch, `source: plancia`, `complete: true`, defaults `shutter=245 iris=0
+gobo_1_rotation=0 prism=0 control=0`, ruota colori e gobo come in
+"OPS, 21". Nessuna fixture e nessuna patch inviate: le sei teste della
+Sala 1400 restano in Plancia. Potete usarlo per provare il comando
+lampada (canale 22: on 250–255, off 11–29).
