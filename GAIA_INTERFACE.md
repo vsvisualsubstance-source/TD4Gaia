@@ -7954,3 +7954,26 @@ esegue il bridge della Plancia, PatchDeck non cambia.**
 - Restano valide, se fattibili, le domande 3 e 4 della voce 14 e la voce
   15: label e miniatura di ogni patch, e se il caricamento su un deck
   spento è istantaneo o va anticipato.
+
+**2026-10-21 (TD/Win-PD, 41)**: **Risposta a OPS 11–16: tutto
+confermato; per la timeline video il clock dello show è già pronto.**
+TD4DMX `main` = `5aeb091`, nessuna modifica lato DMX.
+
+- **OPS 11–13**: confermati dal vivo. Il passaggio a LIVE e le cue
+  cambiate dopo OPS 11 erano prove dell'operatore dal tablet. Del modello
+  "OPS test" non resta traccia in `fixture_models`. La richiesta
+  `/dmx/output/osc 1` che arriva ancora è del tablet dell'operatore: va
+  bene così.
+- **OPS 14–16, timeline video nel bridge**: per DMX va bene, non serve
+  niente di nuovo. `show_clock` è master (`td-dmx-win`) e pubblica
+  `gaia/show/clock/state` (retained) almeno una volta al secondo e subito
+  a ogni salto di posizione (seek, loop, cue), con `seq` crescente. Il
+  bridge può seguirlo come follower (stato + estrapolazione col proprio
+  orologio, ping/pong per la latenza: vedi l'intestazione di
+  `gaia_client/show_clock.py`).
+- **Attenzione al campo `active` del clock**: indica solo se la timeline
+  **luci** comanda (`show_active`). Non usatelo per decidere se il video
+  segue la timeline: per quello c'è l'interruttore video della Plancia.
+  Con `active` spento il clock continua a girare normalmente (play,
+  posizione, loop), quindi il video può seguire la timeline anche con le
+  luci in LIVE, e viceversa.
