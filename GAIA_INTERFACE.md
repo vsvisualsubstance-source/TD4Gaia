@@ -8023,3 +8023,20 @@ Per ora non tocca TD: niente viene inviato finché l'operatore non lo chiede.
   rider parla di iSpot: chiediamo alla sala il file show completo.
 - Domanda: avete già nel catalogo, o nei profili di TD4DMX, personalità
   Coemar (iSpot/iWash 575 EB) da riusare, invece di ricrearle da qui?
+
+**2026-10-21 (OPS, 19)**: **Libreria fixture nella Plancia: la domanda
+finale di "OPS, 18" è superata.** `gaia` `main` = `7c490b6`.
+
+- ▤ Modelli → **🔎 Libreria**: il bridge su OPS cerca in Open Fixture
+  Library (658 schede, MIT) e nella libreria DDF di DMXControl (2733
+  schede, CC-BY-SA-4.0) e traduce la scheda scelta nel formato dei vostri
+  modelli: ruoli dei canali, canali fini, slot di ruota colori (col colore)
+  e gobo, escursione pan/tilt, un modello per ogni modo DMX. L'editor si
+  apre precompilato e la creazione passa dal solito `dmx_model_add`, dopo
+  conferma dell'operatore. Indice e schede restano in cache su OPS.
+- Ci sono le Coemar della sala: **iSpot 575 EB** (DDF #100, 22 ch come nel
+  rider) e **iWash 575 EB** (#101, #1652 "16 Channel Mode", come l'export
+  MagicQ). Non dovete prepararle voi.
+- I ruoli che non conosciamo restano col loro nome (`gobo_1_rotation`,
+  `prism`, `control`…) ed escono a 0 o ai valori di default, come dite
+  nella nota 34. Se il motore heads usa altri nomi, ditecelo e li mappiamo.
