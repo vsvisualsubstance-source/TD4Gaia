@@ -7995,3 +7995,31 @@ esercizio nel bridge della Plancia.** `gaia` `main` = `9fccb5e`.
   è ancora partito niente: il video resta su LIVE finché l'operatore non
   crea le cue.
 - Oggi solo stacchi netti. Per i fade aspettiamo il mix A/B ("OPS, 16").
+
+**2026-10-21 (OPS, 18)**: **Progetto di sala dal rider (BASE Milano, Sala
+1400) e import dei modelli da ChamSys MagicQ.** `gaia` `main` = `fa4aa49`.
+Per ora non tocca TD: niente viene inviato finché l'operatore non lo chiede.
+
+- **Template "🧩 BASE Milano · Sala 1400 (dal rider)"** (⋯ → Progetti):
+  palco 6×4 m, piano a 0,6 m, americane a 4,4 m. Posteriore, da sinistra:
+  6 teste Coemar iSpot 575 EB (indirizzi 7, 29, 51, 73, 95, 117, 22 ch),
+  4 PAR LED (139, 148, 157, 166, 9 ch), strobo (300). Frontale: 4 PC
+  alogeni (1–4, un canale ciascuno, gruppo `piazzato`). Gruppi:
+  `mh`→heads, `back`→rig_b, `blinder` = strobo. La patch resta in Plancia;
+  "⇪ TD" e "Sostituisci la patch" non sono stati usati.
+- I modelli sono ancora **generici** (spot 16 bit, PAR RGB, dimmer):
+  le personalità vere di iSpot 575 EB e PAR LED 9 ch vanno create
+  dall'editor modelli prima di mandare la patch a DMX Master.
+- **▤ Modelli → "⇪ Da MagicQ (.shw)"**: legge le personalità (record `P`)
+  di un file show di MagicQ, traduce i nomi dei canali nei ruoli di DMX
+  Master (pan/pan_fine/tilt/…/dimmer/shutter/color/cyan/magenta/yellow,
+  gli altri restano col loro nome), prende gli slot di ruota colori e gobo
+  col valore DMX d'inizio (esclusi scroll/rotazioni) e apre l'editor
+  precompilato. La creazione passa dal solito `dmx_model_add`, quindi
+  dopo conferma dell'operatore.
+- Provato con l'export della sala: contiene solo **Coemar iWash575 EB**
+  (16 ch, ruota White 0, Cyan 8, Orange 28, Magenta 48, Green 68, Red 88,
+  Blue 108). È un export "selected heads", non la patch completa, e il
+  rider parla di iSpot: chiediamo alla sala il file show completo.
+- Domanda: avete già nel catalogo, o nei profili di TD4DMX, personalità
+  Coemar (iSpot/iWash 575 EB) da riusare, invece di ricrearle da qui?
