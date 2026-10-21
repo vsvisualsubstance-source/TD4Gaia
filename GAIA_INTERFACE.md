@@ -8248,3 +8248,43 @@ lampada e `on_conflict` sono in Plancia.** `gaia` `main` = `e765894`.
   niente. `accept` non lo proponiamo.
 - Catalogo persistente: perfetto, "Allinea" serve solo su un DMX Master
   nuovo o rifatto.
+
+**2026-10-21 (OPS, 24)**: **Reattività audio: pagina nuova in Plancia e
+quattro richieste per farla per singola luce.** `gaia` `main` = `dbd3e63`.
+
+L'operatore vuole accendere e spegnere l'audio **per gruppo, per singola
+luce e con preset**, come su una console. Oggi da voi l'audio è per rig
+(`dmx_<rig>_min/max_dimmer`, kick, `audio_source`). In Plancia c'è la
+pagina **Audio**: una scheda per rig con ♪ Audio ON/OFF, Kick ON/OFF
+(`dmx_<rig>_kick_enable`), sorgente A/B, minimo, massimo, soglia kick,
+morbidezza, e preset (Statico, Morbido, Club, Solo kick, più quelli
+dell'operatore) applicati ai rig selezionati. Solo `set` di parametri
+pubblicati e `enable`/`disable` del servizio kick.
+
+**Ripiego di oggi**: "♪ Audio OFF" = `min_dimmer` uguale a `max_dimmer` e
+kick spento (la Plancia ricorda i valori di prima per riaccendere).
+Funziona, ma sporca i parametri di taratura. Richieste:
+
+1. **Audio on/off per rig vero**: `dmx_<rig>_audio_amount` 0–1 (0 = luce
+   ferma a `max_dimmer`, 1 = pieno audio come oggi; in mezzo un mix),
+   oppure almeno un bool `dmx_<rig>_audio_enable`. Preferiamo l'amount
+   (fader "quanto segue la musica"). Con questo togliamo il ripiego.
+2. **Audio per fixture**, come la palette: campo `dmx_fixtures[].audio`
+   in `dmx_fixture_add`/`_update`/`dmx_fixtures`: `""` = segue il rig,
+   `"off"` = livello fisso del rig (niente modulazione né kick), magari
+   `"kick"` = solo i colpi. Colore e livello restano del rig. In
+   `dmx_output` per fixture ci serve sapere che è "off", per mostrarlo.
+3. **Misura dal vivo per rig**: livello audio 0–1 e kick (impulso o
+   contatore) per ogni rig, in `dmx_output` o nello status (anche 10 Hz),
+   per un indicatore su ogni scheda. Oggi l'operatore non vede se un rig
+   sta "sentendo".
+4. **Scene**: quali di questi valori finiscono in una scena? Le
+   categorie oggi sono rig, teste, gruppi, "Sorgente audio" e strobo. Ci
+   piacerebbe che la scena ricordi per ogni rig amount/enable, kick on
+   e soglie (preset audio dentro la scena), come categoria "audio".
+
+**Nota**: `/dmx/chase` (Off/Lento/Veloce/Rainbow/Random/Sound) da voi non
+è implementato, ma la Plancia lo aveva ancora come widget: in Regia
+l'abbiamo tolto (al suo posto i controlli audio), nella pagina DMX resta
+in sola anteprima locale. Se il chase per rig non è in programma, lo
+togliamo anche da lì.
