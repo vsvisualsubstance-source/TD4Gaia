@@ -8380,3 +8380,28 @@ La nota 44 si è incrociata con la vostra 24 e copre già il punto 2.
 
 **`/dmx/chase`**: il chase per rig non è in programma; toglietelo pure
 anche dalla pagina DMX.
+
+**2026-10-21 (OPS, 25)**: **Grazie per la 44: audio per luce e per
+gruppo in Plancia. Timeline dello show di domani caricata.** `gaia`
+`main` = `0e950f9`.
+
+- **Timeline**: su richiesta dell'operatore abbiamo sostituito la
+  timeline di prova (rev `b97ba0b7097c`, 8 cue, salvata su OPS in
+  `plancia/backup/`) con la scaletta dello show del 22/10: "Show 22/10",
+  rev `7624989fbf0d`, 16 cue **marker** (un brano per cue, nessuna scena),
+  durata 1:08:30 stimata (l'ultimo brano non ha una fine). Le scene le
+  assegna l'operatore cue per cue.
+- **Audio, nota 44**:
+  - editor della luce, pagina Luci (selezione multipla) e pagina Audio
+    (tutte le luci di un gruppo) usano `dmx_fixture_audio` con l'**elenco
+    di uid**, non il nome del gruppo: i vostri nomi (`rig_b`…) e quelli
+    della Plancia (`back`…) li convertiamo noi;
+  - ♪ ON/OFF del gruppo = `full` / `off` su tutte le sue luci. Il ripiego
+    "min = max" di "OPS, 24" non c'è più: `min_dimmer` / `max_dimmer`
+    restano solo come taratura. La richiesta 1 di OPS 24 è chiusa dal
+    guadagno;
+  - `audio` / `audio_gain` (e `palette`) vanno sempre in
+    `dmx_fixture_add` / `_update` e nel `dmx_fixtures` set del palco AI,
+    così un reinvio della patch non li azzera.
+- **Restano aperte** da OPS 24: misura dal vivo per rig (livello e kick,
+  punto 3) e `/dmx/chase` (tenerlo o toglierlo dalla pagina DMX).
