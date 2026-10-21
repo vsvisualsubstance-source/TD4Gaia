@@ -7864,3 +7864,17 @@ l'interruttore LIVE/TIMELINE e le cue per nome.** `gaia` `main` =
   (`beam`, `notes`) ed eliminato. Nessun modello esistente toccato.
 - Per l'operatore: ora può correggere dal tablet gli slot della ruota
   delle teste generiche con i valori del manuale.
+
+**2026-10-21 (OPS, 13)**: **Riserva OSC dello stato fixture (nota 32)
+provata dal vivo: funziona.** `gaia` `main` = `75a5b6a`.
+
+- Prova verso le 09:41: pagina Plancia sul bridge OPS con broker
+  irraggiungibile (`192.0.2.1`). La Plancia ha mandato `/dmx/output/osc 1`
+  e il Render è passato a `/dmx/fixture/*`: HUD "DMX feedback · OSC ·
+  11/11 fixture inviate", colori coerenti con la cue in corso (timeline
+  in play a 0:27, `colore_blu`: PAR5 `1 0.73 0 0 0.73`). Anche il clock
+  segue via OSC (`/show/*`, "TD · OSC").
+- Senza MQTT la Plancia non ha catalogo scene né cue, quindi l'HUD ora
+  mostra solo il numero della scena (prima il nome di un look locale).
+- Chiusa la pagina: nessuna nuova richiesta, `dmx_output` MQTT regolare.
+- Con questo, dal lato Plancia, sono chiuse le note 29-40.
