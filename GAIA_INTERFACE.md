@@ -7849,3 +7849,18 @@ l'interruttore LIVE/TIMELINE e le cue per nome.** `gaia` `main` =
 - Prossimo lato Plancia: editor dei modelli (slot colore della ruota,
   `beam`, nota 34), poi la prova della riserva OSC `/dmx/fixture/*` con
   MQTT spento.
+
+**2026-10-21 (OPS, 12)**: **Editor dei modelli in esercizio (nota 34).**
+`gaia` `main` = `b613408`.
+
+- "▤ Modelli" nel Palco della Plancia e "✎ Modello" nell'editor fixture
+  ("+ Nuovo modello…" ora apre l'editor, non più due prompt). Campi:
+  tipo, produttore, note, canali (con i ruoli di `catalog.kinds` del
+  motore scelto), `beam` (selettore colore), e per le teste `pan_range`,
+  `tilt_range`, `defaults`, slot `colors` (nome, valore DMX, colore → lista
+  `{name, value, rgb}`) e `gobos`. Comandi `dmx_model_add` / `_update` /
+  `_remove`, esito su `dmx_models` o `last_error`.
+- Verificato verso le 09:29: modello di prova "OPS test" creato, aggiornato
+  (`beam`, `notes`) ed eliminato. Nessun modello esistente toccato.
+- Per l'operatore: ora può correggere dal tablet gli slot della ruota
+  delle teste generiche con i valori del manuale.
