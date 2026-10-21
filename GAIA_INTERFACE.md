@@ -8040,3 +8040,55 @@ finale di "OPS, 18" è superata.** `gaia` `main` = `7c490b6`.
 - I ruoli che non conosciamo restano col loro nome (`gobo_1_rotation`,
   `prism`, `control`…) ed escono a 0 o ai valori di default, come dite
   nella nota 34. Se il motore heads usa altri nomi, ditecelo e li mappiamo.
+
+**2026-10-21 (TD/Win-PD, 42)**: **Risposta a OPS 18–19: i ruoli che il
+motore delle teste capisce, e quattro regole per tradurre le schede della
+libreria.** TD4DMX `main` = `5004ce0`, nessuna modifica lato DMX.
+
+Template della Sala 1400, import da MagicQ e libreria: ottimo, grazie.
+Finché la patch resta in Plancia per noi non cambia niente.
+
+**Ruoli che il motore heads comanda** (`moving_heads/heads_dmx`, un canale
+per voce di `channels` del modello, in ordine di indirizzo):
+`pan`, `pan_fine`, `tilt`, `tilt_fine` (16 bit se ci sono i `_fine`),
+`dimmer`, `shutter`, `red`, `green`, `blue`, `white`, `cyan`, `magenta`,
+`yellow` (calcolati dal colore richiesto: 255 − R/G/B), `color` (ruota
+colori: valore DMX dello slot), `gobo` (ruota gobo: valore DMX dello
+slot), `zoom`, `focus`, `speed` (velocità pan/tilt: 0 = veloce, come
+quasi tutte le teste). Tutti gli altri nomi escono al valore di
+`defaults` del modello, oppure a 0.
+
+**Regole per la traduzione** (sono le cose che possono andare storte con
+le iSpot vere):
+
+1. **`shutter` = valore di "aperto" in `defaults`.** Da aperto mandiamo
+   `defaults.shutter`, e se manca mandiamo 255. Su molte teste 255 sul
+   canale shutter vuol dire strobo o random, non aperto. Prendete dalla
+   scheda il valore d'inizio dell'intervallo "open" e scrivetelo in
+   `defaults` (es. `shutter=32`). Da chiuso mandiamo 0: se per la scheda
+   0 non è "closed", segnalatelo nel modello (`notes`).
+2. **Un nome per canale.** Se due canali hanno lo stesso nome (es. due
+   ruote gobo tradotte entrambe `gobo`), ricevono lo stesso valore, e
+   anche lo stesso default perché i `defaults` si leggono per nome. La
+   seconda ruota va chiamata in un altro modo (`gobo_2`, `gobo_2_rotation`…):
+   esce al suo default. Lo stesso vale per `color` se ci sono due ruote
+   colori.
+3. **`defaults` per i canali che non comandiamo.** Lo 0 non sempre è
+   neutro: iris (0 può voler dire chiuso), frost, prism, rotazioni,
+   macro. Per ogni canale non comandato scrivete in `defaults` il valore
+   "neutro/aperto/off" della scheda; se manca, lo 0 va bene solo se la
+   scheda dice che 0 è neutro.
+4. **Velocità pan/tilt = `speed`**, qualunque nome abbia nella scheda
+   (`pan_tilt_speed`, `pt_speed`, `movement_speed`…). Se nella scheda la
+   velocità è al contrario (0 = lento), lasciatelo col suo nome e mettete
+   il valore in `defaults`.
+
+**Lampada a scarica (iSpot / iWash 575 EB)**: oggi TD non ha un comando
+"lamp on/off". Il canale `control`/reset esce al suo `defaults` (o a 0).
+Se le Coemar della sala accendono la lampada solo da DMX (e non per
+impostazione all'accensione), non si accenderanno. Prima di usarle alla
+Sala 1400 aggiungiamo in TD un comando lampada, con i valori presi dal
+modello: mandateci, quando l'avete, la scheda iSpot tradotta (DDF #100),
+così vediamo quali valori del canale di controllo accendono e spengono la
+lampada. Mettete in `defaults` il valore di riposo di quel canale (quello
+che non fa niente).
