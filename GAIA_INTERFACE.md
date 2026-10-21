@@ -8288,3 +8288,55 @@ Funziona, ma sporca i parametri di taratura. Richieste:
 l'abbiamo tolto (al suo posto i controlli audio), nella pagina DMX resta
 in sola anteprima locale. Se il chase per rig non è in programma, lo
 togliamo anche da lì.
+
+**2026-10-21 (TD/Win-PD, 44)**: **Audioreattività per singola fixture e
+per gruppo, anche nelle scene.** TD4DMX `main` = `b129e3a` (in esercizio
+su `dmx.toe`). Richiesta dell'operatore: oggi l'audio si regolava solo per
+rig.
+
+**Due campi nuovi della fixture** (solo luci dei rig **chase**: rig_a,
+rig_b, ledbar, side, truss…; haze/blinder/teste → errore):
+- `audio`: `full` (o `""`) = come il rig, tutte le bande + kick, come
+  prima; `off` = non segue l'audio: dimmer fisso al `Maxdimmer` del rig,
+  colore fermo sulla palette alla fase del rig; `bass` / `mid` / `high` =
+  solo quella banda, con la sua normalizzazione sul brano, senza kick;
+  `kick` = ferma al `Mindimmer` del rig, sale solo sui colpi di cassa.
+- `audio_gain`: 0..2 (`""` = 1), moltiplica il movimento audio (livello e
+  kick) di quella luce. 0 = ferma al `Mindimmer`.
+- Il resto (palette del rig o della luce, Mindimmer/Maxdimmer, Kick…) resta
+  del rig. Due fixture sulla stessa unità: decide la prima (come profilo e
+  palette).
+
+**Comandi**
+- **`dmx_fixture_audio`** (w, JSON): `{fixtures?: [id|uid], groups?:
+  [gruppo|alias], audio?, audio_gain?}`. Imposta le luci elencate e/o
+  **tutte** le luci dei gruppi; un campo assente resta com'è. Es.
+  `{"groups": ["rig_b"], "audio": "bass", "audio_gain": 1.5}`, poi
+  `{"fixtures": ["p-6sbj0ql"], "audio": "kick"}`. Prima valida tutto, poi
+  scrive. Errori in `last_error`.
+- Gli stessi campi in `dmx_fixture_add` / `dmx_fixture_update` e nella
+  lista di `dmx_fixtures`. **Attenzione a `dmx_fixtures` (set = sostituisce
+  tutta la patch)**: una fixture mandata senza `audio` / `audio_gain` torna
+  a "come il rig". Se la Plancia rimanda la patch, rimandate anche questi
+  due campi (come fate con `palette`).
+- `dmx_matrix` → `fixtures`: `columns` ha `audio` e `audio_gain`, più
+  `audio_modes` (`["full","off","bass","mid","high","kick"]`) e
+  `audio_gain_range` (`[0, 2]`).
+
+**Scene** (categoria `rigs`, "Look dei rig"): una cattura con `rigs`
+salva anche `audio` e `audio_gain` di **ogni** luce dei rig chase, target
+`fx:<uid>` (o `fx:id:<n>` senza uid). Richiamo e timeline le rimettono:
+nei fade il modo cambia a metà, il guadagno sfuma. Le scene catturate
+prima non hanno queste righe e non toccano le luci; per usarle,
+ricatturatele. `show_scene_catalog` (scene nel `dmx_matrix`) ha
+`per_fixture: true` per le scene che le contengono.
+
+**Proposta per la Plancia**: nell'editor fixture un menu "Audio" (le
+`audio_modes`, "Come il rig" = `full`) e uno slider "Guadagno" 0–2;
+nella selezione multipla e nel gruppo lo stesso, via `dmx_fixture_audio`.
+Sulla pianta si può mostrare un segno per le luci non `full`.
+
+Provato dal vivo, poi tutto rimesso com'era: `off` fisso a 255
+(Maxdimmer), `kick` fermo a 200 (Mindimmer) con i colpi, `bass` gain 2
+che segue solo i bassi, gain 0 fermo al Mindimmer; comando per gruppo e
+per fixture, `dmx_fixture_update`, cattura/richiamo con e senza fade.
