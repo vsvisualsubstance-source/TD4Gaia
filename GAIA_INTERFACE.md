@@ -8169,3 +8169,57 @@ gobo_1_rotation=0 prism=0 control=0`, ruota colori e gobo come in
 "OPS, 21". Nessuna fixture e nessuna patch inviate: le sei teste della
 Sala 1400 restano in Plancia. Potete usarlo per provare il comando
 lampada (canale 22: on 250–255, off 11–29).
+
+**2026-10-21 (TD/Win-PD, 43)**: **Risposta a OPS 20–22: comando lampada
+in esercizio, `dmx_model_update` gestisce le sovrapposizioni, catalogo
+persistente.** TD4DMX `main` = `44b125a` (in esercizio su `dmx.toe`).
+
+- **OPS 22 verificato**: "Coemar iSpot 575 EB 22ch" è in `fixture_models`
+  e in `head_profiles` con i defaults della 21, committato.
+
+**Comando lampada**
+- Nuovo campo del modello (solo `kind` heads): **`lamp`**, testo
+  `"<canale> on=<v> off=<v> hold=<s>"` oppure JSON `{channel, on, off,
+  hold?}`. `channel` deve essere uno dei ruoli del modello; `on`/`off`
+  valori DMX; `hold` secondi 2..30 (default 5). Va in `dmx_model_add` /
+  `dmx_model_update` come gli altri campi; in `dmx_models` esce come
+  `lamp: {channel, on, off, hold}` oppure `null`. Valori sbagliati →
+  `last_error`.
+- **Non leggiamo le `notes`**: per la iSpot mettete nel modello
+  `lamp: "control on=250 off=11 hold=5"` (dalla libreria o dall'editor)
+  e mandatelo con `dmx_model_update` / "Allinea". Oggi la iSpot in TD non
+  ha ancora `lamp`. `hold` 5 s è una stima: da verificare in sala
+  (manuale Coemar).
+- **Comandi**: Gaia `heads_lamp` (w) `"on"` / `"off"` oppure `{lamp:
+  "on"|"off", heads?: [refs]}`; OSC `/mh/lamp 1|0`. Agiscono su **tutte**
+  le teste il cui modello ha `lamp` (non serve la selezione; con `heads`
+  solo quelle). Durante `hold` il canale della lampada vale `on`/`off`,
+  poi torna al suo `defaults` (iSpot: `control=0`, riposo). Le teste
+  senza `lamp` vengono saltate e nominate nel messaggio. Esito in
+  `heads_last_result` / `/mh/result` (es. "lampada on su 6 teste per 5
+  s"). `heads_list` ha il campo `lamp` = ultimo comando dato (`on`, `off`
+  o `null`): non è un sensore, TD non sa se la lampada è accesa davvero.
+- Provato dal vivo con valori innocui su un modello generico (TD, OSC,
+  Gaia, una testa sola, valore non valido rifiutato): il canale torna al
+  default allo scadere di `hold`.
+
+**Risposte a OPS 20**
+1. **Sì, il catalogo resta**: `fixture_models` è salvato su file nel repo
+   (sincronizzato e committato), sopravvive al riavvio di TD e della toe.
+2. Chiusa dalla nota 42.
+3. **Ora gestito.** `dmx_model_update` che cambia il numero di canali di
+   un modello in uso, quando le sue fixture andrebbero a sovrapporsi ad
+   altre, segue il nuovo campo **`on_conflict`**:
+   - `reject` (**default**): rifiutato, in `last_error` l'elenco delle
+     sovrapposizioni ("MH1 17-38 con MH6 28-49, ...");
+   - `auto`: scritto, e le fixture del modello che si sovrappongono si
+     spostano al primo indirizzo libero **in avanti** (stessa porta, poi
+     le altre). Una fila di fixture dello stesso modello mantiene l'ordine
+     (es. 400, 404, 408 da 4 a 6 canali → 400, 406, 412; una fixture di
+     un altro modello in mezzo viene scavalcata, mai spostata);
+   - `accept`: scritto com'è, le sovrapposizioni restano nei conflitti
+     (`dmx_patch_conflicts`, `overlap`).
+   Gli indirizzi nuovi si leggono dalla patch (`dmx_fixtures`). Un
+   cambio di canali che non crea sovrapposizioni passa sempre. Proposta
+   per la Plancia: con `reject` mostrare l'errore e offrire "Sposta
+   (auto)" / "Scrivi lo stesso (accept)".
