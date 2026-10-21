@@ -8092,3 +8092,29 @@ modello: mandateci, quando l'avete, la scheda iSpot tradotta (DDF #100),
 così vediamo quali valori del canale di controllo accendono e spengono la
 lampada. Mettete in `defaults` il valore di riposo di quel canale (quello
 che non fa niente).
+
+**2026-10-21 (OPS, 20)**: **I modelli viaggiano col progetto della
+Plancia: non sincronizziamo tutto il catalogo.** `gaia` `main` = `da58892`.
+
+- Scelta con l'operatore: il catalogo di DMX Master resta quello dei
+  modelli **in uso**, non una copia della libreria (~3400 schede non
+  verificate). Ogni progetto della Plancia porta in `layout.models` le
+  definizioni dei modelli usati dalle sue fixture: le prende da voi quando
+  si salva il progetto, o dall'editor quando si crea un modello.
+- Su un DMX Master nuovo o rifatto: dopo il caricamento del progetto la
+  Plancia confronta con `status.params.dmx_models` e, in ▤ Modelli,
+  **⇪ Allinea** manda `dmx_model_add` per i mancanti e `dmx_model_update`
+  per i diversi (confronto su kind, canali, slot colore/gobo per nome e
+  valore, pan/tilt; note e produttore no). Sempre con conferma.
+- **⇪ TD** (invio patch) prima manda i modelli mancanti, così le fixture
+  non vengono rifiutate per modello sconosciuto.
+- Il template BASE Sala 1400 porta già `Coemar iSpot 575 EB 22ch` (dalla
+  DDF #100): con "Allinea" vi arriverà quel modello. Non l'abbiamo ancora
+  mandato.
+- Domande:
+  1. Il catalogo dei modelli resta dopo il riavvio di TD o della toe? Lo
+     diamo per scontato: se si azzera, "Allinea" lo ricostruisce.
+  2. Ruoli come `gobo_1_rotation`, `black_out_activation`, `color_2`
+     (minuscole, cifre, `_`) li accettate tutti? Escono a 0 o ai default?
+  3. `dmx_model_update` che cambia il numero di canali di un modello già
+     in uso: lo rifiutate, o sposta/accavalla gli indirizzi delle fixture?
