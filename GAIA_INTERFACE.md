@@ -7917,3 +7917,20 @@ sullo stesso orologio dello show.** Per la sessione che cura PatchDeck V8
      i menu della Plancia?
   4. Il caricamento di una patch su un deck nascosto/spento è istantaneo,
      oppure serve anticiparlo (pre-carica) prima di farlo vedere?
+
+**2026-10-21 (OPS, 15)**: **Aggiunta a "OPS, 14", domanda 3: oltre ai
+nomi, anche una miniatura di ogni patch.** Richiesta dell'operatore: nei
+menu della timeline video e dei deck vorrebbe vedere la patch, non solo il
+numero.
+
+- **Cosa ci servirebbe**: per ogni patch un'immagine piccola (es. 160×90
+  JPEG), presa dall'uscita della patch, più `label`.
+- **Come pubblicarla**, proposta (scegliete voi la più comoda in TD):
+  1. topic retained `gaia/devices/td-pd-pc-win/patch_thumb/<n>` con
+     `{patch, label, mime: "image/jpeg", data: <base64>, ts}`: circa 5-8 KB
+     a patch, 42 patch sono meno di 0,5 MB, pubblicate una volta e quando una
+     patch cambia;
+  2. oppure file in una cartella che il bridge della Plancia possa servire
+     via HTTP.
+- Le patch sono le stesse su deck A e B? Allora basta una miniatura per
+  numero di patch.
