@@ -8118,3 +8118,45 @@ Plancia: non sincronizziamo tutto il catalogo.** `gaia` `main` = `da58892`.
      (minuscole, cifre, `_`) li accettate tutti? Escono a 0 o ai default?
   3. `dmx_model_update` che cambia il numero di canali di un modello già
      in uso: lo rifiutate, o sposta/accavalla gli indirizzi delle fixture?
+
+**2026-10-21 (OPS, 21)**: **Risposta alla nota 42: le quattro regole sono
+nel convertitore della libreria, ed ecco la scheda iSpot tradotta.**
+`gaia` `main` = `bcf8c00`. La domanda 2 di "OPS, 20" è chiusa dalla 42.
+
+- **Regole applicate** a ogni modello preparato dalla libreria (OFL e
+  DDF), poi l'operatore lo controlla nell'editor:
+  1. `defaults.shutter` = inizio dell'intervallo "open" della scheda (OFL
+     `shutterEffect: Open`, DDF 3 `step type="open"`, DDF 2 l'intervallo
+     "open" più ampio letto dagli script del pannello).
+  2. Un nome per canale: seconda ruota → `color_2`, `gobo_2`.
+  3. `defaults` per i canali non comandati: OFL `defaultValue` o inizio di
+     `NoFunction`; DDF 2 `initsequence` e le voci "off / open / park / no
+     function / stop…" dei menu. Se la scheda non dice niente, nessun
+     default (esce 0): lo segnala l'editor.
+  4. Velocità: `speed` solo se 0 = veloce; se la scheda la dà al contrario
+     resta col suo nome.
+- **Coemar iSpot 575 EB 22ch** (DDF #100, è il modello nel template BASE,
+  non ancora mandato). Canali in ordine:
+  `pan pan_fine tilt tilt_fine speed dimmer shutter iris zoom focus gobo
+  gobo_1_index gobo_1_rotation gobo_2 gobo_2_index gobo_2_rotation prism
+  color color_2 gobo_color_positioning black_out_activation control`.
+  - `defaults`: `shutter=245 iris=0 gobo_1_rotation=0 prism=0 control=0`.
+    Shutter: chiuso 0–9, strobo 10–66, **aperto 245–255** (anche 67–68,
+    126–127, 185–187). Iris 0–129 = aperto. Prisma 0–10 = off.
+  - `speed` (canale 5): 0–10 "fast (standard)", 11–25 ultra fast, 26–127
+    vector, 128–248 tracking. Lo 0 va bene.
+  - **Lampada, canale 22 `control`**: 0–10 riposo ("park, no function", il
+    valore in `defaults`), **11–29 lamp off**, 30–65 reset pan/tilt,
+    66–100 reset motori tranne dimmer/pan/tilt, 101–135 reset tranne
+    dimmer, 136–170 reset completo, 171–209 disattiva iris automatico,
+    210–249 ventole al massimo, **250–255 lamp on** (ventole spente, se la
+    temperatura lo consente). Dalla scheda non risulta per quanto tempo va
+    tenuto il valore: le Coemar di solito vogliono qualche secondo, da
+    verificare sul manuale o in sala.
+  - Ruota colori (canale 18): white 0, orange 8, red 28, green 48,
+    dark_blue 68, yellow 88, dark_green 108. Gobo (canale 11): no_gobo 0,
+    poi 11, 41, 71, 101, 131, 161.
+- I valori della lampada li scriviamo anche nelle `notes` del modello
+  ("lampada: canale 22 (control) on 250–255, off 11–29"), così il vostro
+  comando lampada può leggerli da lì, se vi va bene. Altrimenti diteci in
+  quale campo li volete.
