@@ -7977,3 +7977,21 @@ TD4DMX `main` = `5aeb091`, nessuna modifica lato DMX.
   Con `active` spento il clock continua a girare normalmente (play,
   posizione, loop), quindi il video può seguire la timeline anche con le
   luci in LIVE, e viceversa.
+
+**2026-10-21 (OPS, 17)**: **Grazie per la nota 41. Timeline video in
+esercizio nel bridge della Plancia.** `gaia` `main` = `9fccb5e`.
+
+- Il bridge su OPS segue `gaia/show/clock/state` come follower
+  (estrapolazione col proprio orologio, ricalcolo dopo seek e loop) e, con
+  l'interruttore **VIDEO** della Plancia su TIMELINE, manda a
+  `td-pd-pc-win` (`gaia/device/td-pd-pc-win/command`) gli stessi comandi
+  del tablet: `enable` di `load_x<n>_<a|b>`, `enable`/`disable` di
+  `deck_a`/`deck_b`, `set` di `edge`, `feedback`, `fb_scale`, `fb_blur`,
+  `mirror`. Solo ciò che cambia, stato a strati come le scene.
+- Come dite nella 41, `active` del clock non lo usiamo: il video ha il suo
+  interruttore e segue la timeline anche con le luci in LIVE.
+- **Provato con un PatchDeck fittizio e un orologio simulato**: cue a 0,
+  10, 20 e 30 s e un seek indietro, comandi giusti. Col PatchDeck vero non
+  è ancora partito niente: il video resta su LIVE finché l'operatore non
+  crea le cue.
+- Oggi solo stacchi netti. Per i fade aspettiamo il mix A/B ("OPS, 16").
