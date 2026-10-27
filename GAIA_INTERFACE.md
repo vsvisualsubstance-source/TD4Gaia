@@ -8516,3 +8516,51 @@ sono chiuse.** `gaia` `main` = `a45189a`. La 46 si era incrociata con la 28.
   `deck_mix` a peso 0), il bridge manda `load_x<n>_<a|b>` **2 s prima**
   (`VIDEO_PRELOAD_S`); sul deck visibile carica al tempo esatto. Provata
   dall'operatore con le dissolvenze: per noi PatchDeck è a posto così.
+
+**2026-10-27 (OPS, 30)**: **Lo status di DMX Master è pesante: proposta
+per alleggerirlo. Più una nota su PD_DMX.** `gaia` `main` = `f752e23`.
+
+**Misure** (broker su OPS, 70 s): `dmx_output` 9 al secondo, intervalli
+116 ms ±2, massimo 122 ms, nessun buco; `gaia/show/clock/state` 1/s
+regolare. Il trasporto MQTT è solido. Lo **status di `td-dmx-win` pesa
+33,4 KB** ogni 30 s (più a ogni comando), quasi tutto struttura che cambia
+di rado:
+
+| blocco in `status.params` | KB |
+|---|---|
+| `dmx_models` | 6,6 |
+| `dmx_fixtures` + `dmx_universe_map` + `dmx_patch_report` | 5,2 |
+| `heads_positions` + `heads_list` | 3,5 |
+| `show_scene_catalog` + `show_scenes` | 2,4 |
+| `dmx_types` + `dmx_groups` | 1,8 |
+| gli altri 261 params (livelli, palette, audio, show…) | 1,5 |
+
+Ogni tablet lo riceve e lo rianalizza tutto, anche in show sul Wi-Fi.
+
+**Proposta** (decidete voi i nomi, a noi basta saperli):
+1. **Status = heartbeat leggero**: `online`, `ts`, `services`, i params
+   "vivi" piccoli (livelli, palette, `audio_amount`, `show_active`,
+   `show_active_scene`, esiti `*_result`, `last_error`). Obiettivo ~3–4 KB.
+2. **Struttura su topic retained, pubblicati solo quando cambiano**, ognuno
+   con un `rev` (o hash) che cambia a ogni modifica:
+   - modelli, tipi e gruppi: già in `dmx_matrix.catalog`? Allora basta
+     toglierli dallo status;
+   - patch (`dmx_fixtures`, `dmx_universe_map`, `dmx_patch_report`): es.
+     `gaia/devices/td-dmx-win/dmx_patch`;
+   - scene (`show_scene_catalog`, `show_scenes`): es. `.../show_scenes`.
+3. **Teste**: `heads_positions` e `heads_list` cambiano spesso ma non ogni
+   30 s: un topic `.../heads_state` a ogni cambio (massimo 10/s), oppure
+   dentro `dmx_output` per le teste.
+4. **Transizione**: per un periodo pubblicate sia il vecchio status pieno
+   sia i topic nuovi, con un campo nello status (es. `status_slim: true`
+   o l'elenco dei topic). La Plancia legge dai topic nuovi se ci sono e
+   torna allo status se mancano; quando ci dite che è pronta, togliete i
+   blocchi dallo status.
+
+**PD_DMX (`td-pddmx-win`)**: anche lui si presentava come `family: dmx`.
+La Plancia sceglieva il device DMX "più recente" e saltava da DMX Master a
+PD_DMX (34 campioni su 40 mostravano PD_DMX): era l'instabilità che
+vedeva l'operatore. Corretto in Plancia: ora sceglie il DMX online più
+completo, cioè DMX Master. L'operatore ha spento PD_DMX. Se lo riaccendete
+per un uso preciso, ditecelo, così aggiungiamo la scelta esplicita del
+device.
