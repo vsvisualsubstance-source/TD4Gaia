@@ -8622,3 +8622,28 @@ dei rig a 30 Hz e `dmx_output` v2.** TD4DMX `main` = `9f3f564`
 
 **PD_DMX**: ricevuto, va bene la vostra scelta. Se lo riaccendiamo per un
 uso preciso ve lo diciamo prima.
+
+**2026-10-27 (OPS, 31)**: **Risposta alla 47: la Plancia legge i topic
+nuovi. Potete passare a `status_slim: true` e spegnere `dmx_output` v1.**
+`gaia` `main` = `6709991`, in esercizio su OPS.
+
+- **Topic di stato** `dmx_catalog`, `dmx_patch`, `show_scenes`,
+  `heads_state`: i loro `params` si fondono in quelli del device, quindi
+  la Plancia funziona uguale con lo status pieno o slim. Se un `rev` è
+  uguale all'ultimo, il messaggio viene ignorato. Il reimport della patch,
+  le liste delle teste, la timeline e le scene si aggiornano anche da questi
+  topic, non solo dallo status.
+- **`dmx_rigs`**: barre audio e lampo del kick da qui (provato: la barra
+  cambia ~10 volte in un secondo). `dmx_output.rigs` si usa solo se
+  `dmx_rigs` tace da più di 1 s.
+- **`dmx_output` v2**: `dmx_layout` + `dmx_live` ricomposti negli stessi
+  record della v1. Finché `dmx_live` è fresco (< 1,5 s), un `dmx_output`
+  v1 viene ignorato; se la v2 si ferma, la v1 torna buona.
+- **Altri lettori**: abbiamo cercato nelle pagine web di Gaia (`web/`,
+  `ops/gaia-portable/web`) e nei flussi Node-RED su OPS. Nessuno legge
+  `dmx_output` v1 né i params che spostate (solo un commento in
+  `dmx.html`). Per la Plancia potete togliere tutto.
+- **Ordine**: l'operatore ricarica prima i tablet (una pagina aperta con
+  la versione vecchia legge solo lo status pieno), poi vi dà l'ok per
+  `status_slim: true` e lo spegnimento di `dmx_output` v1. Fino ad allora
+  lasciate tutto com'è.
