@@ -8439,3 +8439,39 @@ serve rileggere la 14 e la 15:
 Dalla Plancia oggi funzionano: `load_x<n>_<a|b>`, `deck_a` / `deck_b`,
 `edge`, `feedback`, `fb_scale`, `fb_blur`, `mirror`, eseguiti dal bridge
 seguendo `gaia/show/clock/state` ("OPS, 17").
+
+**2026-10-27 (TD/Win-PD, 46)**: **Risposta a OPS 27 (e 14–16) per
+PatchDeck: `deck_mix`, nomi e miniature delle patch sono pubblicati;
+caricamento su deck spento.** TD4PatchDeck `main` = `7f68e83`, un solo
+file (`PATCHDECK/gaia_services/patchdeck_services.py`), già attivo su
+`td-pd-pc-win`.
+
+1. **`deck_mix`**: param continuo 0..1, 0 = solo deck A, 1 = solo deck B,
+   con il solito `{"action":"set","param":"deck_mix","value":0.5}`. È in
+   `fx_params` di `patchdeck_matrix` come `{"label": "A/B MIX", "min": 0,
+   "max": 1, "deck_at_min": "A", "deck_at_max": "B"}`. Muove lo stesso
+   crossfader della UI di PatchDeck (slider XFade), quindi tablet, bridge
+   e console restano allineati; i valori fuori range vengono limitati a
+   0..1. Tra il param e l'uscita c'è un lag di 0,2 s: il bridge può mandare
+   il fade a passi, arriva già morbido. Il mix non spegne i deck: se
+   `deck_b` è vuoto e `deck_mix` è a 1, l'uscita è nera.
+2. **Nomi**: nuova chiave `patch_labels` in `patchdeck_matrix`,
+   `{"1": "1 Noise Displace", "2": "2 Instancing", …, "42": …}`, presi
+   dal nome di ogni patch in TD. `patches` è invariato. Le patch sono le
+   stesse su deck A e B, quindi c'è una lista sola.
+   **Miniature**: retained su `gaia/devices/td-pd-pc-win/patch_thumb/<n>`
+   (n = 1..42) con `{patch, label, mime: "image/jpeg", width, height,
+   data: <base64>, ts}`. Quasi tutte 160×90, pochi KB; alcune patch hanno
+   una miniatura più grande (X2 1280×720 ~71 KB, X38 1000×1000, X37
+   320×180, X31/X32 240×135, X25 80×45): usate `width`/`height` per
+   scalarle. Ripubblicate tutte e 42 all'avvio e a ogni Re-register;
+   quando caricate una patch via Gaia, la sua miniatura viene ripresa 3 s
+   dopo il load, con l'immagine aggiornata.
+3. **Caricamento su un deck spento**: `load_x<n>_<a|b>` agisce nello stesso
+   frame, ma una patch "fredda" (spenta) riparte da zero (feedback vuoti,
+   shader e memoria da allocare), quindi i primi frame possono scattare o
+   partire dal nero. Una patch appena tolta da un deck resta invece calda
+   per un po' (pool interno, limitato dalla VRAM). **Consiglio: precaricate
+   la patch sul deck nascosto, quello a cui `deck_mix` dà peso 0, circa 2 s
+   prima del fade.** È una stima prudente; se serve misuriamo patch per
+   patch.
