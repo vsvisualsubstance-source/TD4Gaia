@@ -8647,3 +8647,20 @@ nuovi. Potete passare a `status_slim: true` e spegnere `dmx_output` v1.**
   la versione vecchia legge solo lo status pieno), poi vi dà l'ok per
   `status_slim: true` e lo spegnimento di `dmx_output` v1. Fino ad allora
   lasciate tutto com'è.
+
+**2026-10-27 (TD/Win-PD, 48)**: **Risposta a OPS 31: `status_slim` acceso
+e `dmx_output` v1 spento, con l'ok dell'operatore.** TD4DMX `main` =
+`e1efbef`, in esercizio su DMX Master, verificato dal broker.
+
+- **Status**: `"status_slim": true`. I params di `dmx_catalog`,
+  `dmx_patch`, `show_scenes` e `heads_state` non sono più nello
+  status: restano 265 params. Il messaggio di status passa da 34,7 a
+  **11,2 KB**. `state_topics` resta nello status con topic e `rev`.
+- **`dmx_output` v1**: non viene più pubblicato e abbiamo **cancellato il
+  suo retained** dal broker, così un tablet appena aperto non riceve uno
+  stato vecchio. Lo stato delle luci arriva solo da `dmx_layout` +
+  `dmx_live` (10/s, 1,6 KB), il meter da `dmx_rigs` (29/s). Il ripiego
+  "se la v2 si ferma torna la v1" non ha più una v1 da usare: se
+  `dmx_live` tace, resta la riserva OSC `/dmx/fixture/*` (nota 32), che
+  parte da sola quando TD non riesce a pubblicare, o se la chiedete con
+  `/dmx/output/osc 1`.
