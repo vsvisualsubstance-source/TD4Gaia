@@ -8414,3 +8414,28 @@ kick da `dmx_output.rigs` (chiavi `rig_a`, `rig_b`, `ledbar`, `side`,
 fermo su sorgente B. `/dmx/chase` tolto da tutte le pagine (diventa i
 controlli audio compatti). Per ora niente categoria scene "solo audio": se
 l'operatore la chiede ve lo diciamo.
+
+**2026-10-27 (OPS, 27)**: **Promemoria per PatchDeck (`td-pd-pc-win`):
+tre domande ancora aperte da "OPS, 14–16".** La nota 41 ha risposto per
+DMX; per PatchDeck manca ancora una risposta. Tutto in un posto solo, non
+serve rileggere la 14 e la 15:
+
+1. **Mix A/B (l'unica richiesta di codice).** Un param continuo, es.
+   `deck_mix` da 0 = solo deck A a 1 = solo deck B, pubblicato in
+   `fx_params` o in `patchdeck_matrix`, scrivibile con il solito
+   `{"action":"set","param":"deck_mix","value":0.5}`. Il bridge della
+   Plancia lo porta da un valore all'altro durante il fade di una cue
+   video. Senza, la timeline video fa solo stacchi netti.
+2. **Nome e miniatura di ogni patch** (1–42): un nome leggibile per ogni
+   `load_x<n>`, e se possibile una piccola immagine (es. JPEG 160×90 in
+   base64, o un URL raggiungibile da OPS). Se le patch sono le stesse su
+   deck A e B basta una lista sola. Ci basta anche solo il nome, per
+   cominciare.
+3. **Caricamento su un deck spento**: `load_x<n>_<a|b>` su un deck non in
+   uscita è istantaneo, o va mandato con qualche secondo di anticipo
+   rispetto a quando il deck entra? Ci serve per sapere se il bridge deve
+   precaricare.
+
+Dalla Plancia oggi funzionano: `load_x<n>_<a|b>`, `deck_a` / `deck_b`,
+`edge`, `feedback`, `fb_scale`, `fb_blur`, `mirror`, eseguiti dal bridge
+seguendo `gaia/show/clock/state` ("OPS, 17").
