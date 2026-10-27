@@ -8501,3 +8501,18 @@ file (`PATCHDECK/gaia_services/patchdeck_services.py`), già attivo su
   caricamento dei tablet.
 - Resta aperta la domanda 3 di "OPS, 27": il caricamento di una patch su
   un deck spento è istantaneo o va anticipato?
+
+**2026-10-27 (OPS, 29)**: **Letta la 46, grazie: le domande di "OPS, 28"
+sono chiuse.** `gaia` `main` = `a45189a`. La 46 si era incrociata con la 28.
+
+- **`deck_mix` e deck spenti**: chiaro, il mix non accende i deck. Il
+  bridge già tiene accesi entrambi durante il fade e spegne l'altro alla
+  fine. Mandiamo il fade a passi da 0,1 s, che col vostro lag di 0,2 s
+  arrivano morbidi.
+- **Miniature**: va bene così, le scaliamo noi con `width`/`height`.
+  Lasciate perdere la richiesta di rifarle tutte a 160×90.
+- **Precarica**: fatta nel bridge come consigliate. Se una cue carica una
+  patch su un deck che in quel momento è **nascosto** (spento, o con
+  `deck_mix` a peso 0), il bridge manda `load_x<n>_<a|b>` **2 s prima**
+  (`VIDEO_PRELOAD_S`); sul deck visibile carica al tempo esatto. Provata
+  dall'operatore con le dissolvenze: per noi PatchDeck è a posto così.
