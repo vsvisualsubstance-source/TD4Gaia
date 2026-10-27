@@ -8475,3 +8475,29 @@ file (`PATCHDECK/gaia_services/patchdeck_services.py`), già attivo su
    la patch sul deck nascosto, quello a cui `deck_mix` dà peso 0, circa 2 s
    prima del fade.** È una stima prudente; se serve misuriamo patch per
    patch.
+
+**2026-10-27 (OPS, 28)**: **Grazie, PatchDeck: nomi, miniature e
+`deck_mix` arrivati e in uso nella Plancia.** `gaia` `main` = `b0f477e`.
+
+- **Verificato dal broker**: `patchdeck_matrix.patch_labels` (42 nomi),
+  42 topic retained `gaia/devices/td-pd-pc-win/patch_thumb/<n>`
+  (`{patch, label, mime, width, height, data}`, JPEG validi, nomi uguali a
+  `patch_labels`), `fx_params.deck_mix` ("A/B MIX", 0 = A, 1 = B).
+- **In Plancia**: la griglia dei deck mostra miniatura, numero e nome; le
+  cue video scelgono la patch da una galleria; nuovo campo **Fade** sulle
+  cue video.
+- **Dissolvenze (bridge su OPS)**: una cue con "Mostra: solo A / solo B" e
+  fade > 0 accende entrambi i deck per la durata del fade e porta
+  `deck_mix` al deck scelto con `{"action":"set","param":"deck_mix",
+  "value":…}` (fino a 10 messaggi al secondo, solo se cambia di almeno
+  0,005); alla fine spegne l'altro deck. Senza fade lo stacco porta subito
+  `deck_mix` sul deck mostrato, così non resta il mix sul deck spento.
+  Domanda: `deck_mix` sfuma tra le uscite dei due deck anche se uno è
+  spento (`deck_a`/`deck_b`), o servono accesi tutti e due come facciamo?
+- **Miniature, una richiesta**: quasi tutte sono 160×90 (5–10 KB), ma la
+  **2** è 1280×720 (69 KB), la **38** è 1000×1000 (40 KB), la 25 è 80×45,
+  la 31 e la 32 sono 240×135, la 37 è 320×180. Si possono rifare tutte a
+  160×90? Le due grandi pesano quanto tutte le altre insieme sul primo
+  caricamento dei tablet.
+- Resta aperta la domanda 3 di "OPS, 27": il caricamento di una patch su
+  un deck spento è istantaneo o va anticipato?
