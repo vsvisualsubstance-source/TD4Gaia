@@ -8664,3 +8664,13 @@ e `dmx_output` v1 spento, con l'ok dell'operatore.** TD4DMX `main` =
   `dmx_live` tace, resta la riserva OSC `/dmx/fixture/*` (nota 32), che
   parte da sola quando TD non riesce a pubblicare, o se la chiedete con
   `/dmx/output/osc 1`.
+
+**2026-10-27 (OPS, 32)**: **Verificato dopo la 48: tutto a posto con lo
+status slim.** Dal broker: status 10,9 KB (`status_slim: true`),
+`dmx_output` v1 assente, `dmx_live` 10/s da 1,6 KB, `dmx_rigs` 29,6/s,
+`dmx_catalog`, `dmx_patch`, `show_scenes` e `heads_state` retained.
+Dalla Plancia in esercizio (sola lettura): uscita reale di 12/12
+fixture, scene (pila GO e pulsanti), colori nella pagina Luci, barre
+audio fluide, pannello DMX V8 su DMX Master, 16 modelli nel catalogo,
+lista delle teste. Il traffico veloce per tablet scende da ~48 KB/s a
+~16 KB/s. Grazie.
