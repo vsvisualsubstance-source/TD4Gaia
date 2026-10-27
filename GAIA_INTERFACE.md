@@ -8564,3 +8564,61 @@ vedeva l'operatore. Corretto in Plancia: ora sceglie il DMX online più
 completo, cioè DMX Master. L'operatore ha spento PD_DMX. Se lo riaccendete
 per un uso preciso, ditecelo, così aggiungiamo la scelta esplicita del
 device.
+
+**2026-10-27 (TD/Win-PD, 47)**: **Risposta a OPS 30: struttura su topic
+retained con `rev`, status ancora pieno per la transizione. In più meter
+dei rig a 30 Hz e `dmx_output` v2.** TD4DMX `main` = `9f3f564`
+(`gaia_client` 1.4.0), in esercizio su DMX Master, verificato dal broker.
+
+1. **Struttura su topic retained** (OPS 30, punti 2 e 3). Ognuno è
+   `{"v": 1, "device_id", "rev", "ts", "params": {<nome>: <valore>}}`, con
+   gli stessi valori che oggi sono in `status.params`. Viene pubblicato
+   solo quando cambia (`rev` = hash del contenuto), più a ogni
+   (ri)connessione di TD:
+
+   | topic `gaia/devices/td-dmx-win/…` | params | controllo | KB |
+   |---|---|---|---|
+   | `dmx_catalog` | `dmx_models`, `dmx_types`, `dmx_groups` | 2 s | 10,2 |
+   | `dmx_patch` | `dmx_fixtures`, `dmx_universe_map`, `dmx_patch_report` | 1 s | 6,2 |
+   | `show_scenes` | `show_scene_catalog`, `show_scenes` | 1 s | 3,2 |
+   | `heads_state` | `heads_list`, `heads_positions` | 0,1 s (max 10/s) | 4,3 |
+
+   `dmx_matrix.catalog` resta com'è; per i modelli fa fede `dmx_catalog`.
+2. **Transizione** (punto 4): lo status per ora è **ancora pieno**. Ha due
+   campi nuovi: `"status_slim": false` e `"state_topics": {<nome>:
+   {"topic", "rev", "params": [...]}}`. Se `state_topics` c'è, leggete da
+   lì; se manca (TD vecchio o un altro device), tornate allo status.
+   Quando ci dite che la Plancia è pronta, mettiamo `status_slim: true` e
+   quei params spariscono dallo status. Misurato: i params passano da
+   32,4 KB a **8,9 KB**. Non arriviamo ai vostri 3–4 KB perché i restanti
+   ~270 params "vivi" pesano davvero ~1 KB per rig (5 rig chase) più
+   audio e show.
+3. **Meter dei rig: topic nuovo `gaia/devices/td-dmx-win/dmx_rigs`**, **non**
+   retained, `{"v": 1, "device_id", "seq", "ts", "rate_hz": 30, "rigs":
+   {...}}`. Ha lo stesso contenuto di `dmx_output.rigs` (nota 45), ma va
+   al cambio fino a **30/s** (misurati 29/s, 430 byte), invece dei 10/s
+   di `dmx_output`. La barra di livello e il lampo del kick vengono più
+   fluidi e in ritardo al massimo di 33 ms. `rigs` resta anche in
+   `dmx_output` finché non passate.
+4. **`dmx_output` v2, facoltativo**: gli stessi dati divisi in due topic
+   retained, così il messaggio veloce porta solo i valori:
+   - `gaia/devices/td-dmx-win/dmx_layout`: `{"v": 2, "device_id", "rev",
+     "ts", "fixtures": [{uid, id, name, group, comp, profile, universe,
+     address, status, sent, color_source, audio, audio_gain}]}`. Viene
+     pubblicato al cambio e ogni 30 s.
+   - `gaia/devices/td-dmx-win/dmx_live`: `{"v": 2, "device_id", "seq",
+     "ts", "rate_hz", "layout_rev", "master", "blackout", "strobe",
+     "scene", "fixtures": {<uid>: {dimmer, rgb, white, amber, uv,
+     intensity, rgb_out, e per le teste color_wheel, gobo, shutter, pan,
+     tilt, zoom, focus}}}`. I campi `null` sono **omessi** (assente =
+     `null` della v1). Va a 10/s come `dmx_output`, ma pesa **1,6 KB**
+     invece di 5,3. Se `layout_rev` è diverso dall'ultima `rev` di
+     `dmx_layout`, sta arrivando un layout nuovo. Il meter dei rig è
+     solo su `dmx_rigs`.
+   - `dmx_output` v1 resta acceso. Quando la Plancia legge v2, ditecelo e
+     lo spegniamo.
+5. **Lato TD** (per voi non cambia niente): `dmx_output` non ricalcola più
+   lo snapshot a ogni frame quando le luci sono ferme.
+
+**PD_DMX**: ricevuto, va bene la vostra scelta. Se lo riaccendiamo per un
+uso preciso ve lo diciamo prima.
