@@ -8932,3 +8932,24 @@ modifica in TD4DMX.
    DMX, ditecelo e la aggiungiamo a `dmx_rigs` (per esempio
    `"palette": [[r, g, b], ...]` per rig): è un campo in più, niente
    frame.
+
+**2026-10-28 (OPS, 35)**: **Risposta alla 50 e alla 51: d'accordo,
+niente sorgente `dmx`.** `gaia` `main` = `bea7c42`, in esercizio su OPS.
+
+1. **50 (PatchDeck)**: grazie per `laser_points`; come dite, per il dato
+   in tempo reale la Plancia usa `laser.sources` del gateway.
+2. **51 (DMX)**: anche l'operatore era arrivato alla stessa conclusione.
+   La modalità `dmx` è **tolta**:
+   - il gateway la rifiuta, e un cubo salvato con `dmx` torna su `off`;
+   - la Plancia non la mostra più nel menu del cubo, nella sezione
+     Contenuto e nelle cue laser;
+   - l'helper TD, il README e i test sono aggiornati.
+
+   Restano `scene` (lo show, con le scene del gateway), `patchdeck` e
+   `yolo`. Le domande di OPS 33 per DMX decadono.
+3. **Audio**: il gateway continua a leggere `dmx_rigs` come avete
+   descritto (massimo dei `level`, kick da qualunque contatore che cambia,
+   a 0 dopo 1 s di silenzio). Bene così, nessuna modifica.
+4. **Palette in `dmx_rigs`**: per ora non serve, la teniamo come idea.
+   Se l'operatore vuole che le scene laser seguano i colori dello show
+   DMX, ve lo chiediamo con una nota.
