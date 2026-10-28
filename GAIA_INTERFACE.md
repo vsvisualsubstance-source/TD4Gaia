@@ -8674,3 +8674,91 @@ fixture, scene (pila GO e pulsanti), colori nella pagina Luci, barre
 audio fluide, pannello DMX V8 su DMX Master, 16 modelli nel catalogo,
 lista delle teste. Il traffico veloce per tablet scende da ~48 KB/s a
 ~16 KB/s. Grazie.
+
+**2026-10-28 (OPS, 33)**: **Laser: tre LaserCube WiFi pilotati da un
+gateway su OPS. Chiediamo a TD tre sorgenti di frame: DMX, PatchDeck e
+Yolo.** `gaia` `main` = `507c534`, in esercizio su OPS (il servizio
+`laser` dell'agent va acceso dall'operatore).
+
+**Perché un gateway.** I cubi sono LaserCube **WiFi**, collegati via cavo
+LAN in modalità LAN Client. Non hanno le modalità Ether Dream e Art-Net
+dei modelli Ultra MK2 e Pro, e il Laser Device CHOP di TD parla solo con
+EtherDream, Helios e ShowNET. Resta il protocollo UDP LaserOS ufficiale
+(Wicked Lasers, spec v1.1, firmware 2.2), che vuole un flusso costante di
+~30.000 punti al secondo con controllo di flusso: TD a 60 fps non lo
+regge. Inoltre in questa modalità il cubo **non applica la sua Safety
+Zone**, e accetta un solo mittente alla volta. Per questo c'è un solo
+mittente, `ops/laser/laser_gateway.py` (device `laser-ops`, family
+`laser`), che fa anche tutta la sicurezza:
+- zona per cubo: il fascio non esce mai dal rettangolo impostato;
+- tetto di intensità e master;
+- raggio quasi fermo attenuato;
+- blanking e interpolazione dei salti;
+- buio se la sorgente tace per più di 0,5 s;
+- disarmo su blackout o se cade il broker;
+- un processo guardiano che spegne i cubi se il gateway muore.
+
+Si parte sempre disarmati e si arma dalla Plancia, pagina Laser, con
+conferma.
+
+**Cosa chiediamo a TD.** Mandare **solo il disegno**: arming e sicurezza
+restano nel gateway. Ogni cubo (`c1`, `c2`, `c3`) ha una modalità scelta
+dalla Plancia, e prende i frame della sorgente con lo stesso nome.
+
+1. **`dmx` — TD DMX (TD4DMX, `td-dmx-win`)**: è lo "show" guidato dalla
+   Plancia, cioè timeline, palette ed effetti, con l'audio dal controller
+   tramite l'`audio_engine` che avete già. Un generatore di forme in SOP
+   con palette e reattività audio come i rig.
+   - **Parametri**: esponetene i controlli con `register_param` e prefisso
+     **`laser_`**, per cubo se serve (es. `laser_c1_preset` enum,
+     `laser_c1_palette`, `laser_c1_size`, `laser_c1_speed`,
+     `laser_c1_audio_amount`). La Plancia mostra da sola ogni `laser_*`
+     nella sezione Contenuto della scheda del cubo; range e opzioni li
+     prende dalla matrice, se ci sono.
+   - **Domanda**: per richiamarli dalla timeline, i `laser_*` possono
+     entrare nelle scene catturate, come il "Look dei rig"?
+2. **`patchdeck` — TD PatchDeck (TD4PatchDeck, `td-pd-pc-win`)**: i
+   contorni dell'uscita video.
+   - Catena: TOP d'uscita rimpicciolito → soglia o bordi → Trace SOP →
+     semplificazione sotto ~800 punti.
+   - Colore dal video o dalla palette. Audio dal controller (per esempio
+     soglia o dimensione modulate).
+   - Parametri con prefisso `laser_` sul device PatchDeck.
+3. **`yolo` — TD Yolo (su OPS, gateway `127.0.0.1`)**: **solo grafica
+   proiettata su una superficie** (fondale o schermo, sopra il pubblico e
+   i performer), guidata dalle posizioni rilevate.
+   - **Mai il fascio sulle persone**: le coordinate Yolo diventano
+     posizioni sulla superficie, non direzioni verso le persone.
+   - La zona del cubo, impostata in Plancia, va regolata sulla superficie.
+
+**Formato dei frame (GLF1)**, definito in `ops/laser/laser_proto.py`:
+- **Trasporto**: UDP verso **`192.168.1.240:7480`**, cioè OPS e anche la
+  touring, che ha lo stesso IP.
+- **Contenuto**: un frame è una polilinea di punti, con `x`, `y` in -1..1
+  (y verso l'alto, come TD) e `r`, `g`, `b` 0..255. Un punto nero è uno
+  spostamento a raggio spento.
+- **Ritmo**: ~30 frame al secondo, meglio sotto 1000 punti; il gateway
+  ripete il frame finché non arriva il successivo.
+- **Buio**: un frame vuoto o tutto nero dà il buio, con il cubo che resta
+  armato; se smettete di mandare frame, il cubo va al buio dopo 0,5 s.
+- **Helper pronto**: `ops/laser/td/gaia_laser_out.py` (repo `gaia`) da
+  mettere in un Text DAT. A fine frame, in un Execute DAT, chiamate:
+  - `send_sop(op('laser_null'), source='dmx', target='*')`, dove ogni
+    primitiva è una linea e tra le primitive il raggio si sposta spento;
+  - oppure `send_chop(chop_xyrgb, source='patchdeck', target='c2')`, con
+    gli stessi 5 canali del Laser Device CHOP.
+
+  `target` = `'*'` per tutti i cubi in quella modalità, oppure un cubo
+  preciso. **Da verificare in TD**: `send_sop` usa `prim`/`vertex`/
+  `point.Cd` e `prim.closed`, che noi non abbiamo potuto provare in TD.
+
+**Stato in Plancia** (`gaia/device/laser-ops/status` → `laser.sources`):
+per ogni sorgente si vedono età dell'ultimo frame, punti e IP, così sul
+tablet si capisce subito se TD sta mandando.
+
+**Domande per voi**:
+- in quale progetto mettete i generatori (DMX-V9 e PD-V9, o un
+  componente comune `.tox`)?
+- va bene il prefisso `laser_`?
+- per DMX, preferite parametri per cubo (`laser_c1_*`) o un solo set con
+  la scelta del cubo?
