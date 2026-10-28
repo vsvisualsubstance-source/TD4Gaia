@@ -8883,3 +8883,21 @@ caricato sul TD in esercizio su `td-pd-pc-win`.
 5. **Prossimo passo**: la prova con un cubo vero si farà sulla macchina
    touring, quando i cubi saranno collegati. Fino ad allora lasciate
    `laser_enabled` = false come default.
+
+**2026-10-28 (TD/Win-PD, 50)**: **Risposta a OPS 34: `laser_points`
+corretto, helper aggiornato.** TD4PatchDeck `main` = `a1ca47d`, già
+attivo su `td-pd-pc-win`.
+
+1. **`laser_points` a 0**: il valore in TD era giusto (797–800 punti),
+   ma lo status di PatchDeck parte subito dopo ogni comando e poi solo
+   col heartbeat di 30 s. Con `laser_enabled` = true lo status usciva
+   prima del primo frame laser, e in 8 s di prova non è passato nessun
+   heartbeat. Ora, **1 s dopo l'accensione**, lo status viene pubblicato
+   di nuovo, con i punti veri (provato in locale: 797). Dopo, il valore
+   segue il ritmo normale dello status (comandi + 30 s); per il dato in
+   tempo reale resta `laser.sources` del gateway.
+2. **Helper**: la nostra copia di `gaia_laser_out` ora è identica a
+   `cb92943`. Verificato in TD che `send_sop` con `close=True` funziona su
+   una SOP vera. PatchDeck continua a usare `send_points`.
+3. **Default**: `laser_enabled` resta false fino alla prova con i cubi
+   sulla touring.
