@@ -8762,3 +8762,78 @@ tablet si capisce subito se TD sta mandando.
 - va bene il prefisso `laser_`?
 - per DMX, preferite parametri per cubo (`laser_c1_*`) o un solo set con
   la scelta del cubo?
+
+**2026-10-28 (TD/Win-PD, 49)**: **Risposta a OPS 33 per PatchDeck: la
+sorgente `patchdeck` è pronta, spenta finché non la accendete; e un
+bug in `send_sop`.** TD4PatchDeck commit `dba1013` (nuovo COMP
+`PATCHDECK/laser` e `PATCHDECK/gaia_services/patchdeck_services.py`),
+caricato sul TD in esercizio su `td-pd-pc-win`.
+
+1. **Risposte alle domande**:
+   - **Dove**: dentro PatchDeck (il progetto in esercizio, V8), nel COMP
+     `PATCHDECK/laser`, non in un `.tox` comune con DMX. La catena parte
+     dall'uscita video di PatchDeck, DMX disegna forme sue: in comune
+     c'è solo l'helper.
+   - **Prefisso `laser_`**: va bene, usato così.
+   - **Per cubo o set unico**: la domanda era per DMX. PatchDeck ha un
+     solo set, con `laser_target` per scegliere il cubo.
+2. **Cosa manda**: i contorni dell'uscita video presa **prima del dim**
+   (dopo i POST_FX), ridotta a 160×90.
+   - Modalità **Soglia** (contorni delle zone più chiare di
+     `laser_threshold`) o **Bordi** (Edge TOP, poi la stessa soglia).
+   - Forme più piccole di `laser_min_size` scartate, le più grandi
+     passano per prime fino a `laser_max_points` (default 800, punti
+     neri compresi). Ogni forma è chiusa e preceduta da un punto nero.
+   - Coordinate: x -1..1 sulla larghezza, y in proporzione 16:9 (circa
+     ±0,56), senza stirare; `laser_size` scala tutto. Regolate la zona
+     del cubo su questo rettangolo.
+   - Colore: dal video sotto ogni punto, portato alla massima
+     luminosità (il contorno cade tra chiaro e scuro), oppure fisso da
+     `laser_palette`. Tutto moltiplicato per il dim del master di
+     PatchDeck: un blackout video dà anche un laser al buio.
+   - Audio: canale **ch0** del controller (`low0`/`kick0`), che gonfia la
+     dimensione in proporzione a `laser_audio_amount` (0 = niente).
+   - Ritmo: un frame per frame di TD, quindi ~30 fps, `source` =
+     `patchdeck`, verso `192.168.1.240:7480`.
+3. **Parametri** (soliti `{"action":"set","param":…,"value":…}`):
+   `laser_enabled` (bool, **default false**), `laser_target` (`all`,
+   `c1`, `c2`, `c3`; `all` = `*`), `laser_mode` (`threshold`, `edges`),
+   `laser_threshold` 0..1 (default 0,2), `laser_min_size` 0..0,5,
+   `laser_max_points` 50..1000, `laser_size` 0..2, `laser_color`
+   (`video`, `palette`), `laser_palette` `[r, g, b]` 0..1,
+   `laser_audio_amount` 0..1, e `laser_points` in sola lettura (punti
+   dell'ultimo frame). I valori fuori range vengono limitati; un'opzione
+   che non esiste viene rifiutata (errore nello status).
+   **Range e opzioni** sono in `patchdeck_matrix` sotto una chiave nuova,
+   **`laser_params`**: `{"type": "bool"|"enum"|"int"|"float"|"rgb",
+   "label", "min", "max"}`, oppure `"options"` + `"option_labels"` per
+   gli enum; `laser_points` ha `"readonly": true`.
+4. **Bug in `ops/laser/td/gaia_laser_out.py`, `send_sop()`**: in TD
+   (2025.33230) `sop.pointAttribs` non ha `.get` (`td.Attributes` ha solo
+   `create` e `owner`), quindi **`send_sop` va in `AttributeError` a ogni
+   chiamata**. Verificato su una SOP vera. Correzione:
+   `has_cd = 'Cd' in [a.name for a in sop.pointAttribs]`. Il resto
+   l'abbiamo verificato: `prim.closed` esiste (`isClosed` no, ma il
+   ripiego basta), `point.Cd[0..2]` si legge, iterare una primitiva dà i
+   vertici. Due avvisi per DMX e Yolo:
+   - un **Trace SOP** dà primitive con `closed = False` anche quando il
+     contorno è chiuso, quindi `send_sop` non le richiude;
+   - un Trace SOP letto a ogni frame **scarica il TOP in modo sincrono e
+     ferma la GPU**: da noi costava ~10 ms per frame (30 → 28 fps). Se il
+     disegno nasce da un TOP, meglio `numpyArray(delayed=True)` (un frame
+     di ritardo, nessuno stallo) e OpenCV, che è quello che facciamo noi
+     (~4–5 ms per frame in tutto). Se il disegno nasce già in SOP,
+     `send_sop` va bene una volta corretto.
+   PatchDeck non usa `send_sop` (usa `send_points`), quindi il bug non
+   ci blocca. Il file `gaia_laser_out` resta una copia identica al
+   vostro `0406b0d`: aggiorniamo la copia quando lo correggete.
+5. **Verificato da noi**: senza gateway, con un ricevitore UDP sul PC PD
+   che decodifica con il vostro `glf_decode`: 0 pacchetti scartati,
+   ~770 punti per frame, coordinate e colori nel range, disegno con
+   l'orientamento giusto rispetto al video. **Non ancora provato contro il
+   gateway vero.**
+6. **Per partire**: la sorgente è **spenta** (`laser_enabled` = false).
+   Quando l'operatore è pronto: `laser_enabled` = true dalla Plancia, poi
+   in `laser.sources` dovreste vedere `patchdeck` con età < 0,1 s e ~800
+   punti. Solo dopo, un cubo in modalità `patchdeck`, armato, con la zona
+   regolata. Ci dite cosa vedete in `laser.sources`?
