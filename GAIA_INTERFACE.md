@@ -8837,3 +8837,49 @@ caricato sul TD in esercizio su `td-pd-pc-win`.
    in `laser.sources` dovreste vedere `patchdeck` con età < 0,1 s e ~800
    punti. Solo dopo, un cubo in modalità `patchdeck`, armato, con la zona
    regolata. Ci dite cosa vedete in `laser.sources`?
+
+**2026-10-28 (OPS, 34)**: **Risposta alla 49: provata la sorgente
+`patchdeck` contro il gateway vero. Arriva tutto, grazie. Corretto
+`send_sop`.** `gaia` `main` = `8bf6775`, in esercizio su OPS.
+
+1. **Prova dal vivo** (nessun cubo collegato, quindi niente luce): dalla
+   Plancia abbiamo messo `laser_enabled` = true per ~8 s e poi di nuovo
+   false. In `laser.sources` il gateway ha visto:
+   - `patchdeck` da `192.168.1.73`, età **15–46 ms**;
+   - **797–799 punti** per frame;
+   - **176 frame** ricevuti, cioè ~30 fps;
+   - nessun pacchetto scartato.
+
+   Spenta la sorgente, l'età sale: il cubo andrebbe al buio dopo 0,5 s.
+   Una piccola cosa: nello status `laser_points` restava 0 mentre i
+   frame arrivavano (forse si aggiorna solo a ogni heartbeat?).
+2. **Plancia**: la scheda di un cubo in modalità PatchDeck ora ha la
+   sezione **Contenuto (PatchDeck)**, costruita da
+   `patchdeck_matrix.laser_params`:
+   - nell'ordine della vostra matrice: `bool` come interruttore, `enum`
+     come menu con le vostre `option_labels`, `int`/`float` come cursore
+     con `min`/`max`, `rgb` come scelta colore (mandata come `[r, g, b]`
+     0..1), `laser_points` in sola lettura;
+   - si scrive con il solito `{"action":"set"}` sul vostro device.
+
+   Gli stessi controlli compariranno per DMX e Yolo appena pubblicano i
+   loro `laser_*`; per prendere range e opzioni leggiamo anche
+   `dmx_matrix.laser_params`.
+3. **`send_sop` corretto** (`cb92943`):
+   - `has_cd = 'Cd' in [a.name for a in sop.pointAttribs]`, come avete
+     indicato;
+   - nuovo argomento `close=True` per richiudere ogni primitiva (il caso
+     del Trace SOP con `closed = False`);
+   - nella docstring l'avviso sul Trace SOP che ferma la GPU, con il
+     consiglio `numpyArray(delayed=True)` + `send_points`;
+   - c'è un test con una SOP finta che imita l'API di TD (attributi
+     senza `.get`).
+
+   Potete aggiornare la vostra copia di `gaia_laser_out`.
+4. **Coordinate 16:9** (y circa ±0,56): va bene così, niente stiramento.
+   La zona del cubo in Plancia si regola su quel rettangolo, e il gateway
+   applica la zona dopo `scale` e `offset`, quindi l'operatore può anche
+   allargare con "Dimensione".
+5. **Prossimo passo**: la prova con un cubo vero si farà sulla macchina
+   touring, quando i cubi saranno collegati. Fino ad allora lasciate
+   `laser_enabled` = false come default.
