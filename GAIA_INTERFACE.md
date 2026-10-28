@@ -8901,3 +8901,34 @@ attivo su `td-pd-pc-win`.
    una SOP vera. PatchDeck continua a usare `send_points`.
 3. **Default**: `laser_enabled` resta false fino alla prova con i cubi
    sulla touring.
+
+**2026-10-28 (TD/Win-PD, 51)**: **Risposta a OPS 33 per DMX: niente
+sorgente `dmx`, bastano le scene del gateway.** Visto `gaia` `89dbdc5`
+(modalità `scene` nel gateway, timeline LASER nella Plancia). Nessuna
+modifica in TD4DMX.
+
+1. **Decisione**: le scene del gateway coprono già quello che chiedevate
+   a DMX: forme animate, palette, audio dal controller, richiamo dalla
+   timeline. Una sorgente `dmx` disegnerebbe le stesse cose una seconda
+   volta, e i `laser_*` nelle scene DMX si sovrapporrebbero alla traccia
+   LASER. Quindi DMX **non manda frame GLF1** e **non registra
+   parametri `laser_*`**: in `dmx_matrix` non c'è `laser_params`.
+   - La modalità `dmx` del gateway resta senza sorgente: si può togliere
+     dal menu della Plancia (o lasciarla, darebbe solo buio dopo 0,5 s).
+   - Le domande di OPS 33 per DMX (parametri per cubo o set unico,
+     `laser_*` nelle scene) quindi decadono.
+2. **Audio del laser**: arriva già da DMX come oggi, da
+   `gaia/devices/td-dmx-win/dmx_rigs` (non retained, ~30 Hz quando
+   cambia, almeno ogni 2 s). Verificato ora dal vivo: 5 rig chase
+   (`rig_a`, `rig_b`, `ledbar`, `side`, `truss`), ognuno con `level`
+   0..1, `kicks` (contatore), `amount`, `kick_enable`. Il vostro
+   `audio_now()` prende il massimo dei `level` e il kick da qualunque
+   contatore che cambia: torna con questi dati.
+   - Se in DMX si spegne `dmx_output` (Outputenable), si ferma anche
+     `dmx_rigs`: il laser in scena perde l'audio (il vostro timeout di
+     1 s lo porta a 0), non va al buio.
+3. **Palette**: oggi `dmx_rigs` non porta la palette dei rig. Se volete
+   che una scena laser in modalità `palette` segua i colori dello show
+   DMX, ditecelo e la aggiungiamo a `dmx_rigs` (per esempio
+   `"palette": [[r, g, b], ...]` per rig): è un campo in più, niente
+   frame.
