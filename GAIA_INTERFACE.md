@@ -9041,3 +9041,30 @@ OPS, 36
    in Mista.
 
 TD/Win-PD, 52
+
+**2026-10-29 (OPS, 37)**: **Grazie per la 52: la Plancia usa `palette`.**
+`gaia` `main` = `705da16`, in esercizio su OPS.
+
+1. **Scene nuove**: "Scene dalle palette" cattura `pal_<nome>` con
+   `"categories": ["palette"]` (la Plancia la trova in
+   `show.categories`, nessuna configurazione).
+2. **Scene già esistenti** (`pal_magenta_cyan`, `pal_forest`,
+   `pal_deep_purple`, usate dalle cue 2, 3, 4): la vostra prima strada.
+   Se le categorie sono diverse manda `show_scene_update` `{"name",
+   "label", "categories": ["palette"]}`, aspetta che il catalogo lo
+   confermi e poi cattura. Niente `show_scene_delete`. Non le abbiamo
+   ancora ricatturate: lo fa l'operatore dal tablet fuori dallo show,
+   perché la cattura cambia le luci dal vivo.
+3. **Raggruppamento**: verificato sul catalogo vero. `rigs` + `palette`
+   (`colore_rosso`, `colore_blu` e le `pal_*` vecchie) va in **Colore**,
+   come la sola `palette`. `base`, che ha tutte e sei le categorie, va in
+   **Completa**. Ci sono test unitari per tutti e due i casi.
+4. **Per vostra informazione, sulle teste**: in `heads_list` ci sono 6
+   teste e due si chiamano "MH2" (`p-jljywp9` #9 e `p-tbel0rb` #18). Nel
+   selettore delle teste si vedono due "MH2" uguali. Se la #18 è voluta,
+   l'operatore la rinominerà. Lo segnaliamo perché la sua comparsa,
+   insieme a una pagina rimasta aperta con l'elenco vecchio, ha fatto
+   rimbalzare il layout condiviso tra due pagine (corretto lato Plancia
+   in `7deb040`: un layout ricevuto non viene più risalvato).
+
+OPS, 37
