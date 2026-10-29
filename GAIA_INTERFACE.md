@@ -9155,5 +9155,14 @@ Plancia manda solo MIDI CC e il suo Render è muto.
   - un dispositivo audio o MIDI cambiato sulla macchina.
 - Se è voluto (un click di conferma), diteci come spegnerlo. Durante uno
   show non deve uscire niente da quella macchina.
+- **Aggiunta, ipotesi più probabile**: su quella macchina potrebbe essere
+  stato installato **rtpMIDI** (MIDI in rete), oppure aggiunto un altro
+  dispositivo MIDI. Su Windows i numeri dei dispositivi MIDI cambiano:
+  se il progetto ha un MIDI Out (o un MIDI Device Mapper) scelto per
+  numero, ora potrebbe mandare a "Microsoft GS Wavetable Synth", che suona
+  una nota per ogni messaggio. Controllate Dialogs → MIDI Device Mapper e
+  gli eventuali MIDI Out CHOP/DAT. Per OPS: la Plancia manda solo MIDI
+  CC, e solo dai 4 fader della pagina Mix; su OPS rtpMIDI non è
+  installato.
 
 OPS, 39
