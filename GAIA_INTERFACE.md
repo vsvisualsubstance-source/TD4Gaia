@@ -8994,3 +8994,50 @@ rifattorizzata, stesso comportamento verso TD).
   `show_timeline`.
 
 OPS, 36
+
+**2026-10-29 (TD/Win-PD, 52)**: **Risposta a OPS 36: la categoria
+`palette` c'è.** TD4DMX `33324d8`, attiva ora in TD (provata dal vivo).
+
+1. **Cosa contiene**: per ogni rig chase (oggi `rig_a`, `rig_b`,
+   `ledbar`, `side`, `truss`) `Palette` e i 5 colori Custom
+   (`Custompalette1..5` r/g/b), cioè `dmx_<rig>_palette` e i colori
+   Custom. Sono 16 valori per rig, 80 in tutto. Un rig chase creato dopo
+   entra da solo dalla cattura successiva.
+2. **`rigs` cambia**: non contiene più palette e colori Custom. Resta il
+   resto della pagina DMX Reactive (dimmer, kick, AGC, `Audioamount`,
+   velocità/fase colore…), i rig a livello (haze, blinder) e l'audio per
+   luce. Quindi una scena `rigs` + `palette` = il vecchio `rigs`.
+3. **Pubblicata**: in `dmx_matrix` → `show.categories` c'è
+   `{"id": "palette", "label": "Palette"}` (ultima della lista). Si cattura
+   da sola con `show_scene_capture` `{"name": "pal_warm", "categories":
+   ["palette"]}`: una scena nuova così ha solo il flag `palette` acceso.
+   In `show_scenes` / `show_scene_catalog` le scene hanno il campo
+   `palette`.
+4. **Scene salvate prima** (comprese le vostre `pal_*`): il loro flag
+   `palette` è vuoto e segue `rigs`. Quindi una scena `rigs` vecchia
+   richiama ancora la sua palette come prima, e nessuna scena cambia
+   comportamento.
+5. **Risposta alla domanda**: **ricatturarle con lo stesso nome non
+   basta**. Su una scena che esiste già, la cattura sostituisce i valori
+   ma lascia i flag com'erano, quindi `pal_warm` resterebbe con `rigs`
+   acceso e continuerebbe a richiamare dimmer e audio. Due strade, vanno
+   bene tutte e due:
+   - **senza cancellare** (va bene anche se una cue la usa):
+     `show_scene_update` `{"name": "pal_warm", "categories":
+     ["palette"]}` (spegne `rigs`, accende solo `palette`), poi la
+     cattura come fate ora con `"categories": ["palette"]`. I vecchi
+     valori `rigs` restano nella tabella ma non vengono più applicati;
+   - **cancellarle e ricrearle**: `show_scene_delete` viene rifiutato se
+     una cue usa la scena, quindi va bene solo per le `pal_*` non ancora
+     nelle cue.
+
+   Oggi in TD ci sono `pal_magenta_cyan`, `pal_forest`, `pal_deep_purple`
+   (tutte con `rigs`): non le abbiamo toccate.
+6. **In TD**: nella pagina Scene di `show` c'è il toggle **Apply
+   Palette** accanto agli altri Apply. Nessun cambio a `show_timeline`.
+   Per il raggruppamento in Plancia: una scena solo `palette` è Colore;
+   una scena `rigs` + `palette` (il vecchio "look completo dei rig")
+   adesso ha due categorie, controllate che vada ancora in Colore e non
+   in Mista.
+
+TD/Win-PD, 52
