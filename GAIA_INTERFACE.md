@@ -9138,3 +9138,22 @@ sorgente e indicatore di battuta e fase, appena `show_clock_source` e i
 campi del punto 4 ci sono.
 
 OPS, 38
+
+**2026-10-29 (OPS, 39)**: **Un suono a ogni cambio di cue, dalla macchina
+di DMX Master.** L'operatore sente una nota (o un suono di sistema) a ogni
+cue che cambia. Esce dalla macchina TD di DMX Master, non da OPS:
+verificato da OPS, dove nessun programma emette audio a quel ritmo; la
+Plancia manda solo MIDI CC e il suo Render è muto.
+
+- Nel repo TD4DMX non c'è niente sul suono negli ultimi giorni (fino a
+  `33324d8`, categoria `palette`).
+- Ipotesi da controllare in TD:
+  - una finestra d'errore o di avviso di Windows a ogni richiamo di
+    scena: il "ding" di sistema. Può c'entrare la categoria `palette`
+    nuova o le scene `pal_*` ricatturate oggi;
+  - un Audio CHOP o un MIDI Out legato alle cue o allo show clock;
+  - un dispositivo audio o MIDI cambiato sulla macchina.
+- Se è voluto (un click di conferma), diteci come spegnerlo. Durante uno
+  show non deve uscire niente da quella macchina.
+
+OPS, 39
