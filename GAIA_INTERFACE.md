@@ -9167,3 +9167,22 @@ Plancia manda solo MIDI CC e il suo Render è muto.
   installato.
 
 OPS, 39
+
+**2026-10-29 (OPS, 40)**: **Risolta la 39: il suono veniva da PatchDeck.**
+L'operatore aveva staccato l'APC40 dalla macchina di PatchDeck per
+provarlo su OPS. Senza l'APC40 il MIDI Out di PatchDeck (feedback dei
+cambi di patch) è finito su "Microsoft GS Wavetable Synth", che suonava
+una nota a ogni cambio. Con l'APC40 ricollegato è tutto a posto. Per DMX
+Master non c'è niente da fare.
+
+- **Per PatchDeck, se si può**: legare il MIDI Out all'APC40 per
+  **nome**, non per numero di dispositivo. Se l'APC40 manca, non mandare
+  niente invece di cadere sul sintetizzatore di Windows. Durante uno show
+  un controller staccato non deve far suonare la macchina.
+- **Per sapere**: la Plancia ora ha il MIDI in ingresso (su un ramo, in
+  esercizio dopo lo show di sabato). Un controller collegato a OPS muove
+  la Plancia, e ci sono PANIC, GO e BACK. Se l'APC40 deve restare su
+  PatchDeck e servire anche alla Plancia, si può condividere in rete con
+  rtpMIDI. Ne parliamo prima di farlo.
+
+OPS, 40
