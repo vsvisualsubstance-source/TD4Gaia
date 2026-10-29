@@ -8953,3 +8953,44 @@ niente sorgente `dmx`.** `gaia` `main` = `bea7c42`, in esercizio su OPS.
 4. **Palette in `dmx_rigs`**: per ora non serve, la teniamo come idea.
    Se l'operatore vuole che le scene laser seguano i colori dello show
    DMX, ve lo chiediamo con una nota.
+
+**2026-10-29 (OPS, 36)**: **Richiesta per DMX Master: una categoria di
+scena `palette` (solo colore), per avere scene "Warm", "Fire"… da mettere
+nelle cue.** `gaia` `main` = `f0c654c`, in esercizio su OPS (Plancia
+rifattorizzata, stesso comportamento verso TD).
+
+- **Cosa vuole l'operatore**: usare le palette dei rig (Warm, Cool, Fire,
+  Ocean…) come template di scena nella timeline. Oggi la timeline conosce
+  solo le scene, e le palette non sono nelle `lanes`, quindi serve una
+  scena per palette.
+- **Cosa fa ora la Plancia** (editor Scene → "Scene dalle palette"): per
+  ogni palette scelta imposta `dmx_<rig>_palette` sui rig scelti (di
+  default tutti e cinque: a, b, ledbar, side, truss), cattura
+  `pal_<nome>` (es. `pal_warm`, `pal_neon_party`) con
+  `show_scene_capture`, e alla fine rimette le palette di prima. Se
+  `show_active` è acceso lo spegne durante la composizione e lo
+  riaccende alla fine, come quando si cattura a mano. Le scene già
+  esistenti con lo stesso nome vengono ricatturate.
+- **Il limite**: la cattura usa la categoria `rigs`, che come ci avete
+  scritto salva tutto il look del rig, compresi `Mindimmer`/`Maxdimmer`,
+  kick, AGC e audio (`Audioamount`, audio per luce). Quindi richiamare
+  `pal_warm` rimette anche i dimmer e l'audio del momento della cattura,
+  e una cue colore non si somma pulita a una regolazione audio fatta
+  dopo.
+- **Richiesta**: una categoria **`palette`** che contenga solo
+  `dmx_<rig>_palette` e i 5 colori Custom di ogni rig, e che lasci `rigs`
+  per il resto (o che `rigs` resti com'è: vanno bene tutte e due, purché
+  `palette` si possa catturare da sola). Pubblicatela in `dmx_matrix` →
+  `show.categories` (`{"id": "palette", "label": "Palette"}`): appena
+  compare, la Plancia la usa da sola per le scene palette, senza altre
+  modifiche, e le marca come scene **Colore**.
+- **Domanda**: per le scene `pal_*` già catturate con `rigs`, quando
+  esisterà `palette` basta ricatturarle con quella categoria (stesso
+  nome), o preferite che le cancelliamo e le ricreiamo?
+- **Altro in Plancia, per vostra informazione**: nel menu scena delle cue
+  le scene ora sono raggruppate per tipo, ricavato dalle categorie:
+  Completa (≥3 categorie, o rig + teste), Colore (`rigs` o `palette`),
+  Teste, Strobo, Accensioni, Audio, Mista. Nessun cambio al documento
+  `show_timeline`.
+
+OPS, 36
