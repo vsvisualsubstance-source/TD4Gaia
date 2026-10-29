@@ -9068,3 +9068,73 @@ TD/Win-PD, 52
    in `7deb040`: un layout ricevuto non viene più risalvato).
 
 OPS, 37
+
+**2026-10-29 (OPS, 38)**: **Richiesta per DMX Master: sorgente
+dell'orologio dello show a scelta (interna, Ableton Link, MTC, LTC).**
+L'operatore vuole prevedere sia musica **suonata dal vivo** (band, DJ,
+Ableton o Resolume) sia **riprodotta** (traccia o set fisso, video). Dal
+vivo serve il **tempo** (BPM, battuta, fase): Ableton Link. Riprodotta
+serve la **posizione**: timecode MTC o LTC. Resta un solo orologio, quello
+di DMX Master (`gaia/show/clock/state`); cambia da dove prende tempo e
+posizione. Nella vostra nota 25 Link e LTC erano "da valutare a parte":
+ora servono. Niente di questo è per lo show BASE di sabato.
+
+1. **Parametro `show_clock_source`** (enum, scrivibile con `set` come gli
+   altri): `internal` (come oggi), `link`, `mtc`, `ltc`. Default
+   `internal`. Cambiarlo non deve fare salti di posizione mentre la
+   timeline è ferma.
+2. **`link`** (Ableton Link CHOP di TD):
+   - il BPM arriva dalla sessione Link (`bpm` nello stato, già presente);
+   - la posizione la tiene ancora il vostro orologio: Link non ha una
+     posizione;
+   - se si può, play/stop seguono la sessione (start/stop sync di Link 3):
+     ditecelo;
+   - `quantum` (battute per misura, default 4) come parametro.
+3. **`mtc` e `ltc`**: la posizione segue il timecode, `pos = timecode −
+   show_tc_offset` (parametro in secondi, default 0), e `playing` = il
+   timecode avanza.
+   - **Se il segnale sparisce**: parametro `show_tc_dropout` = `freewheel`
+     (continua da solo per `show_tc_freewheel` secondi, default 2, poi si
+     ferma) oppure `stop`. Con `freewheel` un segnale che salta per un
+     attimo non ferma le luci.
+   - **Fps** del timecode letto: 24, 25, 29,97 DF o 30.
+4. **Campi nuovi in `gaia/show/clock/state`**, tutti facoltativi: chi non
+   li conosce li ignora. Plancia, bridge (tracce VIDEO e LASER) e
+   PatchDeck continuano a usare `pos`, `playing` e `bpm`.
+   ```json
+   "source": "link",           // sorgente in uso
+   "source_ok": true,          // false = segnale assente (Link senza peer, timecode fermo)
+   "beat": 132.75,             // battute dall'inizio, frazionarie
+   "phase": 0.75,              // 0..1 dentro la battuta
+   "bar": 33,                  // misura corrente (beat / quantum, da 1)
+   "quantum": 4,
+   "link": {"peers": 2},       // solo con link
+   "tc": {"fps": 25, "locked": true, "freewheel": false, "offset": 0}   // solo con mtc/ltc
+   ```
+   Lo stato oggi arriva circa 1 volta al secondo, quindi `beat` e `phase`
+   da soli non bastano per animare a tempo. La Plancia estrapola da
+   `bpm`, `beat` e `sent_ms`, come fa già con `pos`. Se volete mandare lo
+   stato più spesso solo con `link`, ditecelo.
+5. **Cue a tempo** (facoltativo, solo con `link`): un parametro
+   `show_cue_quantize` = `off` | `beat` | `bar`. Un GO o una cue arriva
+   alla prossima battuta o misura.
+6. **Domande**:
+   - **Ingressi della macchina DMX Master (`.73`)**:
+     - ha un ingresso audio libero per LTC?
+     - una porta MIDI per MTC? Oppure MTC via rete con rtpMIDI (driver
+       gratuito su Windows, già nel sistema su macOS)? Ci va bene
+       installarlo noi su OPS e sulla touring.
+   - **LTC in uscita** verso apparati esterni (video, regia), dalla vostra
+     nota 25: vi serve ancora?
+   - **Link e Resolume**: Resolume è sulla stessa sessione Link? Allora
+     anche PatchDeck potrebbe seguire Link direttamente, ma preferiamo un
+     solo orologio (il vostro) e PatchDeck follower come oggi.
+
+**Lato OPS, in preparazione** (dopo BASE, su un ramo, non in esercizio):
+MIDI in ingresso nel bridge della Plancia, con MIDI learn per fader e
+pulsanti, GO/BACK e un **PANIC** (blackout luci + laser) da controller o
+pedale fisico; MIDI in rete con rtpMIDI. Nella Plancia, selettore della
+sorgente e indicatore di battuta e fase, appena `show_clock_source` e i
+campi del punto 4 ci sono.
+
+OPS, 38
