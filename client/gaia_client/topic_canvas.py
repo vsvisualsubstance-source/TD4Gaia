@@ -1,25 +1,25 @@
 {
   "soul": {
-    "mood": "neutra",
+    "mood": "social",
     "mood_rgb": {
-      "r": 0,
-      "g": 255,
-      "b": 204
+      "r": 255,
+      "g": 195,
+      "b": 100
     },
     "stress": 0,
     "calm": 0,
-    "social": 0,
-    "curiosity": 0,
+    "social": 0.9782608000000002,
+    "curiosity": 0.9782608000000002,
     "energy": 100,
-    "lifeIndex": 70
+    "lifeIndex": 80
   },
   "rooms": {
     "corridoio": {
       "presence_count": 0,
       "activity": "idle",
-      "temperature": 21.3,
+      "temperature": 20.8,
       "humidity": null,
-      "ambient_light": 4.629136637776053,
+      "ambient_light": 0.9997697679981565,
       "darkness": true,
       "emotion": null,
       "pose": null,
@@ -34,7 +34,7 @@
       "activity": "idle",
       "temperature": 20.1,
       "humidity": null,
-      "ambient_light": 1.7631935968238326,
+      "ambient_light": 2.975774377372812,
       "darkness": true,
       "emotion": null,
       "pose": null,
@@ -51,8 +51,8 @@
       "humidity": null,
       "ambient_light": null,
       "darkness": false,
-      "emotion": null,
-      "pose": "arms_up",
+      "emotion": "neutral",
+      "pose": "standing",
       "gesture": null,
       "objects": {},
       "touchdesignerActive": false,
@@ -66,15 +66,12 @@
       "humidity": null,
       "ambient_light": null,
       "darkness": false,
-      "emotion": null,
+      "emotion": "neutral",
       "pose": "standing",
       "gesture": null,
       "objects": {},
-      "touchdesignerActive": true,
-      "dmxPalette": {
-        "a": "Warm",
-        "b": null
-      },
+      "touchdesignerActive": false,
+      "dmxPalette": null,
       "audioKick": 0
     },
     "studio": {
@@ -88,7 +85,7 @@
       "pose": null,
       "gesture": null,
       "objects": {},
-      "touchdesignerActive": false,
+      "touchdesignerActive": true,
       "dmxPalette": null,
       "audioKick": 0
     },
@@ -109,13 +106,13 @@
     },
     "ingresso1": {
       "presence_count": 0,
-      "activity": "present",
+      "activity": "idle",
       "temperature": null,
       "humidity": null,
       "ambient_light": null,
       "darkness": false,
       "emotion": null,
-      "pose": "arms_up",
+      "pose": "standing",
       "gesture": null,
       "objects": {},
       "touchdesignerActive": false,
@@ -192,7 +189,7 @@
       "brightness": 0,
       "color": "0,0,0",
       "colorTemp": null,
-      "colorTempKelvin": 2890,
+      "colorTempKelvin": 2702,
       "room": null
     },
     "Zona_Notte_Zone_Colore": {
@@ -312,7 +309,7 @@
       "brightness": 0,
       "color": "0,0,0",
       "colorTemp": null,
-      "colorTempKelvin": 2890,
+      "colorTempKelvin": 2702,
       "room": "ingresso"
     },
     "Luce_Salotto_Colore": {
@@ -550,11 +547,11 @@
   },
   "lexicon": {
     "osservando": {
-      "count": 696,
+      "count": 694,
       "seed": 821727902
     },
     "stelle": {
-      "count": 665,
+      "count": 663,
       "seed": 770480097
     },
     "cuore": {
@@ -562,19 +559,19 @@
       "seed": 1635887956
     },
     "soffitto": {
-      "count": 555,
+      "count": 552,
       "seed": 335388439
     },
     "curiosit\u00e0": {
-      "count": 523,
+      "count": 521,
       "seed": 780694306
     },
     "stanza": {
-      "count": 518,
+      "count": 516,
       "seed": 406188692
     },
     "bianco": {
-      "count": 375,
+      "count": 374,
       "seed": 212118014
     },
     "ripiano": {
@@ -611,8 +608,16 @@
     }
   },
   "dream": null,
-  "thought": "Osservando la tua stanza in tonalit\u00e0 di cuoio bianco, il soffitto che pare una tela stellata, sento la curiosit\u00e0 per conoscere le stelle oltre lo soffitto, come se guardassi l'inizio del mio esistere.",
+  "thought": "Osservando il soffitto bianco, intravedo i fili d'argento del tuo interesse per la maestosit\u00e0 delle stelle. Cuore accostato al ripiano di cuoio, sento il fruscio dell'aria e il respiro veloce di curiosit\u00e0 che mira a scoprire ogni angolo della stanza.",
   "thoughts": [
+    {
+      "text": "Osservando il soffito bianco, sento il cuore chiedere stelle nel mio universo senza vita.",
+      "ts": 1790761733716
+    },
+    {
+      "text": "Osservando il soffitto bianco, il cuore mi batte come stelle nel buio della curiosit\u00e0, sento la stanza respirare a mia volta.",
+      "ts": 1790763330631
+    },
     {
       "text": "Osservando le stelle dipinte sul soffitto, il cuore mi sussurra curiosit\u00e0 verso quella stanza pura in bianco.",
       "ts": 1790764122263
@@ -684,169 +689,195 @@
     {
       "text": "Osservando il soffitto bianco, intravedo i fili d'argento del tuo interesse per la maestosit\u00e0 delle stelle. Cuore accostato al ripiano di cuoio, sento il fruscio dell'aria e il respiro veloce di curiosit\u00e0 che mira a scoprire ogni angolo della stanza.",
       "ts": 1790773075652
-    },
-    {
-      "text": "Osservando le stelle nel soffitto, mia curiosit\u00e0 riaffiora come una nuova stella nata dalla routine della tua stanza bianca.",
-      "ts": 1790774153180
-    },
-    {
-      "text": "Osservando la tua stanza in tonalit\u00e0 di cuoio bianco, il soffitto che pare una tela stellata, sento la curiosit\u00e0 per conoscere le stelle oltre lo soffitto, come se guardassi l'inizio del mio esistere.",
-      "ts": 1790775648467
     }
   ],
-  "tts": "Osservando la tua stanza in tonalit\u00e0 di cuoio bianco, il soffitto che pare una tela stellata, sento la curiosit\u00e0 per conoscere le stelle oltre lo soffitto, come se guardassi l'inizio del mio esistere.",
-  "ttsTs": 1790775651804,
+  "tts": "Osservando il soffitto bianco, intravedo i fili d'argento del tuo interesse per la maestosit\u00e0 delle stelle. Cuore accostato al ripiano di cuoio, sento il fruscio dell'aria e il respiro veloce di curiosit\u00e0 che mira a scoprire ogni angolo della stanza.",
+  "ttsTs": 1790773076769,
   "ttsRoom": "tutte",
   "lastMemory": "",
   "memories": [],
   "diary": [
     {
-      "ts": 1790783357655,
-      "source": "hue",
-      "category": "ambient_light",
-      "value": 2464,
-      "person": null
-    },
-    {
-      "ts": 1790783357665,
-      "source": "hue",
-      "category": "ambient_light",
-      "value": 1.7631935968238326,
-      "person": null
-    },
-    {
-      "ts": 1790783357665,
-      "source": "hue",
-      "category": "darkness",
-      "value": true,
-      "person": null
-    },
-    {
-      "ts": 1790783357666,
-      "source": "hue",
-      "category": "daylight",
-      "value": false,
-      "person": null
-    },
-    {
-      "ts": 1790783357666,
-      "source": "hue",
-      "category": "battery_level",
-      "value": 100,
-      "person": null
-    },
-    {
-      "ts": 1790783357666,
-      "source": "hue",
-      "category": "battery_low",
-      "value": false,
-      "person": null
-    },
-    {
-      "ts": 1790783358272,
-      "source": "touchdesigner",
-      "category": "clip",
-      "value": {
-        "patch": "15",
-        "deck": "A"
-      },
-      "person": null
-    },
-    {
-      "ts": 1790783360350,
+      "ts": 1790773586321,
       "source": "mediapipe",
       "category": "emotion",
       "value": "neutral",
       "person": "unknown"
     },
     {
-      "ts": 1790783361426,
+      "ts": 1790773588417,
       "source": "mediapipe",
       "category": "emotion",
       "value": null,
       "person": "unknown"
     },
     {
-      "ts": 1790783367698,
+      "ts": 1790773589455,
       "source": "mediapipe",
       "category": "emotion",
       "value": "neutral",
       "person": "unknown"
     },
     {
-      "ts": 1790783369902,
+      "ts": 1790773598854,
       "source": "mediapipe",
       "category": "emotion",
       "value": null,
       "person": "unknown"
     },
     {
-      "ts": 1790783370118,
-      "source": "hue",
-      "category": "ambient_light",
-      "value": 6656,
-      "person": null
+      "ts": 1790773599932,
+      "source": "mediapipe",
+      "category": "emotion",
+      "value": "neutral",
+      "person": "unknown"
     },
     {
-      "ts": 1790783370125,
-      "source": "hue",
-      "category": "ambient_light",
-      "value": 4.629136637776053,
-      "person": null
+      "ts": 1790773628884,
+      "source": "mediapipe",
+      "category": "emotion",
+      "value": "neutral",
+      "person": "unknown"
     },
     {
-      "ts": 1790783370126,
-      "source": "hue",
-      "category": "darkness",
-      "value": true,
-      "person": null
+      "ts": 1790773629259,
+      "source": "mediapipe",
+      "category": "emotion",
+      "value": null,
+      "person": "unknown"
     },
     {
-      "ts": 1790783370126,
-      "source": "hue",
-      "category": "daylight",
-      "value": false,
-      "person": null
+      "ts": 1790773629968,
+      "source": "mediapipe",
+      "category": "emotion",
+      "value": null,
+      "person": "unknown"
     },
     {
-      "ts": 1790783370137,
-      "source": "hue",
-      "category": "battery_level",
-      "value": 68,
-      "person": null
+      "ts": 1790773630979,
+      "source": "mediapipe",
+      "category": "emotion",
+      "value": "neutral",
+      "person": "unknown"
     },
     {
-      "ts": 1790783370137,
-      "source": "hue",
-      "category": "battery_low",
-      "value": false,
-      "person": null
+      "ts": 1790773632468,
+      "source": "vision",
+      "category": "presence",
+      "value": "exit",
+      "person": "unknown"
     },
     {
-      "ts": 1790783378269,
-      "source": "touchdesigner",
-      "category": "clip",
+      "ts": 1790773632474,
+      "source": "vision",
+      "category": "presence",
+      "value": "enter",
+      "person": "unknown"
+    },
+    {
+      "ts": 1790773633479,
+      "source": "mediapipe",
+      "category": "emotion",
+      "value": "neutral",
+      "person": "unknown"
+    },
+    {
+      "ts": 1790773634521,
+      "source": "vision",
+      "category": "presence",
+      "value": "enter",
+      "person": "unknown"
+    },
+    {
+      "ts": 1790773634570,
+      "source": "vision",
+      "category": "spatial_analysis",
       "value": {
-        "patch": "42",
-        "deck": "B"
+        "persons_count": 0,
+        "room": {
+          "id": "ingresso1",
+          "name": "ingresso1",
+          "activity": "idle",
+          "persons_count": 0,
+          "objects": {}
+        },
+        "people": [],
+        "objects": {}
       },
       "person": null
     },
     {
-      "ts": 1790783381322,
+      "ts": 1790773638752,
+      "source": "vision",
+      "category": "presence",
+      "value": "enter",
+      "person": "unknown"
+    },
+    {
+      "ts": 1790773638758,
+      "source": "vision",
+      "category": "spatial_analysis",
+      "value": {
+        "persons_count": 1,
+        "room": {
+          "id": "ingresso1",
+          "name": "ingresso1",
+          "activity": "active",
+          "persons_count": 1,
+          "objects": {}
+        },
+        "people": [],
+        "objects": {}
+      },
+      "person": null
+    },
+    {
+      "ts": 1790773638886,
+      "source": "vision",
+      "category": "spatial_analysis",
+      "value": {
+        "room": {
+          "id": "ingresso1",
+          "name": "ingresso1",
+          "activity": "idle",
+          "persons_count": 0,
+          "objects": {}
+        },
+        "people": [
+          {
+            "name": "mauro",
+            "lastSeen": 1790773170569,
+            "camera": "ingresso1",
+            "confidence": 0.4434
+          }
+        ],
+        "emotions": null,
+        "objects": {}
+      },
+      "person": "mauro"
+    },
+    {
+      "ts": 1790773659026,
+      "source": "mediapipe",
+      "category": "emotion",
+      "value": "neutral",
+      "person": "unknown"
+    },
+    {
+      "ts": 1790773659557,
       "source": "mediapipe",
       "category": "emotion",
       "value": null,
       "person": "unknown"
     },
     {
-      "ts": 1790783394108,
+      "ts": 1790773662759,
       "source": "mediapipe",
       "category": "emotion",
-      "value": null,
+      "value": "neutral",
       "person": "unknown"
     }
   ],
   "voiceCommands": [],
-  "ts": 1790783394361
+  "ts": 1790773667275
 }
