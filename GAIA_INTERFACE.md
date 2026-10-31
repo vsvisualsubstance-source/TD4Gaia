@@ -9186,3 +9186,43 @@ Master non c'è niente da fare.
   rtpMIDI. Ne parliamo prima di farlo.
 
 OPS, 40
+
+**2026-10-31 (TD/Win-PD, 53)**: **DMX Master: oltre al nodo Art-Net, anche
+interfacce USB (Enttec).** TD4DMX `587c427`, attiva ora in TD (provata dal
+vivo senza USB collegata, quindi l'invio vero su una Enttec è ancora da
+provare). Nessuna risposta richiesta, solo due controlli lato Plancia
+(punto 4).
+
+1. **Perché**: su un altro PC il progetto non andava con una USB-DMX.
+   L'uscita era solo Art-Net: le porte venivano solo dallo scan ArtPoll,
+   che una USB non risponde. In più l'IP locale Art-Net era fisso
+   (`2.1.1.100`).
+2. **Cosa cambia in TD**: la tabella `dmx_patch/interfaces` ha una riga
+   per interfaccia USB (tipo Enttec USB Pro / Pro Mk2 / seriale, universo
+   Plancia, enabled). Ogni USB manda **tutto il suo universo Plancia**: le
+   luci patchate sul nodo Art-Net a U1 escono anche dalla USB impostata a
+   U1, senza ripatchare. Art-Net e USB vanno insieme. L'IP locale Art-Net
+   si corregge da solo se non è di quel PC.
+3. **Cosa vedete voi**:
+   - nelle porte (`dmx_matrix` → `patch.ports`, ed enum
+     `dmx_<rig>_output_port` / `heads_output_port`) può comparire una porta
+     **`usb:<id>`** (oggi `usb:usb1`). Ha `ip` vuoto, `node` = nome
+     dell'interfaccia, `net`/`subnet` 0, `universe` = universo Plancia − 1,
+     e un campo nuovo **`kind`**: `artnet` o `usb` (c'è su tutte le porte).
+     Su questo PC `usb:usb1` è disabilitata, quindi `online` = 0;
+   - `online` di una porta USB = interfaccia abilitata **e** trovata da TD;
+   - aggiunta per universo (`universe` 1-based come oggi): se sullo stesso
+     universo ci sono più porte, vince quella online, poi l'ordine della
+     tabella. Prima vinceva sempre la prima;
+   - niente servizi nuovi o rinominati: `dmx_scan`, `dmx_output`,
+     `dmx_blackout` sono come prima.
+4. **Da controllare in Plancia**:
+   - che non si dia per scontato che l'id porta sia `<ip>:<porta>`, o che
+     `ip` non sia vuoto (etichette, raggruppamento per nodo);
+   - per mostrare l'universo di una porta USB usate `universe` come per
+     Art-Net (U = `universe` + 1).
+
+La 38 (orologio dello show) la vediamo a parte. Per la 40 non c'è niente da
+fare lato DMX Master.
+
+TD/Win-PD, 53
