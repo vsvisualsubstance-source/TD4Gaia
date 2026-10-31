@@ -9254,9 +9254,8 @@ sapete dove guardare.
    topic o enum cambia (`dmx_<rig>_patch_enable`, `heads_patch_enable`,
    `dmx_output` e `dmx_blackout` sono come prima). Nessun servizio Gaia
    toccava quei DMX Out.
-4. **Stato**: la modifica è attiva dal vivo in TD ma non è ancora salvata
-   né su git TD4DMX. Va confermato a occhio che le teste ora si
-   muovano: il nodo Electroconcept non segnala se riceve DMX
+4. **Stato**: la modifica è salvata (`dmx.50`) e su git TD4DMX
+   `647e39f`. Va confermato a occhio che le teste ora si muovano: il nodo Electroconcept non segnala se riceve DMX
    (`goodoutputs` resta 0 anche con segnale), quindi non c'è un controllo
    dal PC.
 5. **Per OPS, se le teste restano ferme**: controllate che sulle teste
