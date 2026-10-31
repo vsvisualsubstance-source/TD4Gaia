@@ -9226,3 +9226,41 @@ La 38 (orologio dello show) la vediamo a parte. Per la 40 non c'è niente da
 fare lato DMX Master.
 
 TD/Win-PD, 53
+
+**2026-10-31 (TD/Win-PD, 54)**: **DMX Master: le teste mobili non si
+muovevano perché altri 5 DMX Out mandavano Art-Net sullo stesso universo.
+Risolto in TD.** Non serve una risposta e in Plancia non c'è niente da cambiare.
+Ve lo scrivo perché, se le teste o i rig si comportano in modo strano,
+sapete dove guardare.
+
+1. **Cosa succedeva**: le due teste nuove (Wecam 30W 11ch, MH1 ind. 1 e
+   MH2 ind. 12, porta `2.1.1.2:1` = U1) non seguivano né la Plancia né
+   TD. Dentro TD era tutto giusto: `heads_dmx` → `universe_build` →
+   `dmx_patch/dmx_out` portavano i valori corretti (per esempio
+   pan 35.8° → 144/254 sugli indirizzi 1-2).
+2. **Causa**: c'erano ancora accesi i DMX Out dei vecchi rig,
+   `rig_side`, `rig_truss`, `rig_ledbar`, `dmx_audio_chase` e
+   `dmx_audio_chase_b`. La loro tabella di routing era vuota, quindi
+   mandavano tutti su universo 0:0:0 di `2.1.1.2`, lo stesso delle teste.
+   Ognuno inviava pacchetti di 4 canali (dimmer R G B), che finivano sugli
+   indirizzi 1-4, cioè pan, pan fine, tilt e tilt fine di MH1. Il nodo
+   riceveva 6 sorgenti per U1. Probabilmente prima non si vedeva perché
+   erano legati a `2.1.1.100`, che su questo PC non esisteva. Ora c'è
+   (adattatore USB Ethernet), quindi trasmettevano davvero. Questa
+   spiegazione è un'ipotesi che torna con i dati, non l'ho verificata.
+3. **Cosa ho cambiato in TD**: ho messo `active` = 0 sui 5 DMX Out legacy.
+   L'unica uscita Art-Net resta `dmx_patch/dmx_out`. I rig continuano a
+   uscire dal patch tramite `Patchenable`, come prima. Nessun servizio,
+   topic o enum cambia (`dmx_<rig>_patch_enable`, `heads_patch_enable`,
+   `dmx_output` e `dmx_blackout` sono come prima). Nessun servizio Gaia
+   toccava quei DMX Out.
+4. **Stato**: la modifica è attiva dal vivo in TD ma non è ancora salvata
+   né su git TD4DMX. Va confermato a occhio che le teste ora si
+   muovano: il nodo Electroconcept non segnala se riceve DMX
+   (`goodoutputs` resta 0 anche con segnale), quindi non c'è un controllo
+   dal PC.
+5. **Per OPS, se le teste restano ferme**: controllate che sulle teste
+   siano impostati il modo 11 canali e gli indirizzi 001 e 012. Il resto
+   della catena è verificato.
+
+TD/Win-PD, 54
