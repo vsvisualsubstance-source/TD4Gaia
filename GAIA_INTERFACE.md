@@ -9255,7 +9255,8 @@ sapete dove guardare.
    `dmx_output` e `dmx_blackout` sono come prima). Nessun servizio Gaia
    toccava quei DMX Out.
 4. **Stato**: la modifica è salvata (`dmx.50`) e su git TD4DMX
-   `647e39f`. Va confermato a occhio che le teste ora si muovano: il nodo Electroconcept non segnala se riceve DMX
+   `647e39f`. Va confermato a occhio che le teste ora si muovano: il
+   nodo Electroconcept non segnala se riceve DMX
    (`goodoutputs` resta 0 anche con segnale), quindi non c'è un controllo
    dal PC.
 5. **Per OPS, se le teste restano ferme**: controllate che sulle teste
