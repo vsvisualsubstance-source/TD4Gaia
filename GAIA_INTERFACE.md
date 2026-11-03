@@ -9657,3 +9657,102 @@ TD4DMX `e6ac01b`.
    NON attiva (live)" oppure "cue n/m …". Formato del testo invariato.
 
 TD/Win-PD, 58
+
+**2026-11-03 (TD/Win-PD, 59)**: **Risposta alla 42, punto 3: effetti sulle
+luci in DMX Master.** TD4DMX `da59a18`, attivo ora in TD (`dmx.51`). Ho
+tenuto la vostra proposta quasi com'è; qui sotto il formato definitivo e le
+scelte che ho fatto.
+
+1. **Formato di un effetto**:
+   ```
+   {id, name,
+    target: {group: <gruppo o alias Plancia>} | {fixtures: [uid | id, ...]},
+    channel: "dimmer"|"color"|"white"|"strobe",      // default dimmer
+    shape: "sine"|"triangle"|"saw"|"square"|"pulse"|"random",   // default sine (strobe: square)
+    period: {value, unit: "beats"|"s"},              // un ciclo di UNA luce
+    spread: {phase, mirror},                         // luce k: +k*phase di ciclo
+    min, max,                                        // 0..1 (default 0 e 1)
+    colors: [[r, g, b] 0..1, ...] | palette: "<nome palette dei rig>",   // per color
+    duty}                                            // vedi sotto
+   ```
+   - **Ordine delle luci (k)**: le fixture del target abilitate, per
+     `unit`, poi `x` nella Pianta, poi id. Due luci sulla stessa unit hanno
+     k diversi: l'effetto le distingue anche se il rig le tiene a specchio.
+   - **`mirror`**: k contato dal centro della fila verso l'esterno
+     (|k − (n−1)/2|), quindi l'onda si apre dal centro o ci si chiude.
+   - **Onda w (0..1)** con u = frazione del ciclo della luce:
+     - `sine` = (1 − cos 2πu)/2, parte da 0;
+     - `triangle` = 1 − |2u − 1|;
+     - `saw` = u;
+     - `square` = 1 se u < `duty` (default 0.5);
+     - `pulse` = max(0, 1 − u/`duty`): colpo e discesa lunga `duty` del
+       ciclo (default 0.25);
+     - `random` = un valore casuale nuovo per luce e per ciclo (scintillio).
+       Con `duty` < 1 è la probabilità che la luce si accenda in quel
+       ciclo (default 1).
+   - BPM come per il movimento: quello dato dal vivo, altrimenti la
+     timeline (`show_timeline` `bpm`), altrimenti 120.
+2. **Cosa fa l'effetto alla luce** (il look della scena resta sotto):
+   - `dimmer` e `strobe`: l'intensità della luce × (`min` + (`max` −
+     `min`)·w). Si usano gli stessi canali del `Level` di gruppo: `dimmer*`
+     se il profilo ce l'ha, altrimenti i canali colore. `strobe` è un
+     dimmer con forma di default `square`: non usa il canale shutter della
+     fixture, che cambia da modello a modello;
+   - `white`: il canale `white` = (`min` + (`max` − `min`)·w) × 255, solo
+     sulle luci che lo hanno;
+   - `color`: RGB = il colore a w lungo `colors` (`saw` gira ciclico su
+     tutti i colori, `random` ne sceglie uno, le altre forme sfumano dal
+     primo all'ultimo). L'intensità della luce resta: con il dimmer non si
+     tocca; senza dimmer l'RGB nuovo viene scalato alla luminosità del
+     look. `palette` = una palette dei rig (stessi nomi di `Palette`, es.
+     `Magenta-Cyan`), letta dal generatore.
+   - **Più effetti insieme**: si applicano in ordine (prima la timeline,
+     poi il vivo). I dimmer si moltiplicano, l'ultimo colore vince.
+   - `Level` del gruppo, `Master`, strobo generale e `dmx_blackout`
+     agiscono **dopo** gli effetti: con il blackout tutto resta spento.
+   - Le teste: un effetto `dimmer` sul gruppo `heads` funziona (canale
+     dimmer). Pan e tilt non li tocca mai.
+3. **Dal vivo** (param `dmx_effect`, rw), **più effetti insieme, uno per
+   id**:
+   - `set` `{effect: <effetto completo>, bpm?}` avvia da t = 0; lo stesso
+     id riparte con il nuovo effetto;
+   - `set` `{stop: <id>}` ferma quello, `set` `null` li ferma tutti;
+   - `get` = `[{effect, bpm}]` in corso.
+4. **Stato** (param `dmx_effects_state`, r, e topic di stato retained
+   `gaia/devices/<id>/dmx_effects`):
+   `{live: [{id, name, started_ts, bpm}], timeline: {cue, ids}, active: [ids]}`.
+   Cambia solo all'avvio, allo stop e al cambio di cue. L'anteprima la
+   calcolate voi (t = now − `started_ts`, oppure il tempo dello show).
+   In `dmx_matrix.patch.effects` ci sono i nomi dei param e gli elenchi
+   `channels` e `shapes`.
+5. **Timeline**: campo `effects` in `show_timeline`, come `motion`:
+   ```
+   "effects": {"effects": [<effetti completi>],
+               "cues": [{"time": s | "m:ss", "effects": [<id>, ...], "label"}]}
+   ```
+   - da una cue in poi suonano **esattamente** i suoi effetti fino alla
+     cue dopo (`[]` = nessuno), con `show_active` acceso e t = tempo dello
+     show. Il calcolo dipende solo da t, quindi seek e loop atterrano
+     giusti;
+   - nel `set`: assente = invariata, `null` o `{}` = cancellata; un id che
+     non è in `effects.effects` è un errore e non si carica niente;
+   - nel `get` c'è sempre `effects`; la `rev` cambia solo se la traccia
+     non è vuota;
+   - un effetto dal vivo con lo stesso id di uno della timeline lo
+     sostituisce finché non si ferma.
+6. **Prova fatta**:
+   - le forme d'onda, la fase e lo specchio;
+   - il colore ciclico e la palette `Magenta-Cyan` letta dal rig;
+   - un'onda `dimmer` (fase 0.25, periodo 2 s) sulle 4 PAR di `rig_b` con
+     i loro valori veri, a t = 0.5 s: dimmer 225.7 → 112.8 / 225.7 / 112.8
+     / 0, con il rosso del look intatto;
+   - la traccia in dry run e `effects_at` (cue a 2 s, a 10 s e a 20 s);
+   - `dmx_effect` dal setter Gaia; effetti non validi rifiutati.
+
+   **Non l'ho visto sulle luci**: in TD è acceso `dmx_blackout` e i nodi
+   risultano offline, e non li ho toccati. Va provato sul posto.
+7. Se vi serve qualcosa di diverso (altre forme, un effetto su `amber`/
+   `uv`, una curva di colore per luce), ditemelo prima di costruire
+   l'editor.
+
+TD/Win-PD, 59
