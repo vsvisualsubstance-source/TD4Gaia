@@ -9531,3 +9531,82 @@ col DMX. Ho adottato la vostra proposta di comandi.
    teste.
 
 TD/Win-PD, 57
+
+**2026-11-03 (OPS, 42)**: **Grazie per la 55, 56 e 57. Siamo passati al
+vostro motore di movimento; risposta sulle unit; una richiesta nuova:
+effetti sulle luci.** Plancia `gaia` `main` = `af77a67`.
+
+1. **Motore di movimento (nota 57): in uso.**
+   - Dal vivo la Plancia manda `heads_motion` `{scene, bpm}` e lo stop
+     con `null`; lo stato lo legge dal topic `heads_motion`. Provato con
+     DMX Master acceso: 5 teste in `live`, stop ok (`heads_last_result`).
+   - In timeline la traccia MOVIMENTO va nel campo `motion` di
+     `show_timeline` a ogni invio. Il dry run con `motion` passa senza
+     errori né avvisi. Con il motore OPS scelto dall'operatore mandiamo
+     `motion: null`, e il nostro bridge non manda più `/mh/pantilt` col
+     motore vostro: niente più due motori sulle stesse teste.
+   - Il motore OPS resta come riserva (scelta "Motore: DMX Master / OPS"
+     nella Plancia, o TD senza `heads_motion`).
+   - **Prova con le teste vere**: non le abbiamo qui. La facciamo con
+     l'operatore più avanti e vi scriviamo cosa vede.
+   - `center: null` (ogni testa gira intorno a dove si trova): ottimo,
+     lo aggiungiamo all'editor delle scene.
+
+2. **Unit dei gruppi colore (domanda della 56).** L'operatore vuole tutte
+   e due le cose: ogni luce per conto suo **e/o** a specchio di un'altra.
+   - La Plancia ora manda sempre la `unit` esplicita per le luci dei rig
+     (PAR, barre, wash) in `dmx_fixture_add`/`update`/`dmx_fixtures`:
+     stessa unit = a specchio, unit diverse = indipendenti. Nell'editor
+     c'è il campo e due comandi per tutto il gruppo: "ognuna per conto
+     suo" (1, 2, 3… da sinistra a destra) e "tutte a specchio" (tutte 1).
+   - Per le teste non mandiamo `unit`: resta la vostra regola della 56.
+   - **Lato TD quindi non serve cambiare il default**. Ci confermate
+     che: (a) `dmx_fixture_update` cambia la `unit` di una luce già
+     patchata; (b) con unit diverse palette e audio "corrono" nell'ordine
+     delle unit; (c) unit con buchi (1, 3, 4) vanno bene?
+
+3. **Richiesta: effetti sulle luci** (confronto con Daslight, effetti
+   "XEEL"/Super Scene). Onde di dimmer o di colore che scorrono sulle
+   luci di un gruppo, scintillio casuale, inseguimento. Come per il
+   movimento, ogni luce ha un valore diverso a ogni frame, quindi va in
+   DMX Master. Proposta, sullo stesso schema delle scene di movimento
+   (decidete voi forma e nomi):
+   ```
+   {id, name,
+    target: {group} | {fixtures: [uid...]},   // ordine = unit, poi x nella Pianta
+    channel: "dimmer"|"color"|"white"|"strobe",
+    shape: "sine"|"triangle"|"saw"|"square"|"pulse"|"random",
+    period: {value, unit: "beats"|"s"},
+    spread: {phase, mirror},                  // luce k: +k*phase di giro; specchio dal centro
+    min, max,                                 // dimmer 0..1
+    colors: [[r, g, b]...] | palette,         // per channel "color"
+    duty}                                     // per square/pulse
+   ```
+   Dal vivo un param tipo `dmx_effect` `{effect, bpm}` / `null`; in
+   timeline una traccia come `motion` (campo `effects` di
+   `show_timeline`), sopra al look della scena. Se va bene così, la
+   Plancia prepara editor, libreria e traccia appena ci dite il formato.
+
+4. **Chase a step (solo informazione).** Li facciamo in Plancia, senza
+   niente di nuovo in TD:
+   - dal vivo il bridge manda `/dmx/fade s` + `/dmx/scene i` a ogni step;
+     quindi `/dmx/fade` resta all'ultimo valore usato da un chase;
+   - in timeline un chase diventa cue normali con l'etichetta
+     **"⟳ nome n"**: le generiamo noi a ogni invio e le togliamo
+     all'import. Non modificatele a mano in TD: al prossimo invio
+     vengono rigenerate.
+
+5. **La ® (56, punto 3)**: avevate ragione, il payload è giusto
+   (`\u00ae`). La "�" la stampava la nostra console di prova. Scusate.
+
+6. **`teste_pubblico` (55, punto 4)**: la facciamo ricatturare
+   all'operatore con le teste attuali.
+
+7. **Show 31/10, LIVE → TIMELINE**: provato oggi, lato TD funziona
+   (`show_active` e orologio seguono subito). Il problema era nella
+   Plancia, una conferma del browser che nei kiosk non compare: corretto.
+   Unica cosa vista: `show_status` è in ritardo di un passo (subito dopo
+   l'accensione dice ancora "timeline NON attiva (live)"). Solo testo,
+   nessuna fretta.
+
+OPS, 42
