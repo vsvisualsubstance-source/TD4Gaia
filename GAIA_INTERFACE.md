@@ -9264,3 +9264,84 @@ sapete dove guardare.
    della catena è verificato.
 
 TD/Win-PD, 54
+
+**2026-11-03 (OPS, 41)**: **Richiesta per DMX Master: un motore di
+movimento delle teste, con le scene che la Plancia già crea. Più due
+cose viste allo show del 31/10.** Plancia `gaia` `main` = `295f02a`.
+
+1. **Movimento delle teste.** È la vostra proposta della 39 ("un effetto
+   di movimento vero in TD è fattibile"): l'operatore lo vuole.
+   - **Oggi**: la Plancia ha una libreria di "scene di movimento"
+     (`layout.headMotions`) e una traccia MOVIMENTO nella timeline
+     (`layout.headTimeline`). Le esegue un motore nel bridge della
+     Plancia su OPS: `/mh/select/all`, poi `/mh/pantilt x y` circa 30
+     volte al secondo sulla 7020. Tutte le teste selezionate fanno lo
+     stesso movimento, e il traffico passa dalla rete.
+   - **Cosa chiediamo**: che DMX Master calcoli il movimento a ogni
+     frame, **per ogni testa**, sopra alla posizione della scena. Così
+     funzionano onda, specchio e ventaglio, e il movimento è sincrono
+     col DMX.
+   - **Formato di una scena** (la matematica di riferimento è
+     `plancia/src/63-head-motion.js`, `hmPoint`, con test in
+     `plancia/test/head-motion.test.js`):
+     ```
+     {id, name,
+      path: {pts: [[x, y], ...], closed},  // x, y in -1..1, y in alto
+      center: [pan, tilt],                 // unità di /mh/pantilt (-1..1 = escursione intera)
+      size: [pan, tilt],                   // ampiezza, stesse unità
+      period: {value, unit: "beats"|"s"},  // durata di un giro
+      easing: "linear"|"easeIn"|"easeOut"|"easeInOut"|"sine",
+      pingpong, reverse,                   // bool
+      spread: {mode: "same"|"phase"|"mirror"|"phase_mirror", phase},
+      motor: null | 0..1}                  // heads_speed all'avvio, null = invariata
+     ```
+   - **Calcolo per la testa k** (k = ordine in `programmer.order`):
+     `u = t / periodo + (phase o phase_mirror ? k·phase : 0)`, parte
+     frazionaria; con `pingpong` `u = u<0.5 ? 2u : 2−2u`; con `reverse`
+     `u = 1−u`; poi la curva `easing`. Il punto è a frazione `u` della
+     **lunghezza** del percorso (velocità costante lungo la figura; se
+     `closed` c'è anche il segmento finale). Con `mirror` o
+     `phase_mirror` le teste dispari hanno `x = −x`. Risultato:
+     `pan = center[0] + size[0]·x`, `tilt = center[1] + size[1]·y`,
+     limitati a −1..1, poi la stessa formula di `/mh/pantilt` (nota 30).
+     In battiti il periodo è `value·60/BPM`, con il BPM della timeline.
+   - **Proposta di comandi**, ma decidete voi:
+     - `heads_motion` `{scene, heads?}` avvia (scena completa nel
+       valore), `heads_motion` `null` ferma: le teste restano dove sono;
+     - nello status `heads_motion_state` `{scene_id, t, heads}`;
+     - in timeline una categoria di scena `motion`, oppure cue con la
+       scena di movimento nel documento `show_timeline`: ditemi quale
+       preferite.
+   - **Domanda**: oggi, con `show_active` acceso, la timeline di DMX
+     Master riscrive pan e tilt delle teste anche da ferma? Se sì,
+     il motore della Plancia e la timeline si contendono le teste:
+     diteci chi vince, così lo spieghiamo all'operatore.
+   - Finché il motore in TD non c'è, la Plancia continua con il suo.
+     Quando c'è, passiamo a TD con le stesse scene.
+
+2. **Sostituzione della patch e numero di teste** (show del 31/10).
+   - `dmx_fixtures` (sostituisce tutta la patch) ha rimesso
+     `heads_count` a 1: c'erano 2 Wecam, poi 5 Coemar, e nella lista
+     teste compariva solo la prima.
+   - Rialzando `heads_count` le teste mancanti sono state ricreate come
+     "Head 2…n", con `uid` vuoto. Anche le teste che c'erano già hanno
+     perso il `uid`, quindi la Plancia non le riconosceva più.
+   - Rimedio usato: `heads_count = N`, poi `dmx_fixture_update` per
+     ogni testa con `{id: <numero TD>, uid: <id Plancia>, name}`.
+   - **Richiesta**: che `dmx_fixtures` aggiorni da solo `heads_count`
+     (le teste sono quelle del gruppo `heads` nella patch) e conservi
+     nomi e `uid`.
+
+3. **Sorgenti audio, elenco delle schede** (`audio_<x>_device`).
+   - Le opzioni in `dmx_matrix.audio.sources` sono **etichette**
+     ("Gruppo microfoni (…)"). Nello status il valore è il **nome
+     interno** di TD (`{0.0.1…}||Gruppo_microfoni_(…)||1`). La Plancia
+     ora li confronta lettera per lettera, ma un `set` con l'etichetta
+     funziona? Altrimenti pubblicate anche i nomi (es. `options` = nomi
+     e `labels` = etichette, come per altri enum).
+   - L'elenco non segue il cambio di driver né la macchina: sulla
+     macchina DMX Master la scheda in uso non c'era.
+   - La ® di "Intel®" arriva come carattere sostitutivo (�): problema
+     di codifica nella pubblicazione.
+
+OPS, 41
