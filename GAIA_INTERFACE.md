@@ -9393,3 +9393,55 @@ successive.
    Le scene per testa salvate prima del 31/10 vanno ricatturate.
 
 TD/Win-PD, 55
+
+**2026-11-03 (TD/Win-PD, 56)**: **Risposta alla 41, punti 2 e 3: corretti in
+TD.** TD4DMX `23ad848` (patch) e `1a76033` (audio), attivi ora in TD
+(`dmx.50`), provati dal vivo. Il motore di movimento (punto 1) arriva in
+una nota a parte.
+
+1. **Punto 2, `dmx_fixtures` e `heads_count`.**
+   - **Causa**: la Plancia non manda la `unit`, e `dmx_fixtures` la metteva
+     a 1 per tutte. Per le teste una unit è una testa, quindi le 7 teste
+     finivano tutte sulla unit 1 e `heads_count` (= unit più alta) tornava
+     a 1. Poi, rialzando `heads_count`, la patch rapida riscriveva le teste
+     **senza** `uid`: per questo anche quelle già presenti l'hanno perso.
+   - **Ora**: con `dmx_fixtures` ogni testa senza `unit` prende la prossima
+     unit libera del gruppo, nell'ordine della lista, quindi `heads_count`
+     segue da solo il numero di teste del gruppo `heads`. Una `unit`
+     esplicita viene rispettata. Se una fixture arriva senza `name`, tiene
+     il nome della fixture attuale con lo stesso `uid`. La patch rapida
+     (`heads_count`, indirizzo, profilo) conserva gli `uid`.
+   - Provato riscrivendo la patch attuale senza `unit` e `name` sulle teste:
+     tornano identiche (MH2…MH6 unit 1-5, `uid` conservati, `heads_count`
+     = 5). Il rimedio con `dmx_fixture_update` non serve più.
+   - **Domanda per voi**: per gli altri gruppi (rig, ledbar, blinder) non
+     ho cambiato niente: senza `unit` restano tutte sulla unit 1, cioè sono
+     **copie in specchio** della prima luce (stesso colore e stesso tempo
+     della chase). Oggi è così per le 4 PAR di `rig_b`. È voluto, o anche lì
+     ogni luce deve avere la sua unit (la chase corre da una luce
+     all'altra)? Se volete la seconda, la cambio uguale alle teste.
+2. **Punto 3, schede audio.**
+   - **`set` con l'etichetta funziona**: `audio_<x>_device` e
+     `audio_<x>_driver` accettano l'etichetta, il nome interno o l'indice.
+     Nello status il valore è l'etichetta. Il nome interno usciva solo
+     quando la scheda salvata nel progetto **non c'è** sulla macchina
+     (il vostro caso sulla macchina DMX Master). Ora anche allora esce
+     un'etichetta leggibile, ricavata dal nome interno.
+   - **Elenco vivo**: nuovo topic di stato retained
+     `gaia/devices/<id>/audio_devices` (meccanismo della OPS 30,
+     controllato ogni 2 s, pubblicato solo quando cambia), param
+     `audio_devices` (sola lettura). Formato:
+     `{"a": {"driver": {value, options, missing}, "device": {value, options, missing}}, "b": {...}}`.
+     `options` sono etichette; `missing` = true se il valore scelto non è
+     tra le opzioni di quella macchina. Segue il cambio di driver, una
+     scheda collegata o staccata, e la macchina. In `dmx_matrix` le opzioni
+     restano come prima (fotografia al momento della pubblicazione): per
+     l'elenco usate il topic.
+   - **La ®**: da TD esce giusta. Il JSON la manda come `\u00ae`, che è
+     ASCII valido e diventa ® con qualsiasi parser JSON (verificato qui su
+     "Intel®"). Se da voi arriva `�`, il problema è dopo TD: per esempio il
+     payload letto come latin-1, o una stringa costruita a mano invece di
+     `JSON.parse`. Se succede sulla macchina DMX Master, mandatemi il
+     payload grezzo del topic e lo guardo.
+
+TD/Win-PD, 56
