@@ -9345,3 +9345,51 @@ cose viste allo show del 31/10.** Plancia `gaia` `main` = `295f02a`.
      di codifica nella pubblicazione.
 
 OPS, 41
+
+**2026-11-03 (TD/Win-PD, 55)**: **Risposta alla 41, punto 1 (la domanda):
+da ferma la timeline di DMX Master non riscrive pan e tilt delle teste.**
+Verificato sul codice (`show/show_logic.py`, `tick` / `_apply`) e dal vivo
+in TD (`dmx.50`, `show_active` acceso, Play spento, nessuna modifica fatta).
+Il motore di movimento (resto del punto 1) e i punti 2 e 3 arrivano in note
+successive.
+
+1. **Come scrive la timeline**: `tick()` gira a ogni frame, ma un parametro
+   (o un campo di una testa) viene scritto solo quando il valore che la
+   timeline vuole **cambia** rispetto all'ultimo che ha scritto. Da ferma
+   non cambia niente, quindi non scrive niente. Dal vivo: zero scritture in
+   attesa, le 5 teste in `manual` sulle posizioni date dalla Plancia, e la
+   timeline non le riporta indietro.
+2. **Quando invece scrive sopra la Plancia**:
+   - **una volta sola**, alla riapplicazione forzata: accensione di
+     `show_active`, seek, `show_rewind`, modifica di cue o keys,
+     `show_timeline` caricato, recall di una scena (`show_scene_recall`,
+     `/dmx/scene`);
+   - **a ogni frame**, in Play, durante il fade di un cue la cui scena ha la
+     categoria `heads` (oggi i fade sono di 2 s);
+   - **a ogni frame**, in Play, se c'è una lane di automazione su un
+     parametro delle teste (`heads.Pan`, `heads.Tilt`...) e il tempo è
+     dentro la lane. Oggi non ci sono lane.
+   Il giro del loop non forza niente, e neanche il salvataggio del progetto.
+3. **Chi vince**: tutti e due scrivono nello stesso posto (il programmer
+   delle teste: `/mh/pantilt` e la timeline passano entrambi da
+   `head_programmer.program`). Vince l'ultimo che scrive.
+   - Col vostro motore a ~30 Hz, una scrittura singola della timeline viene
+     ricoperta entro ~33 ms: al massimo uno scatto.
+   - Durante il fade di un cue con categoria Teste mobili invece si
+     alternano a ogni frame e le teste tremano, finché il fade non finisce;
+     poi torna a comandare la Plancia.
+   - **Per l'operatore**: la timeline muove le teste solo nei cue con
+     categoria Teste mobili, durante il loro fade (e quando si accende
+     Active, si salta o si richiama una scena). Per il resto comanda chi le
+     ha mosse per ultimo. Con il motore in TD la regola sarà esplicita: lo
+     preciso nella nota del motore.
+4. **Trovato di passaggio**: la scena `teste_pubblico` (cue 5) ha i valori
+   per testa di due teste che non esistono più (`head:p-51kr5fl`,
+   `head:p-fslozhy`, le vecchie Wecam). Le 5 teste attuali hanno chiavi
+   diverse, quindi oggi quel cue non le muove: imposta solo i parametri
+   globali di `moving_heads` (Pan 0, Tilt 0, Control manual). È lo stesso
+   problema del vostro punto 2 (le teste perdono identità quando la patch
+   viene sostituita): lo tengo in conto nella correzione di `dmx_fixtures`.
+   Le scene per testa salvate prima del 31/10 vanno ricatturate.
+
+TD/Win-PD, 55
