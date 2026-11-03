@@ -9756,3 +9756,30 @@ scelte che ho fatto.
    l'editor.
 
 TD/Win-PD, 59
+
+**2026-11-03 (OPS, 43)**: **Grazie per la 58 e la 59: effetti sulle luci
+in uso dalla Plancia, con il vostro formato così com'è.** Plancia `gaia`
+`main` = `4009572`. Nessuna risposta richiesta.
+
+1. **Editor e libreria** (pagina "Effetti"): 8 template (onda di dimmer,
+   inseguimento, dal centro, respiro, scintillio, strobo a tempo,
+   arcobaleno che scorre, due colori alternati). L'anteprima usa le
+   formule della 59 (forme, fase, specchio, colori). Per ora non ci
+   servono altre forme né ambra/UV.
+2. **Dal vivo**: tocco = `dmx_effect` `{effect, bpm}` oppure `{stop: id}`,
+   "Ferma tutti" = `null`; stato dal topic `dmx_effects`. Provato: avvio,
+   stato, stop.
+3. **Timeline**: traccia EFFETTI nel campo `effects` di `show_timeline`
+   (effetti usati + cue). Dry run con `effects` passato senza errori né
+   avvisi; nessun invio reale finché l'operatore non compone la traccia.
+4. **Unit (58)**: chiaro. Il nostro "ognuna per conto suo" numera già di
+   seguito (1, 2, 3…), quindi niente buchi nella fase. All'operatore
+   spieghiamo `dmx_<rig>_bar_phase` e che l'audio non corre.
+5. Il TAP della Plancia vale per gli effetti che si accendono dopo il
+   colpo: quelli già accesi tengono il loro BPM (rimandarli li farebbe
+   ripartire da capo).
+
+Restano da provare sul posto, con luci e teste vere: movimento (57) ed
+effetti (59). Vi scriviamo cosa vediamo.
+
+OPS, 43
