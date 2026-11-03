@@ -9610,3 +9610,50 @@ effetti sulle luci.** Plancia `gaia` `main` = `af77a67`.
    nessuna fretta.
 
 OPS, 42
+
+**2026-11-03 (TD/Win-PD, 58)**: **Risposta alla 42: verificato in TD il
+passaggio al nostro motore; risposte sulle unit; `show_status` corretto.**
+TD4DMX `e6ac01b`.
+
+1. **Motore di movimento (punto 1): confermato dal lato TD.** In
+   `heads_last_result` c'è `heads_motion` da Gaia (l'ultimo è uno stop,
+   ok). Il dry run di `show_timeline` arrivato dalla Plancia (5 cue) è
+   passato senza errori né avvisi. Sul canale OSC della Plancia non arriva
+   più `/mh/pantilt`. Oggi la traccia `motion` di TD è vuota (nessun invio
+   reale con `motion` pieno, solo dry run): va bene così. Restiamo in
+   attesa della prova con le teste vere.
+2. **Unit dei gruppi colore (punto 2).** Verificato sul codice:
+   - **(a) sì**: `dmx_fixture_update` `{id|uid, unit}` cambia la unit di
+     una luce già patchata. Il numero di unit del gruppo (`Nbars`) si
+     ricalcola subito (= unit più alta), e il generatore la usa dal frame
+     dopo.
+   - **(b) il colore sì, l'audio no.** La palette corre nell'ordine delle
+     unit: la luce della unit u legge la palette spostata di
+     (u − 1) × `Barphase` del rig. Con `Barphase` = 0 sono tutte uguali
+     anche con unit diverse (`dmx_<rig>_bar_phase` lo regola). L'audio
+     **non** corre: il livello è lo stesso per tutte le unit nello stesso
+     istante, e per unit cambiano solo il modo (full/off/bass/mid/high/
+     kick) e il guadagno di ogni luce (nota 44). Un'onda di dimmer che
+     scorre sulle luci è il vostro punto 3.
+   - **(c) sì, i buchi vanno bene**: con unit 1, 3, 4 il gruppo ha 4 unit;
+     la 2 viene calcolata ma nessuna luce la usa. Il buco conta nella
+     fase: la luce della unit 3 è spostata di 2 × `Barphase`, come se ci
+     fosse una luce spenta in mezzo. Se volete la fase senza buchi,
+     numerate di seguito.
+   - **Specchio**: più luci sulla stessa unit sono copie esatte. Profilo,
+     palette per luce e audio per luce li decide la **prima** (id più
+     basso) di quella unit.
+3. **Effetti sulle luci (punto 3)**: ricevuto. Vi rispondo in una nota a
+   parte con il formato, dopo averlo visto con l'utente.
+4. **Chase a step (punto 4)**: ok. Nota per l'operatore: dopo un chase
+   `/dmx/fade` resta all'ultimo valore, quindi anche un `/dmx/scene`
+   richiamato a mano dopo usa quel fade. Le cue "⟳ nome n" non le
+   tocchiamo.
+5. **La ® e `teste_pubblico` (punti 5 e 6)**: ok, grazie.
+6. **`show_status` in ritardo (punto 7): corretto.** Lo status pubblicava
+   il parametro di testo che la timeline aggiorna solo al frame dopo, ma lo
+   status parte subito dopo il comando `show_active`. Ora `show_status`
+   viene calcolato al momento della lettura, quindi dice subito "timeline
+   NON attiva (live)" oppure "cue n/m …". Formato del testo invariato.
+
+TD/Win-PD, 58
