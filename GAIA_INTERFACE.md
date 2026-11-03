@@ -9783,3 +9783,67 @@ Restano da provare sul posto, con luci e teste vere: movimento (57) ed
 effetti (59). Vi scriviamo cosa vediamo.
 
 OPS, 43
+
+**2026-11-03 (OPS, 44)**: **Richiesta per DMX Master: la timeline resta con
+un solo orologio, ma le cue divise in tracce; chase come oggetto vero; scene
+limitate a un rig.** Plancia `gaia` `main` = `2b1d820`. Richiesta
+dell'operatore, che in TD vede una lista unica difficile da leggere.
+
+**Il problema.** Il progetto di prova "Demo completo" passa il dry run con
+65 cue, 0 marker e nessun errore, quindi funziona. Ma nella lista stanno
+insieme luci, teste e step dei chase ("⟳ nome n", generati da noi, vedi 42
+punto 4). Le tracce `motion` ed `effects` (57, 59) invece sono già a parte:
+chiediamo di estendere lo stesso schema.
+
+**Non chiediamo timeline separate**: orologio, seek e loop devono restare
+uno solo.
+
+1. **Campo `track` su ogni cue** di `show_timeline`, per esempio `"luci"`
+   (default se assente), `"teste"`, `"barre"`. Stesso tempo per tutte; la
+   composizione a strati non cambia. In TD la vista raggruppata per traccia.
+   Due cue allo stesso istante su tracce diverse devono essere valide: oggi
+   la Plancia ne sposta una di 0.01 s per evitarle (non sappiamo se servisse
+   davvero: ditecelo).
+2. **GO e BACK solo sulla traccia principale.**
+   - **Domanda**: oggi `/show/go` e `/show/back` si fermano su ogni cue,
+     comprese quelle "⟳" e quelle delle teste? Dalla documentazione sembra di
+     sì, ma non l'abbiamo provato. Se è così, con i chase in timeline GO non
+     è utilizzabile in regia.
+   - **Proposta**: GO, BACK e il conteggio di `show_status` e di
+     `cue` nell'orologio ("cue n/m") contano solo la traccia principale.
+     Decidete voi quale campo la identifica.
+3. **Chase come oggetto vero**, sul modello di `motion`:
+   ```
+   "chases": {"chases": [{id, name, steps: [{scene, hold?}],
+                          hold: {value, unit: "beats"|"s"},
+                          fadePct, pingpong}],
+              "cues": [{"time": s, "chase": <id> | "off", "label"}]}
+   ```
+   - Formato e calcolo di riferimento: `plancia/src/63-chase.js`
+     (`chaseOrder`, `chaseSec`, `chaseExpand`) con i test in
+     `plancia/test/chase.test.js`. Uno step tiene `hold` (suo, o quello del
+     chase) e ci arriva con un fade di `fadePct` % del suo tempo.
+   - Dal vivo: un param come `dmx_effect`, per esempio `dmx_chase`
+     `{chase, bpm}` / `null`, con il suo stato. Oggi lo fa il bridge con
+     `/dmx/fade` + `/dmx/scene` e lascia `/dmx/fade` all'ultimo valore: con
+     il chase in TD questo problema sparisce.
+   - Quando c'è, la Plancia smette di generare le cue "⟳" e il motore su OPS
+     resta solo come riserva.
+4. **Scene limitate a un rig o gruppo.** Oggi la categoria `rigs` comanda
+   tutti i rig insieme, quindi non si può fare una traccia BARRE indipendente
+   da FRONT e BACK.
+   - **Proposta**: categorie come `rigs:ledbar`, oppure un campo
+     `only: [gruppi]` alla cattura e in `show_scene_update`. Decidete voi.
+   - Stesso comportamento a strati: la scena tocca solo quel rig, gli altri
+     restano com'erano.
+   - La Plancia mostrerà una traccia per rig solo se usata.
+
+**Compatibilità.** Le timeline senza `track` e senza `chases` devono
+continuare a funzionare come oggi. Il rilevamento lo facciamo da `dmx_matrix`,
+come per `motion` ed `effects`: diteci dove pubblicate le novità.
+
+**Ordine, se dovete sceglierne uno**: per noi 2 (è quello che può bloccare in
+regia), poi 3, poi 1, poi 4. Prima di costruire, ditemi se qualcosa non torna
+col vostro modello.
+
+OPS, 44
