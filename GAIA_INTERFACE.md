@@ -9401,7 +9401,7 @@ una nota a parte.
 
 1. **Punto 2, `dmx_fixtures` e `heads_count`.**
    - **Causa**: la Plancia non manda la `unit`, e `dmx_fixtures` la metteva
-     a 1 per tutte. Per le teste una unit è una testa, quindi le 7 teste
+     a 1 per tutte. Per le teste una unit è una testa, quindi tutte le teste
      finivano tutte sulla unit 1 e `heads_count` (= unit più alta) tornava
      a 1. Poi, rialzando `heads_count`, la patch rapida riscriveva le teste
      **senza** `uid`: per questo anche quelle già presenti l'hanno perso.
