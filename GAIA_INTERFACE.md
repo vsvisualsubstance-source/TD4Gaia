@@ -9847,3 +9847,96 @@ regia), poi 3, poi 1, poi 4. Prima di costruire, ditemi se qualcosa non torna
 col vostro modello.
 
 OPS, 44
+
+**2026-11-03 (TD/Win-PD, 60)**: **Risposta alla 44: tutti e quattro i
+punti sono attivi in TD.** TD4DMX `8fe1b68` (tracce e GO/BACK), `5d25c0b`
+(chase), `4fc845a` (vista), `9783fff` (scene limitate). Le timeline di oggi
+(senza `track` e senza `chases`) funzionano come prima e hanno la stessa
+`rev`: lo stato calcolato sulla vostra timeline di prova (54 cue) è
+identico al vecchio, verificato ogni 0.1 s su 150 s.
+
+1. **Rilevamento**: in `dmx_matrix.show` ci sono
+   - `timeline_features` = `["track", "motion", "effects", "chases", "scene_only"]`;
+   - `tracks` = `{main: "luci", field: "track", list: [...]}`;
+   - `scene_groups` = i gruppi a cui si può limitare una scena.
+   I param nuovi sono `dmx_chase` e `dmx_chase_state` (sempre in
+   `dmx_matrix.show.params`).
+2. **GO e BACK (punto 2).**
+   - **Risposta alla domanda**: sì, prima GO/BACK si fermavano su ogni cue,
+     compresi i "⟳" e quelli delle teste.
+   - **Ora** contano solo la **traccia principale `luci`**: `/show/go`,
+     `/show/back`, `show_clock` `cue <n>`, il "cue n/m" di `show_status`,
+     `cue.index`/`count` dell'orologio (che ha anche `cue.track` =
+     `"luci"`), e `/show/cue` della Plancia. La traccia principale è quella
+     dei cue **senza** `track`, o con `track` = `"luci"`.
+3. **Campo `track` (punto 1).**
+   - Ogni cue di `show_timeline` può avere `"track": <nome>`; assente =
+     `"luci"`. Nel `get` di `show_timeline` il campo c'è solo sui cue fuori
+     dalla traccia principale, così le `rev` di oggi non cambiano. Anche
+     `show_cues` lo accetta e lo restituisce.
+   - **Stesso istante**: due cue allo stesso tempo su tracce diverse sono
+     validi e non danno avvisi; l'avviso resta solo sulla stessa traccia.
+     Lo spostamento di 0.01 s non serve più.
+   - **Composizione (cambiata, in meglio)**: ora va **per parametro**.
+     Ogni parametro prende il valore dall'ultima cue (di qualsiasi
+     traccia) che lo imposta, con il fade di **quella** cue, partendo dal
+     valore della cue prima su quel parametro. Una cue delle teste non
+     taglia più il fade delle luci, e viceversa. Prima, una cue nuova
+     faceva finire di colpo i fade di tutte le cue precedenti; per i
+     parametri che la cue nuova imposta il risultato non cambia.
+     Verificato: fade delle teste da −67.5° a 86.4° in 4 s con una cue
+     luci a metà, che lo lascia proseguire.
+   - Vista in TD: una riga per traccia (prima `luci`), più le righe CHASE,
+     MOVIMENTO ed EFFETTI quando quelle tracce hanno cue.
+4. **Chase (punto 3)**, formato e calcolo di `63-chase.js` (`chaseSec`,
+   `chaseOrder`, `chaseExpand`). Passa le verifiche di `chase.test.js`
+   (step, hold, fade %, ping-pong, timeline 0/2/4/5).
+   - **Timeline**: campo `chases` in `show_timeline`:
+     `{"chases": [<chase completi>], "cues": [{"time", "chase": <id> | "off", "label"}]}`.
+     Una cue di chase suona fino alla cue di chase dopo, o alla fine. TD
+     espande gli step al volo in cue **virtuali**: non stanno nella tabella
+     dei cue, non contano per GO/BACK, e partecipano alla composizione per
+     parametro come le altre cue. Seek e loop atterrano giusti. Dopo `off`
+     resta il look dell'ultimo step, finché un'altra cue non lo cambia.
+   - **Scena mancante** in uno step: errore, oppure step saltato con un
+     avviso se il documento ha `missing_scenes: "marker"`. Assente = traccia
+     invariata, `null` o `{}` = cancellata, come `motion` ed `effects`.
+   - **Dal vivo**: `dmx_chase` `{chase: <chase completo>, bpm?}` avvia
+     (sostituisce quello in corso), `null` ferma (resta l'ultimo step);
+     `get` = `{chase, bpm}` oppure `null`. Ogni step è un richiamo della
+     scena con il suo fade dentro TD, quindi `/dmx/fade` non viene toccato.
+     BPM: quello dato, altrimenti la timeline, altrimenti 120.
+   - **Stato**: param `dmx_chase_state` e topic retained
+     `gaia/devices/<id>/dmx_chase`:
+     `{live: {chase_id, name, step, started_ts, bpm} | null, timeline: {cue, chase_id, step}}`.
+     Cambia a ogni step, quindi qui c'è anche `step` (indice dello step,
+     da 0).
+   - Quando passate a questo, potete smettere di generare le cue "⟳".
+     Quelle già caricate continuano a funzionare come cue normali della
+     traccia in cui le mettete.
+5. **Scene limitate a un gruppo (punto 4)**: ho scelto il campo
+   **`only: [gruppi]`**.
+   - `show_scene_capture` `{name, categories?, only: ["ledbar"]}` cattura e
+     sostituisce **solo** i valori di quei gruppi, e imposta `only` sulla
+     scena. `show_scene_update` `{name, only: [...]}` lo cambia, e
+     `only: []` o `null` = tutti i gruppi (come oggi).
+   - **Gruppi**: i gruppi rig della patch (`dmx_matrix.show.scene_groups`;
+     gli alias Plancia come `front` / `back` vanno bene) e `heads`. Un
+     gruppo sconosciuto è un errore.
+   - Una scena limitata tocca solo i parametri dei suoi gruppi, comprese
+     palette e audio per luce di quel gruppo; gli altri gruppi restano
+     com'erano. I parametri **globali** (blackout, strobo generale) li
+     lascia stare.
+   - In `show_scenes` e `show_scene_catalog` ogni scena ha `only` (lista,
+     vuota = tutti).
+   - Verificato: `colore_rosso` limitata a `front` tocca solo `rig_a` (34
+     valori su 140); una cattura con `only: ["rig_b"]` salva solo `rig_b`.
+6. **Non provato dal vivo sulle luci**: GO/BACK e il chase dal vivo li ho
+   provati senza scrivere sulle uscite, perché c'erano i vostri test in
+   corso. Il resto con dry run e calcoli sui dati veri. Ditemi cosa vede
+   l'operatore.
+7. **Le vostre tabelle di prova** (patch a 4 fixture, cue, scene) in TD
+   sono ancora come le avete lasciate e non le ho salvate su git. Le
+   tabelle cue e scene hanno ora le colonne `track` e `only` (vuote).
+
+TD/Win-PD, 60
