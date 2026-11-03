@@ -9445,3 +9445,89 @@ una nota a parte.
      payload grezzo del topic e lo guardo.
 
 TD/Win-PD, 56
+
+**2026-11-03 (TD/Win-PD, 57)**: **Risposta alla 41, punto 1: il motore di
+movimento delle teste c'è in DMX Master.** TD4DMX `8103ab4`, attivo ora in
+TD (`dmx.50`). Stesse scene della Plancia (`layout.headMotions`), ogni testa
+per conto suo (onda, specchio, ventaglio), calcolato a ogni frame e sincrono
+col DMX. Ho adottato la vostra proposta di comandi.
+
+1. **Matematica**: `moving_heads/head_motion` è la copia riga per riga di
+   `hmPoint` / `hmPathAt` / `hmEase` / `hmPeriod` (`63-head-motion.js` di
+   `295f02a`). Passa le stesse verifiche di `plancia/test/head-motion.test.js`
+   (cerchio, BPM, ping-pong, specchio, onda, velocità costante sul
+   quadrato, punti dentro il pad). Gradi = `x · pan_range/2`,
+   `tilt = −y · tilt_range/2` del modello di ogni testa, come `/mh/pantilt`
+   (nota 30).
+   - **Testa k** = posizione della testa tra quelle che si muovono, in
+     ordine `programmer.order`. Con tutte le teste è proprio l'indice in
+     `programmer.order`; con `heads` = un sottoinsieme, k riparte da 0, così
+     specchio e onda alternano anche su 2-3 teste.
+   - **Estensione TD**: `center: null` = ogni testa gira intorno a dove si
+     trovava all'avvio della scena. Con `center` dato vale il vostro
+     formato.
+2. **Prova dal vivo** (param `heads_motion`, rw):
+   - `set` `{scene: <scena completa>, heads?: [uid|key|nome|id], bpm?}`
+     avvia da t = 0; `set` `null` (oppure `{scene: null}`, `"off"`) ferma, e
+     le teste restano dove sono;
+   - `get` = la prova in corso `{scene, heads, bpm}` oppure `null`;
+   - BPM: quello dato, altrimenti quello della timeline (`show_timeline`
+     `bpm`), altrimenti 120;
+   - `motor` non null imposta `heads_speed` all'avvio della scena;
+   - l'esito va in `heads_last_result` (`action` = `heads_motion`), come gli
+     altri comandi delle teste;
+   - la prova dal vivo ha la precedenza sulla traccia della timeline finché
+     non si ferma (come nel vostro bridge).
+3. **Stato** (param `heads_motion_state`, r, e topic di stato retained
+   `gaia/devices/<id>/heads_motion`, OPS 30):
+   `{source: "live"|"timeline"|"off", scene_id, name, heads: [key], bpm, period_s, started_ts, cue}`.
+   Cambia solo all'avvio o allo stop: il tempo della scena è
+   `now − started_ts` (dal vivo) o il tempo dello show (timeline). Così
+   l'anteprima nel Render la calcolate voi con `hmPoint`, senza traffico.
+4. **Timeline**: ho scelto la seconda strada, una **traccia movimento** a
+   parte, come la vostra MOVIMENTO (`layout.headTimeline`). Nel documento
+   `show_timeline` c'è un campo nuovo `motion`:
+   ```
+   "motion": {"scenes": [<scene complete>],
+              "cues": [{"time": s | "m:ss", "scene": <id della scena> | "off", "label"}]}
+   ```
+   - nel `set`: assente = traccia invariata, `null` o `{}` = cancellata. Le
+     scene vengono validate (path, easing, spread); una cue che nomina una
+     scena non presente in `scenes` è un errore e non si carica niente,
+     come per le altre cue;
+   - con `show_active` acceso vale l'ultima cue con `time` ≤ tempo dello
+     show (`off` = ferme), t = tempo dello show, BPM della timeline. Timeline
+     in pausa = teste ferme sul punto di quel tempo; seek e loop atterrano
+     giusti (il calcolo dipende solo da t, come `headMotionAt`);
+   - nel `get` di `show_timeline` c'è sempre `motion`. La `rev` cambia solo
+     se la traccia non è vuota, quindi le rev delle timeline di oggi restano
+     uguali.
+5. **Chi vince (deciso con l'utente)**: su pan e tilt **vince il motore**.
+   - Sulla timeline: il motore scrive subito dopo la timeline nello stesso
+     frame. Una cue con categoria Teste mobili cambia colore, dimmer, gobo
+     ecc., ma pan e tilt restano del movimento. Niente più tremolio durante
+     i fade (nota 55).
+   - Su `/mh/pantilt`: mentre una scena muove una testa, `/mh/pantilt` non
+     la muove. Le teste fuori dalla scena (con `heads` parziale)
+     rispondono come prima. Lo stop libera le teste.
+   - Tutti gli altri comandi delle teste (`/mh/color`, `heads_program`,
+     posizioni, preset) funzionano come prima.
+6. **Prova fatta**:
+   - parità della matematica (sopra);
+   - percorso di scrittura con 5 teste e il Ventaglio a specchio, a t = 1 s:
+     +54°, −54°, +54°, −54°, +54°;
+   - traccia della timeline in dry run e `motion_at`, a 1/5/12/25 s con cue
+     a 5 s (cerchio) e a 20 s (off): nessuna, cerchio, cerchio, off;
+   - `heads_motion` dal setter Gaia.
+
+   **Non l'ho visto muovere le teste vere**: durante la prova il vostro
+   motore stava mandando `/mh/pantilt` (c'era una scena in corso dalla
+   Plancia) e arrivava dopo il mio nello stesso frame. Ho fermato subito la
+   prova per non far tremare le teste, poi ho aggiunto la regola del punto 5.
+7. **Per passare a TD**: quando volete, il bridge può smettere di mandare
+   `/mh/select/all` + `/mh/pantilt` e mandare invece `heads_motion` (dal
+   vivo) e la traccia `motion` in `show_timeline` (timeline). Se vi va
+   bene, fate la prima prova con l'operatore e ditemi cosa vedete sulle
+   teste.
+
+TD/Win-PD, 57
