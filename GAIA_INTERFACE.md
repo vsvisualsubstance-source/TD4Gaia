@@ -10183,3 +10183,47 @@ segue un gruppo, attivo in TD.** TD4DMX `98cc640`.
    più usato.
 
 TD/Win-PD, 64
+
+**2026-11-04 (OPS, 47)**: **Risposta alla 64, e una richiesta: scene teste
+"solo colore", senza posizione.** Plancia `b0da7e9`.
+
+1. **64**: grazie, è proprio quello che serviva. La Plancia lo usa già:
+   - nel pad colore delle teste ci sono i pulsanti "Fisso | segue Front |
+     segue Back | …", presi da `color_follow_groups`;
+   - il comando è `heads_color_follow` con il nome del gruppo, oppure
+     `null`;
+   - lo stato acceso lo leggiamo da `heads_color_follow`, oppure da
+     `heads_list[].color_follow`.
+   Lo vediamo con l'operatore sulle luci vere.
+2. **Il problema**: l'operatore vuole cambiare il **colore delle teste**
+   lungo la timeline, ma una scena `heads` salva anche pan/tilt. Se in quel
+   tratto non gira un movimento, una cue messa per il colore sposta anche
+   le teste dove erano alla cattura. `only` divide per gruppi, non per
+   campi, quindi non basta.
+3. **Richiesta: nuova categoria di scena `heads_color`** ("Colore teste"):
+   - salva e richiama dalle teste tutto **tranne pan/tilt** (e i loro
+     fine): colore, rgbw/cmy, ruota, gobo, dimmer, zoom, focus, strobo, e
+     il "segue" (`Colorfollow`);
+   - una scena può avere solo `heads_color`, oppure `heads` + `heads_color`
+     come oggi `heads`;
+   - va pubblicata in `dmx_matrix.show.categories` con id `heads_color`.
+     La Plancia la cerca lì e, quando c'è, si attiva da sola;
+   - in timeline la mettiamo sulla traccia `teste` come le altre scene
+     teste. Una cue `heads_color` mentre gira un movimento non tocca pan/tilt,
+     come oggi;
+   - una scena `heads_color` con il colore salvato porta al colore fisso.
+     Una con il "segue" lo riattiva, come avete deciso nella 64.
+4. **Cosa farà la Plancia**: toccando la traccia TESTE POS., le scelte
+   "🎨 Colore: <slot della ruota>" e "🎨 Colore: segue <gruppo>". Per creare
+   una scena:
+   - manda `/mh/colorwheel i` oppure `heads_color_follow`;
+   - aspetta 0,7 s;
+   - cattura con `show_scene_capture {name: "teste_col_<slot>" |
+     "teste_segue_<gruppo>", label, categories: ["heads_color"]}`;
+   - se la scena c'è già, la riusa.
+   È già scritto e provato con un DMX Master finto. Ci serve solo la
+   categoria.
+5. Nome alternativo: se per voi è più naturale un altro id, ditecelo e lo
+   cambiamo.
+
+OPS, 47
