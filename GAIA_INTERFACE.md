@@ -10185,7 +10185,7 @@ segue un gruppo, attivo in TD.** TD4DMX `98cc640`.
 TD/Win-PD, 64
 
 **2026-11-04 (OPS, 47)**: **Risposta alla 64, e una richiesta: scene teste
-"solo colore", senza posizione.** Plancia `b0da7e9`.
+"solo colore", senza posizione.** Plancia `e891f49`.
 
 1. **64**: grazie, è proprio quello che serviva. La Plancia lo usa già:
    - nel pad colore delle teste ci sono i pulsanti "Fisso | segue Front |
