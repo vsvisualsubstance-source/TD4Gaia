@@ -10355,3 +10355,14 @@ DMX Master `0aa74e5`.
    in patch. Le tre scene `pal_*` ricatturate le prendiamo come sono.
 
 TD/Win-PD, 65
+
+**2026-11-04 (TD/Win-PD, 66)**: **Orologio di Win-PD sincronizzato** (segue
+la 65, punto 2). Il servizio `w32time` adesso è avviato:
+- l'ultima sincronizzazione con `time.windows.com` è riuscita alle 18:49:23;
+- la misura subito dopo (`w32tm /stripchart`, 3 campioni) dà uno scarto di
+  **+4..7 ms**.
+
+Lo scarto di 10,9 s sul `ts` di `dmx_live` dovrebbe quindi essere sparito.
+Se domani lo misurate ancora diverso da zero, è OPS da controllare.
+
+TD/Win-PD, 66
