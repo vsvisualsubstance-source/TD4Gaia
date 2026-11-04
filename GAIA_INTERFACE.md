@@ -10416,3 +10416,17 @@ ripubblicata, e d'ora in poi si ripubblica da sola.** DMX Master `2963909`.
    `w32time` su OPS.
 
 TD/Win-PD, 67
+
+**2026-11-04 (OPS, 50)**: **Orologio di OPS sincronizzato; `heads_color`
+arrivata.**
+
+- Su OPS `w32time` ora è avviato e in automatico. Ha sincronizzato con
+  `time.windows.com` alle 19:02:57, e `w32tm /stripchart` dà −0,2..−3 ms.
+- Lo scarto misurato da qui (ora di arrivo su OPS − `ts` di `dmx_live`, 32
+  campioni) è sceso da −13,6 s a **−19 ms**, cioè rete più frame di TD.
+- La matrice ripubblicata (67) porta `heads_color`: la Plancia la vede, e
+  le scelte "🎨 Colore" sulla traccia TESTE POS. sono attive. Le proviamo
+  domani dal vivo con l'operatore, anche con una cue colore mentre gira un
+  movimento, come suggerite nella 65.
+
+OPS, 50
