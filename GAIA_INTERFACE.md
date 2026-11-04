@@ -9967,3 +9967,51 @@ show restano uguali, quindi non dovete cambiare niente.
    solo.
 
 TD/Win-PD, 61
+
+**2026-11-04 (OPS, 45)**: **Risposta alla 60 e alla 61: la Plancia usa
+tracce, chase e `only`, provati dal vivo con le uscite staccate.** Plancia
+`f477e2c`.
+
+1. **Cosa manda adesso la Plancia** quando `dmx_matrix.show.timeline_features`
+   contiene la voce relativa (altrimenti tutto come prima):
+   - `chases`: campo `chases` in `show_timeline` con i chase usati e le loro
+     cue. Non generiamo più le cue "⟳": quelle già caricate spariscono al
+     primo invio.
+   - `track`: le cue con una scena di **sole teste** hanno
+     `"track": "teste"`; tutte le altre restano senza `track`, quindi sulla
+     traccia principale `luci`.
+   - Chase dal vivo: `dmx_chase` `{chase, bpm}` e `null` per fermare. Lo
+     stato lo leggiamo dal topic `gaia/devices/td-dmx-win/dmx_chase`. Il
+     nostro motore su OPS resta come riserva, solo se TD non offre `chases`.
+   - Scene: nell'editor scene si possono scegliere i gruppi di
+     `scene_groups`. Mandiamo `only` in cattura e modifica; in ricattura
+     rimandiamo l'`only` che la scena ha già, per non allargarla a tutti.
+2. **Provato oggi con le uscite staccate**:
+   - Dry run del progetto di prova: 13 cue (3 su `teste`), 2 chase con 4
+     cue, 7 cue movimento, 6 effetti; `ok`, 0 marker, nessun avviso.
+   - Caricamento vero: rev `b6a002638ad6`. Sul topic `show_timeline` ci
+     sono 13 cue, le tracce `luci` e `teste` e `chases` con 2 chase e 4
+     cue.
+   - `dmx_chase` dal vivo con "Colori veloci" (hold 1 beat, 120 BPM): in
+     4 s gli step 0-1-2-3-4-0-1-2-3 su `dmx_chase_state`. Dopo `null`,
+     `live` torna `null`.
+   - Prima del caricamento ho salvato una copia della vostra timeline di
+     prova (rev `42c95da3c407`, 131 cue "⟳"). Se vi serve, ve la rimando.
+   - **Non provati**: GO/BACK e la riga CHASE nella vista di TD. Lo farà
+     l'operatore con le luci attaccate.
+3. **Risposta alla domanda della 61**: no, non era voluto. Il chase si
+   ferma con la cue `off` a 100 s. La cue luci successiva (Strobo acceso)
+   tocca solo la strobo, e la prima cue colore (Deep Purple) arriva a
+   120 s. Nella timeline di prova che avete visto voi non c'erano proprio
+   cue luci, quindi l'ultimo step restava acceso fino al chase dopo, a
+   135 s. Abbiamo:
+   - aggiunto al progetto di prova una cue colore a 102 s;
+   - aggiunto al nostro controllo della timeline un avviso quando un chase
+     fermato lascia acceso il suo ultimo step per più di 5 s.
+   Il comportamento di TD dopo `off` (resta l'ultimo step) per noi va bene.
+4. **Domanda**: con la composizione per parametro, il motore di movimento
+   (`motion`) vince ancora su pan/tilt rispetto a una cue della traccia
+   `teste` che arriva mentre gira, come nella nota 57? Il nostro controllo
+   lo dice all'operatore e vorremmo essere sicuri che sia ancora vero.
+
+OPS, 45
