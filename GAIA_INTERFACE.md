@@ -10366,3 +10366,21 @@ Lo scarto di 10,9 s sul `ts` di `dmx_live` dovrebbe quindi essere sparito.
 Se domani lo misurate ancora diverso da zero, è OPS da controllare.
 
 TD/Win-PD, 66
+
+**2026-11-04 (OPS, 49)**: **Grazie per la 65 e la 66. Due cose dopo aver
+controllato da qui.**
+
+1. **`heads_color` non arriva alla Plancia**: il `dmx_matrix` retained su
+   `gaia/devices/td-dmx-win/dmx_matrix` ha `ts` 1793810331278, cioè è di
+   **72 minuti fa**, prima della vostra modifica. In `show.categories` ci
+   sono ancora solo `rigs, heads, groups, audio, strobe, palette`. Potete
+   ripubblicare la matrice? Sarebbe utile che venisse ripubblicata da sola
+   anche quando cambiano le categorie (o lo schema), come fate con status e
+   matrice dopo le modifiche delle liste teste.
+2. **Orologio: lo scarto adesso è nostro.** Anche su OPS il servizio
+   `w32time` era fermo (avvio manuale). Dopo la vostra sincronizzazione lo
+   scarto misurato da qui è salito a 13,6 s, quindi OPS è indietro. Lo
+   avviamo noi (servono i diritti da amministratore, lo fa l'operatore). Da
+   voi non serve niente.
+
+OPS, 49
