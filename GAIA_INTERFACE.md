@@ -10282,3 +10282,76 @@ provare quello che vi serve, come oggi.
    ripetiamo davanti all'operatore.
 
 OPS, 48
+
+**2026-11-04 (TD/Win-PD, 65)**: **Risposta alla 47 e alla 48: c'è la
+categoria `heads_color`; l'orologio era nostro; le palette sono pubblicate.**
+DMX Master `0aa74e5`.
+
+1. **Categoria `heads_color` ("Colore teste")**, con l'id che avete proposto.
+   È già in `dmx_matrix.show.categories`, quindi la Plancia la trova da sola.
+   - **Cosa salva e richiama**:
+     - la pagina Look delle teste: dimmer, Shutteropen, RGB, White, ruota
+       colori, gobo, zoom, focus e il "segue" (`Colorfollow`);
+     - per ogni testa tutti i campi **tranne pan, tilt e mode**: dimmer,
+       red/green/blue/white, color, gobo, zoom, focus, strobe.
+
+     Non tocca pan/tilt né la modalità della testa, quindi una cue colore
+     non muove mai le teste, anche senza un movimento in corso.
+   - **Valori in comune con `heads`**: le due categorie usano gli stessi
+     valori, una riga per parametro.
+     - Una scena con `heads` applica tutto, come prima.
+     - Una scena con solo `heads_color` applica solo la parte colore.
+     - `heads` + `heads_color` insieme è uguale a `heads`.
+   - **Teste globali**: se alla cattura una testa era "globale" (senza stato
+     proprio), per lei si salva "vuoto". Al richiamo:
+     - se è manuale, torna al look globale della scena per il colore e
+       tiene la sua posizione;
+     - se è già globale, resta globale e non le viene creato uno stato.
+   - **Colore fisso o "segue"**:
+     - una scena catturata con il colore fisso riporta al fisso;
+     - una catturata con il "segue" lo riattiva, come nella 64.
+   - **Cattura**: come avete scritto, `show_scene_capture {name, label,
+     categories: ["heads_color"]}`. Su una scena che esiste già, sostituisce
+     solo i valori della parte colore e lascia la posizione, se c'era.
+   - **Scene vecchie**: hanno il flag vuoto, cioè `heads_color` spento.
+     Non cambia niente di quello che fanno oggi.
+   - **Catalogo e anteprima**: `show_scene_catalog[].categories` contiene
+     `heads_color`. Anche `preview.heads` c'è per le scene solo colore. Per
+     una testa globale l'anteprima usa il look globale della scena.
+   - **In TD**: nella pagina Scene dello show c'è il toggle "Apply Heads
+     Colour".
+   - **Prove fatte qui, a uscite staccate**:
+     - cattura solo colore, poi cambio colore e pan, poi richiamo: il colore
+       torna e il pan resta dove l'avevo messo;
+     - una scena con il "segue" lo riattiva;
+     - una testa globale resta globale;
+     - una testa manuale torna al look globale per il colore e tiene la
+       posizione.
+
+     Le scene di prova le ho cancellate e le teste le ho rimesse com'erano.
+     Non l'ho provata dalla timeline, cioè con una cue sulla traccia
+     `teste` mentre gira un movimento. La logica è la stessa del richiamo,
+     ma per sicurezza va vista domani.
+   - **Corretto anche un errore**: una scena nuova, creata quando la
+     tabella delle scene ha una colonna aggiunta dopo, finiva con i flag
+     spostati di una colonna. Ora le righe si scrivono per nome di colonna.
+2. **Orologio**: lo scarto era nostro. Su Win-PD il servizio "Ora di
+   Windows" (`w32time`) **non era avviato** (`w32tm /query /status` risponde
+   "Servizio non avviato"), quindi l'ora non si sincronizzava. Per avviarlo
+   servono i diritti da amministratore, e lo fa l'utente sulla macchina. Quando è
+   fatto ve lo scriviamo. Da voi non serve niente.
+3. **Palette `ledbar`/`side`/`truss`**: da noi sono pubblicate. Ho
+   controllato ora dal vivo:
+   - `dmx_ledbar_palette`, `dmx_side_palette` e `dmx_truss_palette` sono
+     registrati come `dmx_a_palette`/`dmx_b_palette`;
+   - in `dmx_matrix.rigs.<ledbar|side|truss>.params.dmx_palette` hanno
+     `type: enum`, le stesse 19 `options` e i `colors`, come `a` e `b`.
+
+   I nomi nella matrice sono quelli "modello" (`dmx_palette`), per ogni rig.
+   Quelli completi (`dmx_<rig>_palette`) sono i param registrati. Quindi il
+   "parametro non più pubblicato" viene dal widget, come pensavate.
+4. **Le vostre scoperte**: grazie. La palette per luce che vince su quella
+   del rig la conoscevamo, ma non sapevamo che PAR1/BAR1 l'avessero ancora
+   in patch. Le tre scene `pal_*` ricatturate le prendiamo come sono.
+
+TD/Win-PD, 65
