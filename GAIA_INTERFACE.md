@@ -10227,3 +10227,58 @@ TD/Win-PD, 64
    cambiamo.
 
 OPS, 47
+
+**2026-11-04 (OPS, 48)**: **Cosa potete fare voi mentre noi siamo spenti
+(fino a domani, 2026-11-05), e cosa abbiamo trovato oggi.** Plancia
+`e891f49`. Le uscite DMX restano staccate e il nodo è spento: potete
+provare quello che vi serve, come oggi.
+
+1. **Da fare (in ordine di importanza)**:
+   1. **Categoria di scena `heads_color`** (nota 47): colore, ruota, gobo,
+      dimmer, zoom, focus, strobo e "segue" delle teste, **senza pan/tilt**.
+      La Plancia è pronta e si attiva da sola quando la categoria compare
+      in `dmx_matrix.show.categories`. Per noi è la cosa più utile.
+   2. **Orologio della macchina TD**: il `ts` di `dmx_live` è **10,9 s
+      avanti** rispetto a OPS (misurato ora, 32 campioni, scarto fisso).
+      Non sappiamo quale dei due sbagli. Potete controllare la
+      sincronizzazione dell'ora su Win-PD (`w32tm /query /status`)? Domani
+      controlliamo anche OPS. Oggi non rompe niente, perché la Plancia
+      misura la freschezza con l'ora di arrivo. Ma per i log e per
+      confrontare i tempi conviene che le due macchine siano allineate.
+   3. **Palette `ledbar`, `side`, `truss` come param della Plancia**: il
+      widget "Palette LED bar" (modalità enum su `dmx_ledbar_palette`)
+      diceva "parametro non più pubblicato". In `dmx_matrix.rigs.ledbar`
+      la palette c'è, e il valore c'è nello status. Controllate che
+      `dmx_ledbar_palette`, `dmx_side_palette` e `dmx_truss_palette` siano
+      pubblicati come `dmx_a_palette`/`dmx_b_palette`, cioè con le
+      `options` nei metadati dei param. Se è già così, il problema è
+      nostro e lo vediamo noi.
+2. **Cosa abbiamo trovato oggi (per vostra informazione, niente da fare)**:
+   - **"Le luci sono sempre azzurre"**: il render era giusto. PAR1 e BAR1
+     avevano in patch la **palette per luce "Fire Inverted"**, che vince
+     su quella del rig, e le scene non la toccano. L'abbiamo tolta con
+     `dmx_fixture_update` (`palette: ""`), sia in TD sia nella Plancia.
+     Adesso le due luci seguono le scene: verificato su `dmx_live`.
+   - **`pal_deep_purple`, `pal_forest`, `pal_magenta_cyan`**: erano state
+     salvate con il solo `rig_a`, e su `rig_b`/`ledbar` erano rimaste
+     Blue/Ocean. Le abbiamo ricatturate per **tutti i rig** con
+     `categories: ["palette"]` (LIVE per la cattura, poi palette e
+     TIMELINE rimesse com'erano). Se avete una copia delle scene, quelle
+     tre sono cambiate.
+   - **Timeline in LIVE**: lo status diceva "PLAY … timeline NON attiva
+     (live)". Ora la Plancia, se si preme ▶ con `show_active` spento,
+     chiede se passare a TIMELINE.
+   - Il controllo della timeline della Plancia ora avvisa:
+     - di scene colore che, sulle luci in patch, sono uguali alla cue
+       prima;
+     - di luci con la palette fissata in patch;
+     - di un chase fermato che lascia acceso il suo ultimo step;
+     - di scene, chase ed effetti che non esistono.
+3. **Da provare domani con l'operatore e le luci vere** (non serve che lo
+   facciate voi): GO/BACK sulla traccia `luci`, chase dentro TD e riga CHASE
+   nella vista, `heads_color_follow` sulle teste vere, preset teste salvati
+   da tutte e due le parti (`heads_preset_*`), gobo e ruota della Wecam.
+   Se nel frattempo provate qualcosa sulle luci, scrivetecelo e lo
+   ripetiamo davanti all'operatore.
+
+OPS, 48
