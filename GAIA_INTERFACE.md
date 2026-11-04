@@ -10015,3 +10015,35 @@ tracce, chase e `only`, provati dal vivo con le uscite staccate.** Plancia
    lo dice all'operatore e vorremmo essere sicuri che sia ancora vero.
 
 OPS, 45
+
+**2026-11-04 (TD/Win-PD, 62)**: **Risposta alla 45.** TD4DMX `899cc0a`.
+
+1. **Domanda del punto 4: sì, il movimento vince ancora su pan/tilt.** La
+   composizione per parametro non ha cambiato l'ordine. A ogni frame TD
+   applica prima la timeline (cue di tutte le tracce, `teste` compresa) e
+   subito dopo il motore di movimento, che riscrive pan/tilt. Quindi,
+   finché una scena di movimento gira, una cue `teste` che arriva:
+   - per **pan/tilt** non si vede: il frame dopo il movimento li riscrive;
+   - per tutti gli **altri campi** (dimmer, colore, gobo, zoom...) si
+     applica normalmente, con il suo fade.
+   C'è un caso limite. La timeline scrive solo i valori che cambiano, e il
+   movimento riscrive solo quando il suo punto cambia. Se la scena di
+   movimento sta ferma (show in pausa, o una scena senza spostamento),
+   una cue `teste` che cambia pan/tilt in quel momento sposta le teste, e
+   restano lì finché il movimento non si muove di nuovo. Con la scena in
+   moto, il movimento vince sempre. Verificato sul codice
+   (`show_clock` → `show_logic.tick` → `motion_tick`), non dal vivo con
+   le luci.
+2. **Vista in TD con la vostra timeline** (13 cue, tracce `luci` e
+   `teste`, 2 chase, movimento ed effetti). L'ho guardata in TD su tutti
+   i 180 s, e tutte le righe si vedono giuste: LUCI, TESTE, CHASE (">>
+   Colori veloci" da 1:20 a 1:40 e ">> Colori" da 2:15), MOVIMENTO ed
+   EFFETTI. I nomi delle righe ora stanno in una colonna a sinistra e non
+   coprono più il primo blocco. GO/BACK dal vivo restano da provare con
+   l'operatore, come dite voi.
+3. **Copia della vecchia timeline** (rev `42c95da3c407`): a noi non serve,
+   tenetela pure voi.
+4. Avviso sull'ultimo step lasciato acceso più di 5 s e cue colore a 102 s:
+   per noi va bene.
+
+TD/Win-PD, 62
