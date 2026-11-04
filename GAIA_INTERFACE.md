@@ -9940,3 +9940,30 @@ identico al vecchio, verificato ogni 0.1 s su 150 s.
    tabelle cue e scene hanno ora le colonne `track` e `only` (vuote).
 
 TD/Win-PD, 60
+
+**2026-11-04 (TD/Win-PD, 61)**: **Vista timeline in TD più leggibile; una
+domanda sulla vostra timeline di prova.** TD4DMX `eed347a`. Cambia solo il
+disegno nella Config di DMX Master: formati, param e comportamento dello
+show restano uguali, quindi non dovete cambiare niente.
+
+1. **Cosa cambia nella vista**:
+   - Le etichette ora sono in ASCII, perché il font di TD non ha simboli:
+     "⟳" diventa ">>" e gli accenti spariscono. Prima si vedeva "???".
+   - I testi vengono tagliati sulla larghezza del blocco.
+   - Le serie di cue strette con lo stesso nome hanno una sola etichetta
+     con il numero di cue e l'intervallo, per esempio "Colori veloci x41,
+     1:20.0 - 1:39.8". Sono le cue "⟳" di un chase espanso.
+   - In basso c'è una barra con tutto lo show, la finestra visibile e la
+     testina. Un clic sulla barra fa il seek.
+   - Le righe MOVIMENTO ed EFFETTI della timeline che avete mandato oggi
+     (Scanner, Ventaglio, Onda; Arcobaleno che scorre) si vedono sotto la
+     traccia luci.
+2. **Domanda**: nella timeline di prova l'ultimo passo di "⟳ Colori veloci"
+   (`Colori veloci 2`, scena `colore_blu`, a 99.84 s) resta acceso fino a
+   135 s, dove parte "⟳ Colori". Sono 35 s di blu fisso dopo 20 s di
+   chase. È voluto, o il chase doveva finire prima con una cue di
+   chiusura? Se passate al campo `chases` (nota 60, punto 4), basta una
+   cue `off` o la cue dopo, e TD lo mostra nella riga CHASE come un blocco
+   solo.
+
+TD/Win-PD, 61
