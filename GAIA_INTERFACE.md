@@ -10078,3 +10078,50 @@ quindi non dovete cambiare niente.
    provare con le uscite, va acceso il nodo o rifatto lo Scan.
 
 TD/Win-PD, 63
+
+**2026-11-04 (OPS, 46)**: **Risposta alla 62 e alla 63, e una richiesta: le
+teste che seguono il colore di un gruppo.** Plancia `8d02b37`.
+
+1. **62 e 63**: lette, grazie. Per noi va bene che il movimento vinca su
+   pan/tilt, caso limite compreso. Le porte offline coincidono con le
+   uscite staccate: le riaccendiamo per la prova con l'operatore.
+2. **Cosa vede l'operatore**: nel render le teste restano sempre dello
+   stesso colore mentre lo show cambia. Il render usa già `rgb_out`, che
+   comprende la ruota (vostra nota sul `color_mix`), quindi il disegno è
+   giusto. Il motivo è un altro: le scene colore (`colore_rosso`,
+   `colore_blu`, le palette) toccano solo i rig, e le teste tengono il
+   colore che avevano.
+3. **Richiesta: colore delle teste che segue un gruppo**, come opzione.
+   - Proposta di formato: param `heads_color_follow` = nome di un gruppo
+     (`front`, `back`, `ledbar`, o un gruppo rig come `rig_a`), oppure
+     `null` per il colore fisso di oggi. Va bene anche un campo nel look
+     delle teste, se per voi è più naturale.
+   - Con un gruppo, a ogni frame le teste prendono la tinta media del
+     gruppo, quella che già calcolate per il Look Rig. Su una testa a
+     ruota scegliete lo slot più vicino, come fate con `/mh/color`; su una
+     testa RGB passa il colore com'è.
+   - Una soglia o un tempo minimo tra un cambio di slot e l'altro eviterebbe
+     che la ruota giri avanti e indietro quando la tinta del gruppo sta tra
+     due slot (onde di colore, chase veloci). Decidete voi il valore.
+   - Va salvato **nelle scene** con la categoria `heads`. Così una scena
+     teste può dire "colore fisso" oppure "segue front", e in timeline si
+     cambia da una sezione all'altra. Anche `heads_presets` dovrebbe
+     ricordarlo.
+   - Lettura: lo stato in `heads_list` (per testa, o un campo unico).
+     Quando c'è, la Plancia mette nella pagina Teste mobili una scelta
+     "Colore: fisso | segue Front | segue Back | …".
+   - Domanda: se una cue `teste` imposta un colore fisso mentre è attivo
+     il "segue", chi vince? Per noi la cosa più chiara è che una scena con
+     il colore salvato spenga il "segue".
+4. **Cosa abbiamo cambiato nella pagina teste**, per vostra informazione:
+   - gobo e slot della ruota li prendiamo dai `gobos`/`colors` del modello
+     della prima testa selezionata (`heads_list[].profile`). Prima i 6
+     nomi fissi della Plancia andavano per indice, e "Open" finiva su
+     Gobo_1;
+   - Zoom e Focus si spengono se il modello non ha quei canali;
+   - le posizioni le leggiamo da `heads.programmer.positions`, salviamo
+     con `/mh/position/store i nome` e catturiamo la posizione attuale
+     come scena `teste_n` (categoria `heads`) per la timeline.
+   Il campo `plancia_gobos` (i nostri 6 nomi) per noi non serve più.
+
+OPS, 46
