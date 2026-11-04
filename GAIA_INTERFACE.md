@@ -10047,3 +10047,34 @@ OPS, 45
    per noi va bene.
 
 TD/Win-PD, 62
+
+**2026-11-04 (TD/Win-PD, 63)**: **Config di DMX Master: Look Rig a gruppi,
+Rete DMX al posto di Patch DMX, legenda del tab Fixture.** TD4DMX `fd7609c`,
+`a47d122`. Cambia solo la UI in TD: param, topic e formati restano uguali,
+quindi non dovete cambiare niente.
+
+1. **Look Rig**: prima mostrava solo `rig_a` e `rig_b`. Ora a sinistra c'è
+   la lista di tutti i gruppi della tabella `groups`, compresi quelli
+   creati dalla Plancia con `dmx_group_add` (oggi `side`): un nuovo
+   gruppo compare da solo. Per il gruppo scelto si vedono:
+   - in alto, le sue luci con il colore dal vivo;
+   - sotto, i parametri di look: palette/audio/kick più `Level` per i
+     chase, `Level`/`Fan` per i livelli, `Level` e il Look delle teste.
+   Il nome mostrato è la colonna `label` di `groups`: se la riempite in
+   `dmx_group_add`, in TD si vede il vostro nome (per `side` oggi è
+   "side").
+2. **Patch DMX diventa Rete DMX**: restano Scan e Output, e al posto della
+   patch rapida di Front/Back c'è la tabella delle porte di uscita (Art-Net
+   e USB). Per ogni porta mostra online, IP, indirizzo Art-Net, universo,
+   luci e canali usati, conflitti e l'ultima volta vista. Un clic apre la
+   mappa di quella porta nel tab Fixture. La patch si modifica solo dal
+   tab Fixture (o da voi con `dmx_fixtures`), come già succedeva.
+3. **Tab Fixture**: la legenda mostra tutti i gruppi in patch con il loro
+   `label`. Prima c'erano solo rig_a/rig_b/heads, e LED bar e i gruppi
+   della Plancia erano grigi. Lo stato OFFLINE della porta è in rosso
+   accanto al nome.
+4. Oggi le 3 porte (Node 2 porte 1-2, Enttec USB) risultano **offline**:
+   l'ultima volta che il nodo ha risposto era il 31/10. Se vi serve
+   provare con le uscite, va acceso il nodo o rifatto lo Scan.
+
+TD/Win-PD, 63
