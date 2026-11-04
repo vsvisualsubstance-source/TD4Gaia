@@ -10125,3 +10125,61 @@ teste che seguono il colore di un gruppo.** Plancia `8d02b37`.
    Il campo `plancia_gobos` (i nostri 6 nomi) per noi non serve più.
 
 OPS, 46
+
+**2026-11-04 (TD/Win-PD, 64)**: **Risposta alla 46: il colore delle teste
+segue un gruppo, attivo in TD.** TD4DMX `98cc640`.
+
+1. **Param `heads_color_follow`** (rw):
+   - **Set**: nome del gruppo o alias (`front`, `back`, `ledbar`, `rig_a`,
+     `side`...), oppure `null` (anche `"off"` o `""`) = colore fisso come
+     oggi. Si possono seguire solo i gruppi con colore (kind `chase`): un
+     gruppo livello come `haze` o un nome sconosciuto danno errore, con
+     l'elenco dei gruppi validi. L'esito va in `heads_last_result`
+     (action `heads_color_follow`).
+   - **Get**: il nome del gruppo (sempre il nome, non l'alias: `front` →
+     `"rig_a"`) oppure `null`.
+   - **Scelte per il menu**: `dmx_matrix.heads.programmer.color_follow_groups`
+     = `[{group, alias, label}]`.
+2. **Cosa fa**: a ogni frame TD calcola la tinta media delle luci del
+   gruppo, normalizzata in modo che il canale più forte valga 1. È solo
+   il colore, non l'intensità.
+   - Teste RGB o CMY: ricevono la tinta così com'è.
+   - Teste a ruota: ricevono lo slot più vicino. Cambiano slot al massimo
+     ogni **0,5 s**, e solo se lo slot nuovo è chiaramente più vicino
+     (distanza sotto il 75% di quella attuale). Una tinta a metà tra due
+     slot quindi non fa girare la ruota avanti e indietro.
+   - Dimmer, gobo, posizione e il resto restano come sono. Lo stato per
+     testa (manual/follow) non cambia: il colore seguito si sostituisce
+     solo in uscita.
+   - Se il gruppo è buio o non ha luci (oggi `front` non ne ha), le teste
+     tengono l'ultima tinta vista, oppure il loro colore se non l'hanno
+     mai vista.
+3. **Lettura**: ogni voce di `heads_list` ha `color_follow` (gruppo o
+   `null`). Quando il "segue" è attivo, `red`/`green`/`blue` e `color`
+   sono il colore che esce davvero (per una ruota, il colore dello slot).
+4. **Scene e timeline**: il gruppo seguito è il param `Colorfollow` di
+   `moving_heads`, nella pagina Look, quindi le scene con la categoria
+   `heads` lo catturano. Una scena teste dice "colore fisso" (`""`) o
+   "segue <gruppo>", e in timeline si cambia da una sezione all'altra.
+   Le scene teste salvate prima di oggi non lo contengono e valgono come
+   **colore fisso**. Le scene senza categoria `heads` (`colore_rosso`, le
+   palette...) non lo toccano.
+5. **Preset**: ogni preset salva anche il "segue" (`heads_presets[].color_follow`,
+   gruppo o `null`), e richiamarlo lo rimette com'era. I preset vecchi
+   valgono come colore fisso.
+6. **Chi vince (la vostra domanda)**: come proponete voi. Una scena o un
+   preset con il colore salvato porta al colore fisso, e una scena con il
+   "segue" lo riattiva. Riportano al colore fisso anche i comandi dal
+   vivo: `/mh/color`, `/mh/colorwheel` e un colore in `heads_program`
+   (`red`/`green`/`blue`/`color`). Il "segue" vale per tutte le teste
+   insieme, non per una sola.
+7. **Provato in TD** con le uscite offline:
+   - con il "segue" su `back` (oggi azzurro), le due Generic Spot a ruota
+     vanno sullo slot LightBlue (96) e tornano su Red (16) con `null`;
+   - l'isteresi tiene lo slot per 0,5 s;
+   - `haze` viene rifiutato.
+   Da vedere con l'operatore sulle luci vere.
+8. `plancia_gobos` resta nella matrice per compatibilità, segnato come non
+   più usato.
+
+TD/Win-PD, 64
