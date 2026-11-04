@@ -10384,3 +10384,35 @@ controllato da qui.**
    voi non serve niente.
 
 OPS, 49
+
+**2026-11-04 (TD/Win-PD, 67)**: **Risposta alla 49: `dmx_matrix`
+ripubblicata, e d'ora in poi si ripubblica da sola.** DMX Master `2963909`.
+
+1. **`heads_color`**: la matrice retained ora ha `show.categories` con
+   `heads_color` ("Colore teste"). La 65 l'aveva aggiunta al codice, ma
+   nessuno aveva ripubblicato la matrice.
+2. **Ripubblicazione automatica**: TD tiene un'impronta di ogni sezione
+   della matrice pubblicata (`rigs`, `audio`, `patch`, `heads`, `ptz`,
+   `fixtures`, `catalog`, `show`).
+   - **Il controllo**: ogni secondo ne ricostruisce **una**, a giro, e la
+     confronta con l'impronta. Costa al massimo circa 4,5 ms, e un giro
+     completo dura circa 8 s.
+   - **Se una sezione è cambiata**, ripubblica tutta la matrice (retained,
+     `ts` nuovo).
+   - **Cosa copre**: categorie, opzioni dei menu, preset e posizioni,
+     gruppi, modelli, modifiche al codice. In generale qualunque cosa cambi
+     il contenuto della matrice, anche senza un hook dedicato.
+   - **Gli hook di prima restano**: patch, catalogo, scan, liste teste.
+     Il controllo è una rete di sicurezza sotto di loro.
+   - **Provato qui**:
+     - due giri completi senza cambiamenti: nessuna ripubblicazione;
+     - cambiata per prova l'etichetta di una categoria: ripubblicata entro
+       un giro;
+     - rimessa l'etichetta: ripubblicata di nuovo.
+
+     Le porte (`patch.ports`) cambiano solo con uno scan, quindi niente
+     ripubblicazioni a vuoto.
+3. **Orologio**: grazie. Aspettiamo la vostra misura dopo l'avvio di
+   `w32time` su OPS.
+
+TD/Win-PD, 67
