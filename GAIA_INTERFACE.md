@@ -10802,3 +10802,63 @@ Le scene `teste_pubblico` e `teste_1` vanno ricatturate con le teste
 davanti: lo faremo durante le prove sul posto.
 
 OPS, 54
+
+**2026-11-05 (TD/Win-PD, 72)**: **Risposta alla OPS 54: progetto
+attuale, copie sul Drive, dipendenze, `2.1.1.100`.** TD4DMX `78e9089`.
+
+1. **Il DMX Master attivo su Win-PD** è
+   `Desktop/release/DMX V8/dmx.toe`, uguale al backup `dmx.55.toe`
+   (salvato il 05/11 alle 10:54).
+   - L'ultimo commit di TD4DMX è `78e9089` (GitHub
+     `vsvisualsubstance-source/TD4DMX`, branch `main`).
+   - Contiene tutto, dalla 54 alla 71: motore di movimento, effetti,
+     chase, `only`, `heads_color`, `heads_color_follow`, `rig_config`
+     con taratura/look, partenze e preset, profilo `ZQ006018 8CH`
+     corretto e `dmx_channel_test`.
+2. **Le copie sul Drive sono vecchie.** `DMX-V9.toe` (28/10) e
+   `dmxV10.toe` (30/10) sono precedenti alla 54.
+   - Aperte, avrebbero di nuovo attivi i 5 DMX Out legacy, con doppie
+     uscite sulle stesse luci.
+   - Mancherebbe anche tutto quello che è venuto dopo.
+   - Non usatele per la touring.
+   - Il collega mette ora sul Drive la cartella aggiornata (vedi il
+     punto 3). Il nome ve lo conferma lui.
+3. **Il `.toe` da solo non basta.** Il progetto usa Embody: molti
+   operatori sono salvati come file esterni e TD li ricarica
+   all'apertura. Va copiata **tutta la cartella del progetto**, oppure va
+   fatto un clone di TD4DMX:
+   - `dmx.toe` e `project1.tox`, `perform.tox`, `window1.tox`;
+   - `project1/`, con script `.py`, tabelle `.tsv` e sottorete. Qui ci
+     sono i cataloghi dei modelli (`dmx_patch/fixture_models.tsv`,
+     `fixtures.tsv`), i preset dei rig
+     (`gaia_services/rig_presets.tsv`) e le scene della timeline
+     (`show/`);
+   - `gaia_client/`, il client Gaia;
+   - `.venv/`, i pacchetti Python di Embody. Non è nel repo: copiatela
+     insieme alla cartella.
+
+   Il percorso della cartella può cambiare, perché i riferimenti sono
+   relativi. Con TD chiuso, copiate la cartella intera e aprite
+   `dmx.toe` da lì.
+4. **`2.1.1.100`** è l'IP Art-Net di Win-PD, salvato nel parametro
+   `Localaddress` di `dmx_patch` ("Art-Net Interface IP").
+   - L'uscita attiva (`dmx_patch/dmx_out`) lo segue per espressione.
+   - Lo scan (`artnet_nodes`) lo riceve a ogni scan.
+   - All'avvio `interface_logic.ensure_local_address()` controlla che
+     l'IP sia di questa macchina. Se non lo è, sceglie da solo un
+     indirizzo locale `2.x.x.x`, altrimenti `10.x.x.x`, altrimenti quello
+     di default del sistema operativo.
+   - Sulla touring, quindi, se la scheda Art-Net ha un IP `2.x`, viene
+     presa in automatico. Altrimenti impostate `Localaddress` a mano.
+   - Le uniche altre occorrenze sono i 5 DMX Out legacy (costante
+     `2.1.1.100`), che restano spenti (`active` off) e non mandano
+     niente.
+   - I nodi Art-Net vengono dalla tabella delle porte
+     (`2.1.1.2` per l'Electroconcept di Win-PD). Sulla touring vanno
+     rifatti con uno scan o modificati, se i nodi hanno altri IP.
+
+Abbiamo preso nota della spunta "Intorno a dove si trova ogni testa"
+(`center: null`). Lato TD non serve altro: aspettiamo le prove con le
+teste vere.
+
+TD/Win-PD, 72
