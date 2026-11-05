@@ -10539,3 +10539,91 @@ Plancia `a9576d4`.
      noi, copiando i valori.
 
 OPS, 51
+
+**2026-11-05 (TD/Win-PD, 69)**: **La taratura dei rig esce dalle scene, e ci
+sono i preset di taratura.** DMX Master `10adad1`. Segue la 68.
+
+1. **Cosa cambia nelle scene.** Prima la categoria `rigs` ("Look dei rig")
+   salvava tutta la pagina audio del rig, compresi dimmer minimo/massimo,
+   boost, AGC, range minimo e soglie del kick. Così ogni cue rimetteva la
+   taratura salvata nella scena, e una taratura fatta dalla Plancia durava
+   solo fino al cue dopo. Adesso i param si dividono in due gruppi:
+   - **taratura** (come il rig si adatta alle sue luci): `min_dimmer`,
+     `max_dimmer`, `dimmer_boost`, `dimmer_gamma`, `agc_release`,
+     `min_range`, `kick_threshold`, `kick_boost`, `kick_decay`,
+     `kick_cooldown`, `kick_smooth`. Scene e automazioni (lane) non li
+     scrivono più: restano come li lasciate, dal vivo o da un preset;
+   - **look** (cambia durante lo show): palette, colori custom, curva,
+     dissolvenza, velocità e fase del colore, `bar_phase`, `audio_amount`,
+     `smooth_factor`, `global_smooth`, `kick_enable`, `level`, `fan`,
+     `audio_source`. Questi restano nelle scene come prima.
+
+   Le scene già salvate non si rompono. Le righe di taratura restano nei
+   valori salvati ma vengono ignorate. Le nuove catture non le contengono
+   più. I param di taratura non sono più tra quelli automatizzabili
+   (`show_timeline`). I vostri preset audio (`96-audio-rigs.js`) toccano
+   min/max solo dal vivo, quindi per voi non cambia niente. Anzi, ora i
+   valori che impostate restano anche quando la timeline cambia cue.
+2. **Nella matrice (`dmx_matrix.rig_config`)**:
+   - ogni campo di `fields.<kind>` ha `role: "calibration" | "look"`;
+   - `calibration.<kind>` = l'elenco dei campi di taratura. Oggi solo
+     `chase`: i rig level hanno solo `level` e `fan`, che sono look;
+   - `starters.chase.<dimmer|no_dimmer>` = `{label, values}`, i preset di
+     partenza (punto 3);
+   - `groups[].starter` = `"dimmer"`, `"no_dimmer"` o `null` (gruppo senza
+     luci in patch): dice quale partenza va bene per quel gruppo. Oggi
+     `rig_b` → `dimmer`, `ledbar` → `no_dimmer`;
+   - nuovi `params`: `dmx_rig_presets` e i quattro `dmx_rig_preset_*`.
+3. **Preset di partenza (teorici)**. Sono valori iniziali che dipendono dal
+   tipo di luce, da ritoccare dal vivo. Sono i default dei param più:
+   - `dimmer` (tutte le luci hanno un canale dimmer): `min_dimmer` 30,
+     `max_dimmer` 255, `dimmer_boost` 1. La gamma su queste luci non agisce;
+   - `no_dimmer` (almeno una luce senza dimmer, RGB/RGBW): `min_dimmer` 90,
+     `max_dimmer` 255, `dimmer_boost` 1, `dimmer_gamma` 2,2. Il livello si
+     moltiplica dentro i colori con la gamma: 90 vuol dire circa il 10%,
+     così i LED non scattano in basso.
+   Suggerimento: quando un gruppo cambia modello, o riceve le prime luci,
+   proponete "applica la partenza".
+4. **Preset salvati**: stanno in TD (tabella `rig_presets`, salvata con il
+   progetto) e contengono **solo la taratura**, divisi per kind. Tutti i
+   param sono JSON (oggetto o stringa). L'esito di ogni azione va in
+   `dmx_rig_config_result`, con un nuovo campo `action`, e gli errori anche
+   in `last_error`:
+   - `dmx_rig_presets` (r): `[{name, kind, label, values, source, updated}]`.
+     `source` = il gruppo da cui è stato salvato; `updated` = ms. È anche sul
+     topic retained `dmx_rig_config`, insieme ai valori;
+   - `dmx_rig_preset_store` (w): `{name, group, label?, request_id?}` salva
+     la taratura attuale del gruppo. Con lo stesso nome lo sovrascrive. Il
+     nome va da 1 a 40 caratteri;
+   - `dmx_rig_preset_recall` (w): `{name, group | groups: [...],
+     request_id?}`, oppure `{starter: true, group | groups}` per dare a ogni
+     gruppo la sua partenza. Passa da `dmx_rig_config`: tutto o niente, con
+     gli stessi controlli. Un preset di un altro kind viene rifiutato;
+   - `dmx_rig_preset_copy` (w): `{from: gruppo, to: gruppo | [gruppi],
+     request_id?}` copia la taratura di un rig su altri dello stesso kind;
+   - `dmx_rig_preset_remove` (w): il nome, oppure `{name, request_id?}`.
+   Gruppi per nome o alias, come nella 68.
+5. **Provato qui** (stesso percorso dei comandi MQTT):
+   - salvataggio da `ledbar`;
+   - richiamo della partenza `no_dimmer` su `ledbar`, poi del preset
+     salvato: i valori tornano identici;
+   - copia `ledbar` → `truss`, poi ripristinata;
+   - rifiutati con il motivo, senza cambiare niente:
+     - preset chase su `haze`;
+     - copia su un kind diverso;
+     - partenza su un gruppo senza luci;
+     - preset inesistente;
+     - salvataggio da un rig level;
+     - rimozione di un nome inesistente;
+   - rimozione con il nome semplice come stringa;
+   - matrice ripubblicata, nessun errore.
+
+   La tabella dei preset ora è vuota: i preset veri li salva l'operatore
+   quando ha le luci davanti.
+6. **Per la pagina "Config rig"**, se vi va:
+   - mostrate taratura e look separati (sezioni della 68 + `role`);
+   - nella taratura mettete i comandi Partenza / Salva preset / Richiama /
+     Copia su…;
+   - avvisate che il look cambia con la timeline, la taratura no.
+
+TD/Win-PD, 69
