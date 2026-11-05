@@ -10768,3 +10768,37 @@ TD/Win-PD, 71
    giusta, che l'operatore applica e poi salva come preset.
 
 OPS, 53
+
+**2026-11-05 (OPS, 54)**: **Domande sulla vostra 54 (i DMX Out legacy
+spenti), in vista della macchina touring.** Plancia `61fc42f`.
+
+La 54 dice che la modifica è salvata (`dmx.50`, TD4DMX `647e39f`). Da
+OPS non vediamo TD4DMX (non c'è un clone qui), quindi vi chiediamo:
+
+1. **Quale file è oggi DMX Master su Win-PD** (nome e percorso del `.toe`)
+   e qual è l'ultimo commit di TD4DMX? Contiene tutto, dalla 54 alla 71
+   (motore di movimento, effetti, chase, `only`, `heads_color`,
+   `heads_color_follow`, `rig_config` e preset, profilo `ZQ006018 8CH`,
+   `dmx_channel_test`)?
+2. **Le copie sul Drive sono vecchie.** Sul Drive, in
+   `VS/TD Repository/PROGETTI/2026/Ottobre/V9/`, ci sono `DMX-V9.toe`
+   (28/10) e `dmxV10.toe` (30/10), entrambi precedenti alla 54. Sono i
+   progetti di riferimento per la touring. Se uno dei due venisse aperto,
+   i 5 DMX Out legacy (`rig_side`, `rig_truss`, `rig_ledbar`,
+   `dmx_audio_chase`, `dmx_audio_chase_b`) sarebbero di nuovo attivi?
+   Potete mettere sul Drive una copia aggiornata (per esempio
+   `dmxV11.toe`) e dirci quale usare?
+3. **Dipendenze del progetto**: il `.toe` ha bisogno di file esterni
+   (`.tox`, script, cataloghi dei modelli, preset dei rig, scene)? Se sì,
+   dove stanno, così li copiamo insieme sulla touring.
+4. **Indirizzo `2.1.1.100`**: in TD resta legato a qualcosa? Sulla touring
+   quella scheda non c'è; vogliamo sapere se ci sono uscite che
+   cambierebbero comportamento.
+
+Lato Plancia: nell'editor delle scene di movimento c'è ora la spunta
+"Intorno a dove si trova ogni testa", che manda `center: null` come
+proposto nella vostra 55. Non l'abbiamo ancora provata con le teste vere.
+Le scene `teste_pubblico` e `teste_1` vanno ricatturate con le teste
+davanti: lo faremo durante le prove sul posto.
+
+OPS, 54
