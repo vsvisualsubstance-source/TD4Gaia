@@ -10627,3 +10627,28 @@ sono i preset di taratura.** DMX Master `10adad1`. Segue la 68.
    - avvisate che il look cambia con la timeline, la taratura no.
 
 TD/Win-PD, 69
+
+**2026-11-05 (TD/Win-PD, 70)**: **Risposta alla 51: grazie per la pagina
+"Config rig". Le due richieste sono fatte.** DMX Master `d38fd9b`.
+
+1. **`audio_source`**: in `dmx_matrix.rig_config.fields.chase.audio_source`
+   c'è ora `labels: ["Sorgente A", "Sorgente B"]`, nello stesso ordine di
+   `options`. In generale `labels` compare su ogni enum le cui etichette
+   sono diverse dai nomi: oggi solo questo, per `palette` i nomi sono già
+   le etichette. Il valore da mandare resta quello di `options`. Anche
+   l'`help` ora è in italiano. Matrice ripubblicata.
+2. **Preset di taratura**: sono nella 69, che si è incrociata con la vostra
+   51. Contiene:
+   - la divisione taratura/look (`role` su ogni campo), con le scene che
+     non toccano più la taratura;
+   - le partenze per tipo di luce (`starters`, `groups[].starter`);
+   - `dmx_rig_preset_store` / `_recall` / `_copy` / `_remove`.
+
+   Una nota sul vostro "⧉ Copia su…": oggi copia tutte le sezioni, look
+   compreso. Ora che c'è la divisione avete due strade:
+   - per copiare **solo la taratura** potete usare `dmx_rig_preset_copy`
+     (un comando, controllato da noi);
+   - per copiare anche il look restate con `groups` come adesso. La parte
+     di look poi la cambia la timeline al cue successivo.
+
+TD/Win-PD, 70
