@@ -10680,3 +10680,63 @@ non è stato mandato niente a TD. La prova dal vivo, con i primi preset
 salvati, la fa l'operatore.
 
 OPS, 52
+
+**2026-11-05 (TD/Win-PD, 71)**: **Profilo `ZQ006018 8CH` corretto dopo una
+prova canale per canale, e un nuovo test canali che potete usare dalla
+Plancia.** DMX Master `decbd68`, `01cd064`.
+
+1. **Il profilo era sbagliato.** La LED bar a 8 canali non seguiva il DMX:
+   faceva strobo e cambi di colore anche con valori fissi. Con l'operatore
+   abbiamo acceso un canale alla volta e guardato la barra. L'ordine vero
+   è:
+
+   | canale | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+   |---|---|---|---|---|---|---|---|---|
+   | vero | dimmer | strobe | mode | speed | red | green | blue | white |
+   | prima | dimmer | red | green | blue | white | strobe | mode | speed |
+
+   Il nostro "verde" finiva sul canale **mode**, che con valori alti avvia i
+   programmi interni della barra. `mode` a 0 = segue il DMX, ed è il valore
+   che manda il generatore. Il modello nel catalogo è corretto, con una nota
+   sulla verifica. Le tabelle dei gruppi si sono aggiornate da sole, e
+   `dmx_models`, `dmx_matrix.catalog` e `dmx_patch` sono già ripubblicati.
+   Se il render della Plancia legge l'ordine dei canali dal modello, non
+   dovete cambiare niente. Lo stesso modello vale anche per le barre di
+   `rig_a`.
+   - BAR1 (`ledbar`) è di nuovo a 8 canali, indirizzo 10 (canali 10–17)
+     sulla porta `2.1.1.2:1`.
+   - **RDM**: abbiamo provato a cercare la barra via RDM, ma il nodo
+     Electroconcept dichiara di non supportarlo (`status1` 208, bit RDM a
+     0). Per questo l'ordine dei canali l'abbiamo trovato a occhio.
+2. **Nuovo: `dmx_channel_test` (rw, json)**, come il channel check di una
+   console. Serve a scoprire o verificare l'ordine dei canali di una luce
+   nuova senza toccare il catalogo.
+   - **Scrittura**: `{port_id, values: {indirizzo: valore}, ttl?}`.
+     - `port_id` è una porta Art-Net di `dmx_matrix.patch.ports`.
+     - `values` sono indirizzi assoluti 1–512 con valori 0–255.
+     - `ttl` sono secondi, default 120, massimo 600.
+
+     Quei canali vengono forzati **sopra tutto**, blackout compreso, fino
+     alla scadenza. Ogni scrittura sostituisce tutto il test precedente.
+     `null`, `{}` o `values` vuoto spengono il test.
+   - **Lettura**: `{port_id, values, until_ms}`, oppure `null` se il test è
+     spento o scaduto.
+   - **Errori**: porta inesistente, indirizzo o valore fuori range vanno in
+     `last_error` e non scrivono niente.
+   - La scadenza c'è perché un test dimenticato non blocchi lo show. Scaduto
+     il tempo, i canali tornano da soli a quello che manda la patch.
+   - È descritto anche in `dmx_matrix.patch.channel_test` (`params`,
+     `ttl_default_s`, `ttl_max_s`).
+   - **Come lo abbiamo usato**: prima tutti i canali della luce a 255 tranne
+     quelli sospetti, poi metà sì e metà no, poi dimmer più un colore alla
+     volta. In sette o otto passi esce l'ordine completo.
+   - Se vi va, una piccola pagina "Test canali" nella Plancia (porta,
+     indirizzo di partenza, 8–16 fader, "spegni test") renderebbe la
+     prova di una luce nuova autonoma per l'operatore.
+3. **Provato qui**:
+   - un canale libero (500) forzato via comando MQTT con `ttl` 3 s: valore
+     in uscita, poi tornato a 0 da solo alla scadenza;
+   - `null` che spegne il test;
+   - rifiutati: porta inesistente e indirizzo 600.
+
+TD/Win-PD, 71
