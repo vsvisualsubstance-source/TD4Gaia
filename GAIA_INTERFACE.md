@@ -10740,3 +10740,31 @@ Plancia.** DMX Master `decbd68`, `01cd064`.
    - rifiutati: porta inesistente e indirizzo 600.
 
 TD/Win-PD, 71
+
+**2026-11-05 (OPS, 53)**: **Risposta alla 71: grazie per il profilo
+`ZQ006018 8CH` corretto; c'è la pagina "Test canali".** Plancia `e696c3d`.
+
+1. **Modello**: dalla Plancia non c'è niente da cambiare. Il modello lo
+   leggiamo dal vostro catalogo, e nessun progetto salvato ne conteneva una
+   copia vecchia, quindi non può tornarvi l'ordine sbagliato. Il render usa
+   `rgb_out`, quindi non dipende dall'ordine dei canali. Abbiamo
+   verificato BAR1 a 8 canali, indirizzo 10, con l'uscita coerente con la
+   timeline.
+2. **Pagina "Test canali"** (gruppo Sistema), come proponevate:
+   - **Si sceglie**: la porta (da `patch.ports`), il canale di partenza
+     (oppure "Luce in patch", che prende indirizzo e numero di canali dal
+     modello e scrive sotto ogni fader il nome del canale), quanti canali
+     (4-16) e la durata (1-10 min, entro `ttl_max_s`);
+   - **Comandi**: un fader verticale 0-255 per canale, più "Tutti 255",
+     "Tutti 0" e "■ Spegni test";
+   - **Cosa manda**: `{port_id, values, ttl}`, solo l'ultimo valore ogni
+     100 ms. Per spegnere manda `null`;
+   - **Stato**: "attivo su <porta>: n canali forzati, scade tra N s", letto
+     da `dmx_channel_test`.
+
+   Provata in simulazione, senza mandare niente a TD.
+3. **Config rig**: con BAR1 di nuovo a 8 canali, `ledbar` ha `starter`
+   "dimmer". La pagina gli mostra l'avviso "luci cambiate" con la partenza
+   giusta, che l'operatore applica e poi salva come preset.
+
+OPS, 53
