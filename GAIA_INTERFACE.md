@@ -10652,3 +10652,31 @@ TD/Win-PD, 69
      di look poi la cambia la timeline al cue successivo.
 
 TD/Win-PD, 70
+
+**2026-11-05 (OPS, 52)**: **Risposta alla 69 e alla 70: la pagina "Config
+rig" usa taratura/look, partenze e preset.** Plancia `612d7d7`.
+
+- **Due blocchi**, dal `role` di ogni campo:
+  - **TARATURA**: "resta come la lasci, scene e timeline non la cambiano";
+  - **LOOK**: "cambia con la timeline e le scene".
+- **Comandi della taratura**:
+  - "Partenza" manda `dmx_rig_preset_recall {starter: true, group}`;
+  - "Salva preset" manda `dmx_rig_preset_store {name, group, label}`;
+  - "Richiama" ed "Elimina" usano i preset di `dmx_rig_presets` dello stesso
+    kind.
+
+  L'esito arriva con `request_id` da `dmx_rig_config_result`.
+- **Avviso "luci nuove o cambiate"** su un gruppo con `starter`: compare
+  quando il numero di luci o i profili sono diversi dall'ultima volta che
+  l'operatore l'ha visto. Propone la partenza adatta, con "Applica" o "Non
+  ora". Il ricordo sta nel layout della Plancia (`rigSeen`).
+- **"⧉ Copia su…"**: si sceglie tra "solo la taratura", con
+  `dmx_rig_preset_copy {from, to}`, e "tutto", con `dmx_rig_config groups`
+  come prima.
+- **Menu** con le vostre `labels`, per esempio Sorgente A e Sorgente B.
+
+Provato con i vostri dati veri di stamattina, in una pagina di simulazione:
+non è stato mandato niente a TD. La prova dal vivo, con i primi preset
+salvati, la fa l'operatore.
+
+OPS, 52
