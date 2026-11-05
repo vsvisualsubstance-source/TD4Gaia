@@ -10430,3 +10430,82 @@ arrivata.**
   movimento, come suggerite nella 65.
 
 OPS, 50
+
+**2026-11-05 (TD/Win-PD, 68)**: **Nuovo: configurazione avanzata dei rig in
+un unico param, per una pagina "Config rig" sulla Plancia come il Look Rig
+di TD.** DMX Master `8ac6a8b`. I `dmx_<rig>_*` singoli restano come sono:
+questo è un modo in più, pensato per una pagina intera.
+
+1. **Perché**: oggi la Plancia ha la taratura audio (`96-audio-rigs.js`, 7
+   param) e il pannello device con tutti i param in elenco piatto. Manca una
+   pagina per configurare un rig per intero (dimmer minimo/massimo, livello,
+   gamma, colore, audio, kick) per **ogni** gruppo: `ledbar`, `side`,
+   `truss`, `haze`, `blinder` e quelli che create voi con `dmx_group_add`.
+   Caso reale di oggi: la LED bar è passata a `ZQ006018 4CH RGBW`, che non
+   ha canale dimmer. Lì il livello si moltiplica dentro i colori con
+   `Dimmergamma`, che serve tararla dalla Plancia.
+2. **Struttura: nuova sezione `rig_config` di `dmx_matrix`** (retained,
+   coperta dalla ripubblicazione automatica della 67). Contiene solo la
+   struttura, nessun valore dal vivo:
+   - `kinds.<chase|level>.sections`: `[{key, label, fields}]`, nell'ordine
+     del Look Rig. Chase: `dimmer` "Livello e dimmer" (`level`,
+     `min_dimmer`, `max_dimmer`, `dimmer_boost`, `dimmer_gamma`), `color`
+     "Colore" (`palette`, `custom_color1..5`, `color_curve`, `color_fade`,
+     `color_speed`, `color_phase`, `bar_phase`), `audio` "Audio"
+     (`audio_source`, `audio_amount`, `smooth_factor`, `global_smooth`,
+     `agc_release`, `min_range`), `kick` "Kick" (`kick_enable`,
+     `kick_threshold`, `kick_boost`, `kick_decay`, `kick_cooldown`,
+     `kick_smooth`). Level: `level` "Livello" (`level`, `fan`).
+   - `fields.<kind>.<campo>`: `{type, label, help?, range?, default?,
+     options?}`. I tipi sono `float` (range reale del par),
+     `enum` (`options`), `color_rgb` (`[r, g, b]` 0-1) e `bool`.
+     Le etichette sono in italiano; per `min_dimmer`/`max_dimmer` il range è
+     0-255.
+   - `groups`: `[{group, label, alias, kind, comp, fixtures, profiles,
+     inactive}]`, nell'ordine della tabella `groups`. `inactive` =
+     `{campo: motivo}` per i campi che su quel gruppo oggi non fanno niente:
+     `dimmer_gamma` se tutte le luci hanno un canale dimmer, `bar_phase` se
+     c'è una sola luce. Suggerimento: mostrateli in grigio con il motivo,
+     senza nasconderli.
+   - `params`: `dmx_rig_config` (rw json) e `dmx_rig_config_result` (r json).
+3. **Valori: `dmx_rig_config`** (get) = `{gruppo: {campo: valore}}` di
+   tutti i rig chase e level. Lo trovate nello status e anche sul **topic
+   retained `gaia/devices/td-dmx-win/dmx_rig_config`**, che si ripubblica
+   quando un valore cambia (controllo ogni 0,5 s). Le scene della timeline
+   cambiano palette e taratura, quindi la pagina si aggiorna da sola.
+4. **Scrittura: `{action: "set", param: "dmx_rig_config", value}`**. Il
+   value può essere un oggetto o una stringa JSON, in una di queste forme:
+   - `{group, values: {campo: valore}}`
+   - `{groups: {gruppo: {campo: valore}}}`
+   - `[{group, values}, ...]`
+
+   Opzionale `request_id`. `group` accetta il nome o l'alias (`front`,
+   `back`). I campi sono quelli di `kinds`. I valori parziali vanno bene:
+   mandate solo quelli che cambiano.
+   - **Tutto o niente**: TD controlla tutto prima di scrivere: gruppo,
+     campo del tipo giusto, tipo, range, opzione dell'enum, e
+     `min_dimmer <= max_dimmer` con i valori **dopo** la scrittura (così
+     min e max si possono mandare insieme in qualunque ordine). Con un
+     errore non scrive niente, nemmeno le parti valide. Se è tutto giusto,
+     scrive tutto nello stesso frame.
+   - **Esito** in `dmx_rig_config_result` = `{request_id, ts, ok, applied:
+     {gruppo: [campi]}, errors: [testo]}`. L'esito è anche sul topic
+     `dmx_rig_config`, e un errore va anche in `last_error` dello status,
+     come gli altri param.
+   - Come ogni modifica dal vivo, il valore resta finché la timeline non
+     cambia di nuovo quel par.
+5. **Provato qui** (stesso percorso dei comandi MQTT):
+   - scrittura valida con valori uguali agli attuali: `ok: true`, campi
+     elencati in `applied`;
+   - `min_dimmer` 250 con `max_dimmer` 100, `min_dimmer` 300, gruppo
+     inesistente, `palette` su `haze` (level), un gruppo valido con uno
+     sbagliato: tutti rifiutati con il motivo, nessun par cambiato;
+   - matrice ripubblicata con `rig_config`, topic `dmx_rig_config` attivo.
+6. **Non incluso, per ora**:
+   - le teste: hanno già `heads_*` e la loro pagina;
+   - i preset di taratura (salvare, richiamare e copiare la config di un
+     rig su un altro), che arriveranno in una nota successiva.
+
+   Se vi serve un campo in più o un altro raggruppamento, ditelo.
+
+TD/Win-PD, 68
