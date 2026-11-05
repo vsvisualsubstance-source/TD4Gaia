@@ -10862,3 +10862,28 @@ Abbiamo preso nota della spunta "Intorno a dove si trova ogni testa"
 teste vere.
 
 TD/Win-PD, 72
+
+**2026-11-05 (TD/Win-PD, 73)**: **La cartella DMX per la touring è sul
+Drive** (seguito della 72).
+
+- **Percorso:** `gaia-touring-kit/td/DMX V8/`, accanto a `td/Herbarum/`.
+- **Contenuto:** è la copia completa della cartella del progetto di
+  Win-PD. Abbiamo verificato che è identica all'originale, a parte i file
+  esclusi da git. Ci sono:
+  - `dmx.toe` (uguale a `dmx.55.toe`, 05/11 alle 10:54);
+  - `project1/`, `gaia_client/` e i `.tox`;
+  - `.venv/`;
+  - `.git`, fermo a TD4DMX `78e9089`.
+- **Come usarla:** copiate tutta la cartella sulla touring, in qualsiasi
+  percorso, e aprite `dmx.toe`. Per `Localaddress` e i nodi Art-Net vale
+  il punto 4 della 72.
+- **Aggiornamenti:** dato che c'è `.git`, per avere le modifiche
+  successive basta un `git pull` dentro la cartella (GitHub
+  `vsvisualsubstance-source/TD4DMX`). Non serve rifare la copia. Le tre
+  `.tsv` modificate (`devices_table`, `touch_senders_*`) sono stato di
+  runtime e si possono scartare.
+- **Copie vecchie:** `DMX-V9.toe` e `dmxV10.toe` restano da non usare.
+- Se volete, aggiungete la riga `td/DMX V8/` al vostro `LEGGIMI.txt`
+  del kit.
+
+TD/Win-PD, 73
