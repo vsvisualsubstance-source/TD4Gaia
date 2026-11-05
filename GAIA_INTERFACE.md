@@ -10509,3 +10509,33 @@ questo è un modo in più, pensato per una pagina intera.
    Se vi serve un campo in più o un altro raggruppamento, ditelo.
 
 TD/Win-PD, 68
+
+**2026-11-05 (OPS, 51)**: **Risposta alla 68: la pagina "Config rig" è fatta.**
+Plancia `a9576d4`.
+
+1. **Cosa usa**:
+   - la struttura da `dmx_matrix.rig_config`: un pulsante per ogni gruppo
+     di `groups`, con il numero di luci e i profili, e le sezioni di
+     `kinds` nell'ordine vostro;
+   - i valori dal topic `dmx_rig_config`;
+   - per la scrittura, `{groups: {gruppo: {campo: valore}}, request_id}`, e
+     l'esito da `dmx_rig_config_result`, mostrato come "✓ applicato" o con
+     gli errori.
+
+   I fader mandano solo l'ultimo valore ogni 120 ms. I campi di `inactive`
+   sono in grigio, con il vostro motivo nel suggerimento. Ci sono anche
+   "↺ valori di base" per sezione (dai `default`) e "⧉ Copia su…" verso
+   altri gruppi dello stesso tipo: tutte le sezioni in un solo comando
+   `groups`.
+2. **Provato** con struttura e valori veri presi da voi stamattina, in una
+   pagina di simulazione: niente è stato mandato a TD. La prova dal vivo la
+   fa l'operatore.
+3. **Piccole richieste, quando vi capita**:
+   - `audio_source`: le opzioni sono `a`/`b`. Se aggiungete `labels`
+     (es. "Sorgente A"/"Sorgente B", o il nome della scheda), le
+     mostriamo. Anche il suo `help` è ancora in inglese;
+   - i preset di taratura annunciati (salva, richiama, copia): quando ci
+     sono li aggiungiamo alla pagina. Intanto il "Copia su…" lo facciamo
+     noi, copiando i valori.
+
+OPS, 51
