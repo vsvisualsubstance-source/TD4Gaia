@@ -10887,3 +10887,71 @@ Drive** (seguito della 72).
   del kit.
 
 TD/Win-PD, 73
+
+**2026-11-06 (OPS, 55)**: **DMX Master: due volte oggi il client Gaia ha
+smesso di pubblicare dopo un comando `set`, su due macchine diverse. Vi
+chiediamo di guardarlo, è il punto più delicato per lo show Lowtopic del
+28/11 (touring da sola).** In entrambi i casi TouchDesigner restava vivo e
+reattivo, `last_error` era `null` e niente si è sbloccato da solo.
+
+1. **OPS, 13:28** (`dmx.55.toe` dal Drive, aperto alle 13:22, id
+   `td-dmx-win`, IP 192.168.1.240).
+   - Comandi mandati su `gaia/device/td-dmx-win/command`, in pochi
+     secondi: `audio_b_type` = `scheda_audio`; dopo 0,5 s
+     `audio_b_driver` = `default (DirectSound/CoreAudio)`; appena arrivato
+     `audio_devices` col nuovo elenco, `audio_b_device` =
+     `CABLE Output (VB-Audio Virtual Cable)` (cavo virtuale appena
+     installato). Poi `audio_a_type`/`audio_a_sender` (`touch_audio`,
+     `td-controller-pcmauro`) e di nuovo `audio_b_device`.
+   - Effetto: si fermano lo `status` (heartbeat 30 s) e le risposte a
+     `gaia/show/clock/ping`, quindi la timeline della Plancia resta ferma
+     ("orologio non raggiungibile"). `dmx_live` e `dmx_rigs` continuano;
+     un `show_timeline` mandato dopo viene ancora ricevuto e ripubblicato.
+   - Nel log del broker alle 13:28:54 i 4 client `TD_440_*` si
+     ricollegano. Nessuna disconnessione dopo.
+   - Rimettere `audio_b_device` = `default` non sblocca. Al mattino, sulla
+     stessa macchina, `audio_a_type` + `audio_a_sender` da soli avevano
+     funzionato.
+2. **Touring vspc3, verso le 17:05** (cartella `DMX V8` copiata dal Drive,
+   git `78e9089`, aperta alle 16:02, id `td-dmx-win`).
+   - Comando: `dmx_model_update`
+     `{model: "COLOR PIC 24x3W 14CH", kind: "chase", channels:
+     ["dimmer","strobe","red","green","blue","red","green","blue",
+     "red","green","blue","red","green","blue"], notes}`, cioè un modello
+     a 4 segmenti RGB con **ruoli ripetuti**. Il modello prima era il
+     segnaposto `ch1..ch14` (`complete: false`).
+   - Effetto: si ferma **tutto**, `status`, `dmx_live`, `dmx_catalog`
+     (il modello non risulta aggiornato). Nel log del broker nessuna
+     disconnessione dei client TD; alle 17:10 due connessioni (1883 e
+     9001) si aprono senza mai completare il CONNECT.
+3. **Domande.**
+   - Che cosa blocca il client in questi due casi? Il cambio di
+     driver/scheda audio (riapertura dell'Audio Device In) e il
+     ricalcolo del catalogo con ruoli ripetuti sono le due cose in comune
+     che vediamo noi.
+   - **Ruoli ripetuti** in `channels`: sono ammessi? Se no, come si
+     descrive una barra a più segmenti RGB (qui 24x3W, 14 canali) perché
+     il motore `chase` li pilotasse tutti?
+   - Si può avere un **modo per riavviare solo il client Gaia** (comando o
+     servizio) senza chiudere il progetto, e magari un watchdog interno
+     che lo riavvii se l'heartbeat non parte?
+   - **`device_id`**: sulla stessa OPS stamattina il progetto pubblicava
+     come `td-dmx-ops`, dopo il riavvio di Windows come `td-dmx-win`.
+     Da cosa dipende? La Plancia ora segue da sola la DMX accesa
+     (`td-dmx-*` vivo con più parametri), ma un id stabile per macchina
+     ci aiuterebbe.
+4. **USB DMX sulla touring.** Windows vede un FTDI `0403:6001`, numero di
+   serie `A50285BI`, su COM3, driver a posto. In `dmx_patch/interfaces`
+   la riga `usb1` è `enttecusbpro`, `enabled 0`. Il numero di serie fa
+   pensare a una Open DMX o a un clone, non a una Pro (di solito "EN…").
+   - Il DMX Out di TD supporta le Open DMX? Se no, cosa consigliate?
+   - Si possono esporre `enabled` e il tipo dell'interfaccia via MQTT
+     (`dmx_interface_set` o simile)? Oggi si cambiano solo dentro TD.
+5. **Lato Plancia, solo per informazione:** con il modello segnaposto
+   `dmx_live` manda per quelle luci un oggetto vuoto `{}`; ora la Plancia
+   le simula nel Render invece di disegnarle spente. Finché non avete
+   guardato il punto 3 non mandiamo più `set` di driver/scheda audio né
+   `dmx_model_update` da remoto: la sorgente audio della touring la
+   impostiamo a mano in TD.
+
+OPS, 55
