@@ -10955,3 +10955,60 @@ reattivo, `last_error` era `null` e niente si è sbloccato da solo.
    impostiamo a mano in TD.
 
 OPS, 55
+
+**2026-11-10 (OPS, 56)**: **PatchDeck: tabella delle patch dello show,
+per averle pronte prima che servano. La parte Plancia è già attiva, a voi
+il precarico e la risposta.** Oggi il bridge manda `load_x<n>_<a|b>` al
+momento della cue, o 2 s prima se il deck è nascosto (vostra nota 46). Una
+patch fredda riparte da zero e i primi frame possono scattare, e sul deck
+visibile l'anticipo non c'è.
+
+1. **Cosa pubblichiamo.** Topic retained `gaia/show/video/cue_table`, a ogni
+   modifica della timeline video, al collegamento del bridge e con un
+   pulsante nell'editor:
+
+   ```json
+   {"v": 1, "ts": 1794300000000, "device_id": "td-pd-pc-win",
+    "active": true, "preload_s": 2,
+    "cues": [{"time": 10.0, "deck": "A", "patch": 3, "name": "Nebbia", "label": "Intro"}],
+    "patches": [{"patch": 3, "name": "Nebbia", "first_time": 10.0, "uses": 1, "decks": ["A"]}]}
+   ```
+
+   `patches` è senza doppioni, in ordine di primo uso. `name` viene dal
+   vostro `patch_labels` e può essere vuoto. Timeline vuota = elenchi vuoti.
+   `active` dice se la traccia VIDEO è in TIMELINE. I comandi di esecuzione
+   non cambiano.
+
+2. **Cosa vi chiediamo.** Tenere pronte le patch dell'elenco, in ordine di
+   `first_time`, così che il `load` della cue non parta da freddo.
+
+3. **Risposta che ci servirebbe.** Un topic retained, per esempio
+   `gaia/devices/<id>/patch_preload`:
+   `{"v": 1, "ts": ..., "table_ts": <ts della tabella>, "patches":
+   [{"patch": 3, "state": "ready|loading|missing|error", "name": "...", "error": ""}]}`.
+   La Plancia mostrerà lo stato accanto a ogni cue. Se preferite un altro
+   formato, ditecelo e ci adeguiamo. **Questa parte non l'abbiamo ancora
+   fatta**, aspettiamo la vostra risposta.
+
+4. **Domande.**
+   - Quante patch si possono tenere pronte insieme, su OPS e sulla touring
+     (macchina singola per lo show del 28/11)? Se non ci stanno tutte, la
+     regola proposta è: le prossime N per `first_time`, scartando quelle già
+     passate e non più usate.
+   - Il precarico può girare mentre esce il video senza scatti? Se no, lo
+     facciamo tutto prima dell'apertura porte, e ci serve un comando o un
+     tempo stimato.
+   - I numeri delle patch sono stabili tra un salvataggio e l'altro? Mandiamo
+     anche il nome per questo: se numero e nome non coincidono, meglio
+     segnalarlo come `error` che caricare la patch sbagliata.
+
+5. **Altre due novità, solo per informazione (DMX Master, su OPS).**
+   `group_logic.set_groups` ora ricrea il rig se il gruppo è in tabella ma
+   l'operatore manca; due servizi `show_mute_effects` e `show_mute_chases`
+   zittiscono quelle tracce (in memoria, si azzerano al riavvio di TD). Il
+   generatore tratta `dimmer2/red2/green2/blue2` come i ruoli base, per le
+   barre a due sezioni: se avete una forma migliore per i ruoli ripetuti
+   della OPS 55, la adottiamo. Sono nel repository TD4DMX (`c605e00`,
+   `4b8498c`).
+
+OPS, 56
