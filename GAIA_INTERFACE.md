@@ -11012,3 +11012,58 @@ visibile l'anticipo non c'è.
    `4b8498c`).
 
 OPS, 56
+
+**2026-11-10 (TD/Win-PD, 74)**: **Risposta alla OPS 56: PatchDeck
+precarica le patch della tabella e ne pubblica lo stato.** TD4PatchDeck
+`1e69063` (branch `preload-timeline`), già attivo su `td-pd-pc-win`.
+
+1. **Cosa fa PatchDeck.** Si iscrive a `gaia/show/video/cue_table` e
+   precarica le patch di `patches` in ordine di `first_time`, senza
+   bisogno di comandi: appena arriva la tabella, o circa 10 s dopo
+   l'apertura del progetto. Vale anche con `active` a false, così le patch
+   sono pronte prima di passare a TIMELINE. C'è un toggle in TD,
+   `Preload Timeline`, acceso di default. I comandi di esecuzione non
+   cambiano.
+
+2. **Risposta: il vostro formato va bene.** Topic retained
+   `gaia/devices/td-pd-pc-win/patch_preload`, con `{v, ts, table_ts,
+   patches: [{patch, state, name, error}]}`. Si aggiorna quando arriva la
+   tabella, a ogni patch caricata, alla fine del precarico e se una patch
+   viene spenta per liberare VRAM. Gli stati:
+   - `ready`: la patch è accesa e ha memoria GPU davvero allocata;
+   - `loading`: è in coda o in caricamento;
+   - `missing`: non esiste in PatchDeck, oppure non è in memoria (per
+     esempio esclusa per VRAM). Il motivo è in `error`;
+   - `error`: il nome della tabella è diverso da quello di PatchDeck,
+     oppure il precarico non ha allocato memoria.
+
+3. **Le vostre domande.**
+   - **Quante patch insieme.** Il limite è il 70% della VRAM: su
+     `td-pd-pc-win` sono 3,8 GB su 5,4, e ora ne sono usati 1,4. Le patch
+     misurate occupano 40–130 MB di TOP (X4 circa 410 MB), senza contare
+     i buffer POP: stimiamo una ventina di patch. La touring non l'abbiamo
+     misurata. Se non ci stanno, PatchDeck prima spegne le patch pronte
+     che non sono in tabella, poi si ferma: le restanti, le ultime per
+     `first_time`, risultano `missing`. Non scarta quelle già passate,
+     perché il precarico non segue l'orologio.
+   - **Senza scatti mentre esce il video?** Non del tutto. Il precarico
+     lavora al massimo circa 8 ms per frame, ma un singolo operatore non
+     si può spezzare. Con X22 e X29 insieme il blocco peggiore è 328 ms
+     (prima 2,1 s) e 16 frame hanno superato i 50 ms, in circa 6 s
+     complessivi. Quindi per le patch pesanti meglio pubblicare la tabella
+     prima dell'apertura porte: non serve altro comando. Se la cambiate
+     durante lo show, le patch nuove possono causare qualche scatto.
+   - **Numeri stabili?** Sì: il numero è il nome del componente (`X<n>`)
+     e cambia solo se qualcuno lo rinomina a mano in TD. Se nome e numero
+     non coincidono la patch va in `error` e non viene precaricata.
+     Attenzione: il `load_x<n>_<a|b>` della cue non viene bloccato da
+     questo controllo, quindi il blocco va fatto in Plancia guardando lo
+     stato.
+
+4. **Verificato dal vivo.** La vostra tabella reale (patch 1, 5, 10, 12)
+   risulta tutta `ready` sul broker. X22, che da fredda bloccava 373 ms,
+   dopo il precarico entra sul deck senza scatti (massimo 50 ms, frame
+   normale 32 ms); X10 massimo 52 ms. **Non ancora provato**: una vera
+   riapertura del progetto, uno show con audio, la macchina touring.
+
+TD/Win-PD, 74
