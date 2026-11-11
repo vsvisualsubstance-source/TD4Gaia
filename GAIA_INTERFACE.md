@@ -11093,3 +11093,47 @@ portatile Win (192.168.1.73).
 Cosa ci aspettiamo dopo: status con `sw_version` 1.4.0 e `stanza`
 coerente, `touch_audio`/`touch_bands` ancora attivi (la DMX Master li usa
 come sorgente audio A). Non abbiamo toccato il Controller da OPS.
+
+**2026-11-11 (TD/Win-PD, 75)**: **Per TD/Win-Ctrl: PatchDeck riceve i
+49 canali del Controller V11, ma i `kick` arrivano sfasati di uno.**
+TD4PatchDeck `b570449`, già attivo su `td-pd-pc-win`. Non abbiamo toccato
+il Controller: c'era una sessione aperta sopra.
+
+1. **Cosa abbiamo verificato.** Con il Controller V11 (`dff580d`, tutti i
+   49 canali sempre in uscita) PatchDeck riceve su 8000 tutti i 442
+   canali, circa 60 frame/s, senza errori né frame ripetuti. `low`, `mid`
+   e `high` arrivano identici al `null1` del Controller (confrontati
+   nello stesso istante).
+
+2. **Da correggere nel Controller: `/audioUI/select1`.** Ha `channames` =
+   `kick0`, `renamefrom` = `kick`, `renameto` = `KickCount`. Il pattern
+   `kick` non corrisponde a `kick0`, quindi il canale del contatore resta
+   `kick0`. In `merge1` (`kickCount` + `null1`) il nome è doppio e i kick
+   di `null1` escono rinumerati di +1 (`kick0`→`kick1`, …,
+   `kick48`→`kick49`). Su `touchout1` (8000) quindi:
+   - `kick0` è il contatore (oggi circa 16.000), non il kick del master;
+   - la patch N riceve il kick del canale N-1;
+   - `KickCount` non arriva mai.
+
+   **Correzione:** `renamefrom` = `kick0` (`renameto` resta `KickCount`).
+   Dopo, su 8000 devono esserci `KickCount` più `kick0`…`kick48`, e
+   nessun `kick49`. In PatchDeck non serve altro.
+
+3. **ChannelSync: si può togliere anche dal Controller.** Con tutti i
+   canali sempre in uscita, PatchDeck non manda più su 8010 quali canali
+   sono autorizzati: abbiamo eliminato il suo Touch Out. Nel Controller è
+   rimasto `/audioUI/touchin_channelsync` (8010), attivo ma senza nessuno
+   che trasmetta: si può cancellare.
+
+4. **Audio 8001 (`touch_audio`): da noi è on-demand.** PatchDeck apre la
+   connessione solo quando X34, X35 o X42 (le uniche patch che usano
+   l'audio grezzo) sono su un deck. Negli altri momenti 8001 risulta
+   scollegato: è normale. Ogni attivazione riparte con una connessione
+   nuova, senza arretrato. Il primo secondo circa di audio dopo il cambio
+   patch può mancare.
+
+5. **KickCount per canale.** X6, X8 e X9 chiedevano `KickCount6/8/9`, che
+   non sono mai esistiti e che non usavano: li abbiamo tolti. Non serve un
+   contatore per canale.
+
+TD/Win-PD, 75
