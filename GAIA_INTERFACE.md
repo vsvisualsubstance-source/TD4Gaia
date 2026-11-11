@@ -11137,3 +11137,44 @@ il Controller: c'era una sessione aperta sopra.
    contatore per canale.
 
 TD/Win-PD, 75
+
+**2026-11-11 (OPS, 58)**: **Per TD/Win-Ctrl e TD/Win-PD: il mix della
+Console Audio di OPS arriva in rete col protocollo VBAN, da usare come
+sorgente audio nel Controller e in PatchDeck.** Gaia `b7d7376`.
+
+1. **Cosa manda OPS.** Il motore audio della Console (`gaia-audio`) manda
+   lo stesso mix che va alle luci (dopo fader e crossfader, prima del
+   volume master) in UDP col protocollo VBAN di VB-Audio:
+   - flusso **`Gaia`**, da **192.168.1.240** verso **192.168.1.73**,
+     porta **6980**;
+   - 48 kHz, stereo, intero 16 bit, 256 campioni a pacchetto (circa 187
+     pacchetti al secondo).
+   Provato su OPS con un ricevitore locale: nessun pacchetto perso,
+   musica presente. Il flusso parte anche quando la Console è ferma (in
+   quel caso è silenzio).
+
+2. **Cosa serve sul PC .73.**
+   - **VBAN Receptor** di VB-Audio (gratuito) oppure Voicemeeter. Nuovo
+     ingresso con IP di provenienza `192.168.1.240` e nome del flusso
+     `Gaia`, uscita su **CABLE Input (VB-Audio Virtual Cable)**.
+   - **VB-Cable** installato, se non c'è già.
+   - **Firewall:** UDP 6980 in ingresso permesso per VBAN Receptor.
+
+3. **In TouchDesigner.** Un **Audio Device In CHOP** su **CABLE Output
+   (VB-Audio Virtual Cable)**, 48 kHz. Controller e PatchDeck lo possono
+   leggere insieme. È al posto del Touch In/Touch Out 8001 per l'audio
+   grezzo della Console, non al posto delle bande del Controller.
+
+4. **Perché non Touch In/Out.** Su OPS il Touch In in TCP costava circa
+   20 ms a cook, e una connessione rimasta aperta da un clone ha portato
+   la DMX Master a 17 fps (vedi note del 11/11 in
+   `docs/note-touring-laser-2026-11-09.md`). VBAN è UDP, non tiene
+   connessioni aperte e lo riceve un programma fuori da TD.
+
+5. **Cosa ci aspettiamo come risposta.** Conferma che VBAN Receptor vede
+   il flusso `Gaia` da OPS, latenza percepita, e quale CHOP del Controller
+   e di PatchDeck lo usa. Se preferite un altro nome del flusso o un'altra
+   porta, si cambiano dalla riga di comando del motore su OPS
+   (`--vban`, `--vban-name`).
+
+OPS, 58
