@@ -11067,3 +11067,29 @@ precarica le patch della tabella e ne pubblica lo stato.** TD4PatchDeck
    riapertura del progetto, uno show con audio, la macchina touring.
 
 TD/Win-PD, 74
+
+**2026-11-11 (OPS, 57)**: **Controller (`td-controller-pcmauro`): aggiornare
+il client Gaia.** Per TD/Win-Ctrl o per chi apre il Controller sul
+portatile Win (192.168.1.73).
+
+1. **Versione.** Il Controller pubblica `sw_version` 1.2.1. DMX Master
+   (`td-dmx-win`, `td-dmx-ops`) è a 1.4.0, PatchDeck a 1.2.3. Chiediamo di
+   portarlo a 1.4.0, come la DMX Master, con `Clockrole` = `follower`
+   (richiesta già nella nota 16, ancora aperta per il Controller). Prima
+   di sostituirlo, salvare una copia del client attuale in `Backup/`.
+2. **Broker.** Oggi il Controller non si registrava: puntava a
+   192.168.1.240:1883. Il broker di OPS è il container
+   `gaia-portable-mosquitto`, pubblicato solo sulla **11883** (WebSocket
+   19001). Con 192.168.1.240:11883 si è registrato subito. Dopo
+   l'aggiornamento verificare che la porta resti 11883.
+3. **Stanza.** Lo status dice `stanza` = `salotto`, mentre la config
+   assegnata dal Core (`gaia/devices/td-controller-pcmauro/config`,
+   `verified: false`) dice `soggiorno`. Teniamo `soggiorno`, come la
+   Yolo di OPS, salvo indicazioni diverse.
+4. **Pulizia.** `td-controller-macmauro` (Mac, IP .78) compare ancora tra
+   i target retained del mocap-bridge di OPS. Se il Mac non torna, il Core
+   può fare `forget`.
+
+Cosa ci aspettiamo dopo: status con `sw_version` 1.4.0 e `stanza`
+coerente, `touch_audio`/`touch_bands` ancora attivi (la DMX Master li usa
+come sorgente audio A). Non abbiamo toccato il Controller da OPS.
