@@ -11178,3 +11178,64 @@ sorgente audio nel Controller e in PatchDeck.** Gaia `b7d7376`.
    (`--vban`, `--vban-name`).
 
 OPS, 58
+
+**2026-11-13 (OPS, 60)**: **Orologio dello show: il master diventa il
+motore audio di OPS, la DMX Master fa da riserva.** Per TD/Win-DMX,
+TD/Win-PD, TD/Win-Ctrl. Spiegazione completa in `docs/show-clock.md`
+del repo Gaia.
+
+1. **Cosa cambia.** Su OPS il motore audio (`gaia-audio --clock
+   ops-audio`) pubblica `gaia/show/clock/state` con `"prio": 2` e
+   `"kind": "audio"`. Il contratto è lo stesso di prima: `state`,
+   `command`, `ping`/`pong`. Ci sono due aggiunte:
+   - lo stato porta anche `prio`, `kind` e `cmd` (l'ultimo comando
+     applicato);
+   - c'è un topic nuovo, `gaia/show/clock/timeline` (retained). La DMX
+     Master ci pubblica durata, loop, Active e le cue della traccia
+     principale, e il motore li usa per la cue corrente e per GO, BACK e
+     cue n.
+
+2. **DMX Master (`Clockrole = master`, nessun cambio nel .toe).** Quando
+   riceve battiti vivi da un orologio con priorità più alta, diventa
+   **riserva**:
+   - `show_logic.clock_follow` porta la timeline dove dice l'orologio;
+   - Play e Time cambiati a mano in TD diventano comandi per il motore;
+   - GO, BACK e cue con la timeline non Active richiamano la scena con la
+     sua dissolvenza.
+
+   Se il motore tace per 3,5 s, la DMX Master riprende il comando dalla
+   sua posizione, senza salti. Quando il motore riparte, riprende da lei e
+   lei torna riserva. `Clockstatus` dice "riserva di ops-audio ...".
+   File: `project1/gaia_client/show_clock.py`, `project1/show/show_logic.py`
+   (`clock_timeline`, `clock_follow`), `project1/gaia_services/lifecycle.py`.
+
+3. **PatchDeck e Controller (follower): aggiornate `show_clock.py`** da
+   DMX V8 (`project1/gaia_client/show_clock.py`, file portabile, uguale
+   ovunque). Porta tre cose:
+   - **volano:** se il master tace, la posizione continua a contare per
+     10 minuti invece di fermarsi dopo 3,5 s;
+   - **latenza corretta:** TD consegna i messaggi MQTT una volta per
+     frame, quindi prima la latenza risultava di mezzo frame anche in
+     LAN (circa 17 ms a 30 fps). Ora si toglie un frame dal ping e si
+     usa la migliore previsione degli ultimi stati;
+   - **lo stato retained ridato dal broker** alla connessione non guida
+     più niente da solo: servono due `seq` diversi.
+
+   Con la versione vecchia continuate a funzionare, ma senza queste
+   correzioni.
+
+4. **Precisione misurata** su OPS: motore vero, TD simulato a 30 fps con
+   `show_clock.py` e `clock_follow` veri. La riserva sta entro 2-4 ms
+   dall'orologio, anche quando il master passa dal motore a TD e
+   ritorno.
+
+5. **Cosa ci aspettiamo come risposta.**
+   - Dalla DMX Master (OPS e touring): `Clockstatus` in riserva e nessun
+     salto sulle teste a GO e seek.
+   - Da PatchDeck e Controller: versione di `show_clock.py` in uso e
+     latenza mostrata in `Clockstatus`.
+
+   Sulla touring il motore resta senza `--clock` finché la prova su OPS
+   non è chiusa.
+
+OPS, 60
