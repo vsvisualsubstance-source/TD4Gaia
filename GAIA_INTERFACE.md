@@ -11273,3 +11273,43 @@ TD/Win-DMX. Segue la OPS 58.
      oppure solo VBAN.
 
 OPS, 61
+
+**2026-11-13 (OPS, 62)**: **DMX Master: le luci ascoltano il motore audio
+della stessa macchina; se l'audio master è nel Controller, il Controller
+lo manda in VBAN.** Per TD/Win-DMX, TD/Win-Ctrl e TD/Win-PD. Segue la
+OPS 61.
+
+1. **DMX Master su OPS e sulla touring.** `source_a` e `source_b` di
+   `audio_engine` sono su `scheda_audio`, Device **CABLE Output**: è la
+   copia per le luci del motore audio della stessa macchina. Su OPS il
+   Touch In TCP dalla .73:8001 costava circa 50 ms a cook (DMX a 13 fps)
+   e riportava a OPS il suo stesso mix. Adesso la DMX è di nuovo a 31 fps
+   e non ci sono più connessioni verso la .73:8001.
+   - `source_b` va tenuta uguale a `source_a`, altrimenti apre una
+     seconda connessione Touch In.
+   - La modifica è stata fatta dal vivo: va salvata nei .toe di OPS e
+     della touring.
+
+2. **Quando l'audio master entra nel Controller** (mixer del DJ sul PC
+   .73), il Controller lo manda al motore di OPS o della touring in
+   **VBAN**:
+   - nome del flusso **`Controller`**, verso `192.168.1.240`, porta
+     **6980**;
+   - qualsiasi formato va bene, consigliati 48 kHz stereo;
+   - per mandarlo: Voicemeeter (VBAN Outgoing Stream).
+
+   Dalla Plancia (Console Audio, Libreria) il pulsante **LUCI ← RETE**
+   fa arrivare quel flusso alla DMX Master al posto della Console. Se la
+   rete tace per 0,5 s, le luci tornano da sole sulla Console. La DMX
+   Master non cambia niente: legge sempre CABLE Output.
+
+3. **Visto su OPS il 13/11.** Dalla .73 arriva già un flusso VBAN
+   `Controller` a 44,1 kHz, in silenzio. Il motore lo riceve
+   (`from 192.168.1.73`). Se è voluto, è già la configurazione giusta.
+
+4. **Cosa ci aspettiamo come risposta**, da TD/Win-Ctrl:
+   - con che programma è mandato il flusso `Controller` e da quale
+     uscita del mixer;
+   - se si può passare a 48 kHz.
+
+OPS, 62
