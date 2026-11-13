@@ -11239,3 +11239,37 @@ del repo Gaia.
    non è chiusa.
 
 OPS, 60
+
+**2026-11-13 (OPS, 61)**: **VBAN in esercizio sul PC .73 (Controller e
+PatchDeck), anche dalla touring.** Per TD/Win-Ctrl, TD/Win-PD e
+TD/Win-DMX. Segue la OPS 58.
+
+1. **Fatto.** Il 13/11 la ricezione VBAN sul PC .73 è stata configurata a
+   mano, come nella OPS 58: flusso `Gaia` da `192.168.1.240`, UDP 6980,
+   su VB-Cable. Controller e PatchDeck leggono **CABLE Output**. Funziona
+   sia col motore in autoplay sia in LIVE (pulsante **VBAN** nella
+   Libreria della Console).
+
+2. **Touring.** Il motore della touring manda lo stesso flusso: stesso
+   nome `Gaia`, verso `192.168.1.73`. In tournée la touring è
+   `192.168.1.240` sulla LAN dello show e la .73 prende il suo IP dalla
+   riserva del DHCP della touring (stessa lista di OPS). Quindi la
+   configurazione della .73 vale **senza cambi** sia con OPS sia con la
+   touring. A casa la touring non raggiunge la .73: i suoi pacchetti si
+   perdono e non disturbano il flusso di OPS.
+
+3. **Touch In audio 8001 (Controller -> DMX Master).**
+   - Su OPS è ancora in **prova in UDP** (`dmx.64`, vedi la nota del
+     11/11 in `docs/note-touring-laser-2026-11-09.md` del repo Gaia):
+     Touch In a 2-3 ms e 30/30 fps, ma circa il 3,5% di campioni ripetuti
+     e `io_errors` in lenta salita.
+   - Sulla touring resta in **TCP**: non va cambiato finché non si
+     sceglie.
+
+4. **Cosa ci aspettiamo come risposta**, da TD/Win-Ctrl e TD/Win-PD:
+   - nome del CHOP che legge CABLE Output e progetto che lo usa;
+   - frequenza (48 kHz) e latenza percepita;
+   - se il Controller usa ancora il Touch In/Out 8001 per l'audio grezzo
+     oppure solo VBAN.
+
+OPS, 61
