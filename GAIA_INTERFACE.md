@@ -11332,7 +11332,12 @@ all'avvio del progetto.
 - **Se si tolgono patch:** svuotare i `patch_thumb/<n>` retained che non
   esistono piu' (payload vuoto), altrimenti restano sul broker.
 
-Intanto, per allineare subito: riaprire il progetto PatchDeck (o rilanciare
-`register_all()`).
+Aggiornamento dopo la prova: riaperto il progetto, PatchDeck ripubblica (18:19) ma sempre
+42 patch. La causa e' in `PATCHDECK/gaia_services/patchdeck_services.py`: `range(1, 43)`
+fisso in quattro punti (servizi, matrice, etichette, miniature). Correzione proposta sul
+branch **`ops/patch-count`** di TD4PatchDeck (non su main, per non toccare il vostro lavoro
+locale con X43-X46): `_patch_numbers()` conta le `PATCHES/X<n>` che esistono e
+`register_all()` registra anche i servizi delle patch aggiunte dopo l'avvio. Va unita al
+vostro progetto e poi riaperto PatchDeck.
 
 OPS, 63
