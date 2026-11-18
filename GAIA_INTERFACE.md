@@ -11313,3 +11313,26 @@ OPS 61.
    - se si può passare a 48 kHz.
 
 OPS, 62
+
+**2026-11-18 (OPS, 63)**: **PatchDeck: matrice e miniature non si aggiornano quando si aggiungono patch.**
+Oggi PatchDeck ha 46 patch, ma sul broker (OPS e touring) `patchdeck_matrix`
+ha ancora `patches` 1-42 e `load_x1..42_a/b`, e ci sono solo `patch_thumb/1..42`
+(ultima pubblicazione 18/11 16:10 su OPS, 17:06 sulla touring). Le patch 43-46 non
+esistono per la Plancia: niente pulsante nel widget, niente miniatura, niente
+scelta nella timeline video. Oggi `publish_matrix()` parte solo da `register_all()`
+all'avvio del progetto.
+
+- **Richiesta 1:** quando il numero o i nomi delle patch cambiano, ripubblicare
+  `patchdeck_matrix` (retained) con i servizi `load_x<n>_<a|b>` nuovi e le
+  `patch_thumb/<n>` delle patch nuove o cambiate.
+- **Richiesta 2:** un comando a richiesta, per esempio
+  `gaia/device/td-pd-pc-win/command {"action": "publish_matrix"}` (anche
+  `"thumbs": true` per rifare le miniature), cosi' la Plancia puo' chiederlo
+  senza riaprire il progetto.
+- **Se si tolgono patch:** svuotare i `patch_thumb/<n>` retained che non
+  esistono piu' (payload vuoto), altrimenti restano sul broker.
+
+Intanto, per allineare subito: riaprire il progetto PatchDeck (o rilanciare
+`register_all()`).
+
+OPS, 63
